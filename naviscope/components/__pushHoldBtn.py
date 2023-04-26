@@ -9,45 +9,48 @@
 import odroid_wiringpi as wiringpi
 from time import monotonic
 
-class PropulsionButton( object ):
+class pushHoldButton( object ):
     def __init__(
             self, 
-            master, 
-            pin = 6,
-            backward_threshold = 3, 
+            pin,
+            callback,
+            hold_threshold = 3, 
             verbose = False ):
         
         super().__init__()
 
-        self._master = master
         self._verbose = verbose
 
         self._pinout = pin
+        self._cb = callback
 
         self._isPressed = False
         self._isLongPressed = False
 
-        self._backward_threshold = backward_threshold
+        self._hold_threshold = hold_threshold
 
         self._press_start = 0
         self._press_duration = 0
 
         self._propulsion_is_on_standby = True
 
-    def start( self ):
+        self.enable()
+
+    def enable( self ):
         
         wiringpi.wiringPiSetup()
         
         wiringpi.pinMode( self._pinout, wiringpi.INPUT )
         wiringpi.pullUpDnControl( self._pinout, wiringpi.PUD_UP )
 
+
     def send_stp( self ):
         
         self._propulsion_is_on_standby = True
         self._isLongPressed = False
 
-        if self._master is not None:
-            self._master._update_propulsion( spin_direction = "stp" )
+        if self._cb is not None:
+            self._cb._update_propulsion( 0 )
 
 
     def send_fwd( self ):
@@ -55,8 +58,8 @@ class PropulsionButton( object ):
         self._propulsion_is_on_standby = False
         self._isLongPressed = False
 
-        if self._master is not None:
-            self._master._update_propulsion( spin_direction = "fwd" )
+        if self._cb is not None:
+            self._cb._update_propulsion( 1 )
 
 
     def send_bwd( self ):
@@ -64,8 +67,8 @@ class PropulsionButton( object ):
         self._isLongPressed = True
         self._propulsion_is_on_standby = False
 
-        if self._master is not None:
-            self._master._update_propulsion( spin_direction = "bwd" )
+        if self._cb is not None:
+            self._cb._update_propulsion( -1 )
 
 
 
@@ -86,7 +89,7 @@ class PropulsionButton( object ):
         # If button is released
         if state == wiringpi.HIGH and self._isPressed:
 
-            if self._press_duration <= self._backward_threshold :
+            if self._press_duration <= self._hold_threshold :
 
                 if self._propulsion_is_on_standby is True:
                     
@@ -102,12 +105,12 @@ class PropulsionButton( object ):
     
             self._isPressed = False
 
-        if self._isPressed and self._press_duration > self._backward_threshold :
+        if self._isPressed and self._press_duration > self._hold_threshold :
 
-            if self._press_duration > self._backward_threshold:
+            if self._press_duration > self._hold_threshold:
 
                 if self._isLongPressed is False: 
                     self.send_bwd()
 
-    def exit( self ):
+    def disable( self ):
         print("propulsion button is disabled")

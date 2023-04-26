@@ -66,7 +66,7 @@ class VideoStreamNode( Node ):
             self.declare_parameter( "peer_index", 0 )
             self.declare_parameter( "resolution", (640,480) )
 
-            self.declare_parameters( "opencv_render", True )
+            self.declare_parameter( "opencv_render", True )
 
 
         def _init_subscribers( self ):

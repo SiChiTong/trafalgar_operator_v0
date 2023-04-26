@@ -13,10 +13,11 @@ import smbus2
 import rclpy
 from rclpy.node import Node
 
+from std_msgs.msg import Bool
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
+from ..utils.__utils_objects import AVAILABLE_TOPICS
 
 # MPU9250 Register Map
 MPU_ADDRESS = 0x68
@@ -101,7 +102,10 @@ class ImuNode( Node ):
             self._declare_parameters()
 
             self._initialize_bus()
+            
+            self._init_subscribers()
             self._init_publishers()
+
 
 
     def _initialize_bus( self ): 
@@ -122,6 +126,18 @@ class ImuNode( Node ):
 
         self.declare_parameter("verbose", False)
         self.declare_parameter("peer_index", 0)    
+
+    def _init_subscribers( self ):
+            
+
+        self._watchdog_sub = self.create_subscription(
+            Bool,
+            AVAILABLE_TOPICS.WATCHDOG.value,
+            self._react_to_connections,
+            10
+        )
+
+        self._watchdog_sub   
 
 
     def _init_publishers( self ):
@@ -146,6 +162,19 @@ class ImuNode( Node ):
          
         
         self.timer = self.create_timer( self._timer_tick, self.publish_imu_data )
+
+        
+    def _react_to_connections( self, msg ):
+
+        self._is_peer_connected = msg.data
+
+        """
+        if self._is_peer_connected is False:
+
+            if self._component is not None:
+                    
+                print( "peerIsConnected (drone)", self._is_peer_connected )
+         """
 
 
     def read_accelerometer( self ):

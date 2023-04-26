@@ -19,8 +19,8 @@ from sensor_msgs.msg import Imu
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
 
-from ..components.__btn_propulsion import propulsionButton
-from ..components.__rot_orientation import orientationEncoder
+from ..components.__pushHoldBtn import propulsionButton
+from ..components.__rotaryEncoder import orientationEncoder
 from .__imu_view import viewMPU
 
 class Operator( Node ):

@@ -136,44 +136,29 @@ class HeartbeatsNode( Node ):
                 peer_status_msg = Bool()
                 peer_status_msg.data = True
 
-                #self._operator_connect_event.set()
-
                 self._watchdog_pub.publish(peer_status_msg)
                 
-                self._peer_event_triggered = True
-                
-                #print( "operator is connected to the drone")
-
             self._is_peer_connected = True
-
-            #print( "operator pulse time", pulse_msg.pulse_time)
 
 
         def _check_peer_status(self):
 
             if not self._is_peer_connected :
+                        
+                peer_status_msg = Bool()
+                peer_status_msg.data = False
                 
-                if self._peer_event_triggered:
+                self._watchdog_pub.publish( peer_status_msg )
 
-                    peer_status_msg = Bool()
-                    peer_status_msg.data = False
-                
-                    self._watchdog_pub.publish( peer_status_msg )
-                    #self._operator_connect_event.clear()
-
-                    self._peer_event_triggered = False
-
-                    print( "operator is disconnected to the drone")
+                #print( "operator is disconnected to the drone")
                     
-            #self._timer_handshake_done = False
             self._is_peer_connected =  False
 
 
         def exit( self ):
+            self.get_logger().info("shutdown heartbeat")
             self.destroy_node()  
-            print("shutdown heartbeat")
-
-
+  
 
 def main(args=None):
 

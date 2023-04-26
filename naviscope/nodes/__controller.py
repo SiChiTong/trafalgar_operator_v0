@@ -11,12 +11,12 @@ import json
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String, Bool, Int8, Uint16
+from std_msgs.msg import String, Bool, Int8, UInt16
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
 
-from ..components.__btn_propulsion import propulsionButton
-from ..components.__rot_orientation import orientationEncoder
+from ..components.__pushHoldBtn import pushHoldButton
+from ..components.__rotaryEncoder import rotaryEncoder
 
 
 class OperatorNode( Node ):
@@ -26,6 +26,17 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace="operator_0")
             
             self._sub_sensors = None
+
+            self._pinout_steering = {
+                    "clk" : 6,
+                    "dt" : 4
+            }
+
+            self._pinout_propulsion = {
+                    "clk" : 6,
+                    "dt" : 4,
+                    "sw" : 0
+            }
 
             self._pub_propulsion = None
             self._pub_direction = None
@@ -37,7 +48,6 @@ class OperatorNode( Node ):
 
             self._comp_propulsion = None    
             self._comp_orientation = None
-            self._comp_imu = None
             self._comp_audio = None
 
             self._is_peer_connected = False
@@ -67,16 +77,27 @@ class OperatorNode( Node ):
 
         def _init_component(self):
             
-            self._comp_propulsion = propulsionButton( 
-                self,
+            self._comp_direction = pushHoldButton( 
                 pin = 6,
-                backward_threshold = 3
+                callback = self._update_direction,
+                hold_threshold=3
             )
 
-            self._comp_orientation = orientationEncoder(
-                master = self,
-                pin_clk = 4,
-                pin_dt = 5
+            self._comp_propulsion = rotaryEncoder(
+                pin_clk = 6,
+                pin_dt = 5,
+                enableRange = True,
+                incrementFactor=5,
+                minClip = 50,
+                maxClip = 200,
+                callback = self._update_propulsion
+            )
+
+            self._comp_orientation = rotaryEncoder(
+                pin_clk = 6,
+                pin_dt = 5,
+                incrementFactor=10,
+                callback = self._update_orientation
             )
 
 
@@ -105,7 +126,7 @@ class OperatorNode( Node ):
 
 
             self._pub_propulsion  = self.create_publisher(
-                String, 
+                UInt16, 
                 AVAILABLE_TOPICS.PROPULSION.value,
                 10
             )
@@ -113,7 +134,7 @@ class OperatorNode( Node ):
             self._pub_propulsion
 
             self._pub_direction = self.create_publisher(
-                Uint16, 
+                Int8, 
                 AVAILABLE_TOPICS.DIRECTION.value,
                 10
             )
@@ -129,21 +150,23 @@ class OperatorNode( Node ):
             self._pub_orientation
 
 
-        def _update_propulsion( self, update_pwm = 100 ):
+        def _update_propulsion( self, update_pwm_range = 100 ):
             
-            msg = Uint16()
-            msg.data = int(update_pwm) 
+            msg = UInt16()
+            msg.data = int(update_pwm_range) 
 
             self._pub_propulsion.publish( msg )
 
 
-        def _update_direction( self, spin_direction = "stp" ):
+        def _update_direction( self, spin_direction = 0 ):
             
-            msg = String()
+            msg = Int8()
             msg.data = spin_direction
 
             self._pub_direction.publish( msg )
 
+            if spin_direction == 0:
+                self._comp_propulsion.reset()
 
         def _update_orientation( self, increment = 0 ):
 
@@ -161,8 +184,7 @@ class OperatorNode( Node ):
         def _react_to_connections( self, msg ):
 
             self._is_peer_connected = msg.data
-            #print( "operator status message received, connection ", msg.peer_connected)
-            
+
             """
             if self._is_peer_connected is False:
 
@@ -173,10 +195,9 @@ class OperatorNode( Node ):
 
 
         def exit(self):
-            
-            self.destroy_node()
-            print("shutdown")
 
+            self.get_logger().info("shutdown heartbeat")   
+            self.destroy_node()
 
 
 def main(args=None):

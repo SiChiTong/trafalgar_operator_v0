@@ -7,15 +7,17 @@ class AVAILABLE_TOPICS( str, Enum ):
     STREAM = "videostream"
     IMU = "imu",
     PANTILT = "pantilt"
+    NAVTARGET = "navtarget"
     HEARTBEAT = "heartbeat"
     WATCHDOG = "watchdog"
     SENSOR = "sensor"
     SHUTDOWN = "shutdown"
 
 
-class OPERATOR(str, Enum):
+class PEER(str, Enum):
     MASTER = "master"
     USER = "user"
+    DRONE = "drone"
 
 class EXIT_STATE(str, Enum ):
     ALIVE = "alive"
