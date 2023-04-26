@@ -87,7 +87,7 @@ class OperatorNode( Node ):
                 pin_clk = 6,
                 pin_dt = 5,
                 enableRange = True,
-                incrementFactor=5,
+                increment=5,
                 minClip = 50,
                 maxClip = 200,
                 callback = self._update_propulsion
@@ -96,7 +96,7 @@ class OperatorNode( Node ):
             self._comp_orientation = rotaryEncoder(
                 pin_clk = 6,
                 pin_dt = 5,
-                incrementFactor=10,
+                increment=10,
                 callback = self._update_orientation
             )
 
