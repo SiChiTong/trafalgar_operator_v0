@@ -12,7 +12,7 @@ from time import monotonic
 class pushHoldButton( object ):
     def __init__(
             self, 
-            pin,
+            pin_out,
             callback,
             hold_threshold = 3, 
             verbose = False ):
@@ -21,7 +21,7 @@ class pushHoldButton( object ):
 
         self._verbose = verbose
 
-        self._pinout = pin
+        self._pin = pin_out
         self._cb = callback
 
         self._isPressed = False
@@ -40,8 +40,8 @@ class pushHoldButton( object ):
         
         wiringpi.wiringPiSetup()
         
-        wiringpi.pinMode( self._pinout, wiringpi.INPUT )
-        wiringpi.pullUpDnControl( self._pinout, wiringpi.PUD_UP )
+        wiringpi.pinMode( self._pin, wiringpi.INPUT )
+        wiringpi.pullUpDnControl( self._pin, wiringpi.PUD_UP )
 
 
     def send_stp( self ):
@@ -75,7 +75,7 @@ class pushHoldButton( object ):
     def _read_state( self ):
 
         # Read button state
-        state = wiringpi.digitalRead( self._pinout )
+        state = wiringpi.digitalRead( self._pin )
 
         # If button is pressed
         if state == wiringpi.LOW and not self._isPressed:

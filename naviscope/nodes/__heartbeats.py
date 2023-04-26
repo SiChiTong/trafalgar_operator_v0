@@ -14,7 +14,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Bool
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
+from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
 class HeartbeatsNode( Node ):
 
@@ -37,7 +37,7 @@ class HeartbeatsNode( Node ):
 
             self._is_master_connected = False
 
-            self._operator_type = OPERATOR.USER.value
+            self._operator_type = PEER.USER.value
 
             self.start()
 

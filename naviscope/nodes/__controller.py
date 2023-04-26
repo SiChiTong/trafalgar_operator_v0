@@ -13,7 +13,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String, Bool, Int8, UInt16
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
+from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
 from ..components.__pushHoldBtn import pushHoldButton
 from ..components.__rotaryEncoder import rotaryEncoder
@@ -27,17 +27,19 @@ class OperatorNode( Node ):
             
             self._sub_sensors = None
 
-            self._pinout_steering = {
-                    "clk" : 6,
-                    "dt" : 4
+            self._pinout_orientation = {
+                "clk" : 6,
+                "dt" : 1
             }
 
             self._pinout_propulsion = {
-                    "clk" : 6,
-                    "dt" : 4,
-                    "sw" : 0
+                "clk" : 5,
+                "dt" : 4,
+                "sw" : 0
             }
 
+            self._pinout_direction = self._pinout_propulsion["sw"]
+            
             self._pub_propulsion = None
             self._pub_direction = None
             self._pub_orientation = None
@@ -53,7 +55,7 @@ class OperatorNode( Node ):
             self._is_peer_connected = False
             self._force_commands_enabled = False
 
-            self._operator_type = OPERATOR.USER.value
+            self._operator_type = PEER.USER.value
 
             self._peer_event_triggered = False
 
@@ -78,14 +80,13 @@ class OperatorNode( Node ):
         def _init_component(self):
             
             self._comp_direction = pushHoldButton( 
-                pin = 6,
+                pin_out = self._pinout_direction,
                 callback = self._update_direction,
                 hold_threshold=3
             )
 
             self._comp_propulsion = rotaryEncoder(
-                pin_clk = 6,
-                pin_dt = 5,
+                pin_out = self._pinout_propulsion,
                 enableRange = True,
                 increment=5,
                 minClip = 50,
@@ -94,8 +95,7 @@ class OperatorNode( Node ):
             )
 
             self._comp_orientation = rotaryEncoder(
-                pin_clk = 6,
-                pin_dt = 5,
+                pin_out = self._pinout_orientation,
                 increment=10,
                 callback = self._update_orientation
             )

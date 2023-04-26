@@ -18,7 +18,7 @@ from cv_bridge import CvBridge
 from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage # Image is the message type
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, OPERATOR
+from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
 class VideoStreamNode( Node ):
 
@@ -36,7 +36,7 @@ class VideoStreamNode( Node ):
             self._cv_window_opened = False
             self._gst_window_opened = False 
 
-            self._operator_type = OPERATOR.USER.value
+            self._operator_type = PEER.USER.value
             
             self.start()
 

@@ -11,8 +11,7 @@ import odroid_wiringpi as wiringpi
 class rotaryEncoder( object ):
     def __init__(
             self, 
-            pin_clk,
-            pin_dt,
+            pin_out,
             callback,
             enableRange = False,
             resetToMin = True,
@@ -25,8 +24,9 @@ class rotaryEncoder( object ):
 
         self._verbose = verbose
         
-        self._clk = pin_clk
-        self._dt = pin_dt
+        self._clk = pin_out["clk"]
+        self._dt = pin_out["dt"]
+        self._sw = pin_out["sw"]
         
         self._increment_factor = increment
         self._cb = callback
