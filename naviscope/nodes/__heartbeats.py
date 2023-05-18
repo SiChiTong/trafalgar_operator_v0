@@ -13,6 +13,7 @@ from time import process_time
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Bool
+from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
@@ -77,7 +78,7 @@ class HeartbeatsNode( Node ):
                 String, 
                 f"/drone_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
                 self._on_peer_pulse,
-                10
+                qos_profile_sensor_data
             )
 
             self._peer_sub 
@@ -89,7 +90,7 @@ class HeartbeatsNode( Node ):
             self._heartbeats = self.create_publisher(
                 String, 
                 AVAILABLE_TOPICS.HEARTBEAT.value,
-                10
+                qos_profile_sensor_data
             )
 
             self.timer = self.create_timer( self._beat_pulsation, self._pulse)
@@ -98,7 +99,7 @@ class HeartbeatsNode( Node ):
             self._watchdog_pub = self.create_publisher(
                 Bool, 
                 AVAILABLE_TOPICS.WATCHDOG.value,
-                10
+                qos_profile_sensor_data
             )
 
             self._pub_shutdown = self.create_publisher(

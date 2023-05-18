@@ -49,7 +49,7 @@ class VideoStreamNode( Node ):
 
         def get_render_pipeline( self, address ):
 
-            pipeline_str = (f"udpsrc address= {address} port={self._upd_port} caps=application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 " 
+            pipeline_str = (f"udpsrc port={self._upd_port} caps=application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96 " 
                 "! rtph264depay "
                 "! h264parse "
                 "! decodebin "

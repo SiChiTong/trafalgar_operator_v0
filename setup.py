@@ -29,7 +29,6 @@ setup(
         'console_scripts': [
             'heartbeat = naviscope.nodes.__heartbeats:main',
             'controller = naviscope.nodes.__controller:main',
-            'imu = naviscope.nodes.__mpu:main',
             'videostream = naviscope.nodes.__videostream:main'
         ],
     }
