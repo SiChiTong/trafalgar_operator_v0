@@ -60,7 +60,7 @@ class externalBoard( object ):
         def _enable( self ):
 
             self.PORTS = list(serial.tools.list_ports.comports())
-            
+
             if( len(self.PORTS ) > 0 ):
 
                 self.COM_PORT = self.PORTS[0].device
@@ -71,8 +71,20 @@ class externalBoard( object ):
                 self.SERIAL.parity = self.Parity    
                 self.SERIAL.stopbits = self.StopBits
 
+                self._reset( )
+                
                 self._thread_init()
                 print(f" port open on {self.COM_PORT }")
+
+
+        def _reset(self ):
+            instructions = {
+                    "reset" : True
+                }
+            
+            encodeInstructions = json.dumps( instructions  ).encode("utf-8")
+            self.SERIAL.write(encodeInstructions)
+            self.SERIAL.flush()
 
 
         def _serialize( self, instruction = "direction", data = 0 ):
@@ -103,21 +115,23 @@ class externalBoard( object ):
 
         def _listen_for_outputs(self):
             
-            if self._thread_stopped is False: 
-                
-                with self._lock:
+            while self._thread_stopped is False:
 
-                    if( self.SERIAL is not None ):
+                if( self.SERIAL is not None ):
+
+                    with self._lock:
 
                         try:
                         
                             line = self.SERIAL.readline() 
-                            self._callback( line )
+                            datas = json.loads( line )
+
+                            self._callback( datas )
 
                         except Exception as e: #(ValueError, serial.SerialException)
-                            pass
-                
-
+                            pass  
+     
+  
         def _disable( self ):
 
             if( self.SERIAL is not None ):

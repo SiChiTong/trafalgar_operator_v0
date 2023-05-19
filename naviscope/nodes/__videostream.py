@@ -64,7 +64,7 @@ class VideoStreamNode( Node ):
 
             self.declare_parameter( "verbose", False )
             self.declare_parameter( "peer_index", 0 )
-            self.declare_parameter( "resolution", (640,480) )
+            self.declare_parameter( "resolution", (320,240) )
 
             self.declare_parameter( "opencv_render", True )
 

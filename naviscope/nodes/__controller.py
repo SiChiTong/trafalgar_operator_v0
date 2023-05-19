@@ -42,16 +42,24 @@ class OperatorNode( Node ):
             self._propulsion = 0
             self._direction = 0
             self._orientation = 0
-            self._pitch = 0
-            self._roll = 0
-            self._yaw = 90
+  
+            self._delta_yaw = 0
+            self._delta_roll = 0
+            self._delta_pitch = 0
+
             self._sensor_yaw = 0
+            self._sensor_pitch =0
+            self._sensor_roll =0
+            
+            self._pitch = 90
+            self._yaw = 90
+            self._roll = 90
 
             self.start()
 
 
         def start(self):
-            
+  
             self._declare_parameters()
 
             self._init_subscribers()
@@ -68,7 +76,7 @@ class OperatorNode( Node ):
         def _init_component(self):
             
             self._board = externalBoard( self._board_datas )
-
+            self._board._enable()
 
         def _init_subscribers( self ):
             
@@ -145,6 +153,7 @@ class OperatorNode( Node ):
 
                 if( spin == 0):
                     self._yaw = 90
+                    self._pitch = 90
 
                 self._direction = spin
 
@@ -164,40 +173,43 @@ class OperatorNode( Node ):
 
         def _update_panoramic( self ):
 
-            tilt = np.clip( self._pitch, 0, 180 )
-            angle = np.clip( self._yaw, 0, 180 )
-
+            #tilt = np.clip( self._pitch, 0, 180 )
+            #azimuth = np.clip( self._yaw, 0, 180 )
+            tilt = self._pitch
+            azimuth = self._yaw
+            #tilt -90 to 90
             vec = Vector3()
             vec.x = float( tilt )
-            vec.z = float( angle )
+            vec.z = float( azimuth )
 
             self._pub_pantilt.publish( vec )
 
 
-        def _board_datas( self, line ): 
-
-            datas = json.loads( line )
-
+        def _board_datas( self, datas ): 
+            
+            #print(f" propulsion : {datas[ 'propulsion' ]}, propulsion : {datas[ 'orientation' ]}, direction : {datas[ 'direction' ]}")
+        
             if datas[ "propulsion" ] != self._propulsion:
-                 
-                self._update_propulsion(  datas[ "propulsion" ] )
+                self._update_propulsion( datas[ "propulsion" ] )
 
             if datas[ "orientation" ] != self._orientation:
                 self._update_orientation( datas["orientation"] )
 
             if datas[ "direction" ] != self._direction:
                 self._update_direction( datas["direction"] )
-
-            if datas[ "direction" ] != self._direction:
-                self._update_direction( datas["direction"] )
-            
-            
+                        
             self._sensor_yaw = datas[ "yaw" ]
-            self._yaw += datas[ "delta_yaw" ]
-            self._pitch = datas["pitch"]
+            self._sensor_pitch = datas["pitch"]
+            self._sensor_roll = datas["roll"]
+
+            self._delta_yaw = datas[ "delta_yaw" ]
+            self._delta_pitch = datas["delta_pitch"]
+
+            self._yaw = 90 - self._sensor_yaw
+            self._pitch += self._delta_pitch
 
             self._update_panoramic( )
-
+            
 
         def _react_to_connections( self, msg ):
 
@@ -220,7 +232,7 @@ class OperatorNode( Node ):
 
         def exit(self):
 
-            self.get_logger().info("shutdown heartbeat")   
+            self.get_logger().info("shutdown controller")   
             self.destroy_node()
 
 
@@ -235,7 +247,7 @@ def main(args=None):
 
         controller_node = OperatorNode()
 
-        rclpy.spin(controller_node )
+        rclpy.spin( controller_node )
 
     except Exception as e:
         print( "an exception has been raised while spinning controller node : ", e )
@@ -255,7 +267,7 @@ def main(args=None):
         if controller_node is not None:
             controller_node.exit()
 
-        rclpy.try_shutdown()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
