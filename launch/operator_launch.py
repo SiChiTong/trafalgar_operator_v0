@@ -41,7 +41,7 @@ def generate_launch_description():
         parameters=[{
             "verbose" : VERBOSE,
             "peer_index":INDEX,
-            "resolution" : (640,480),
+            "resolution" : (320,240),
             "opencv_render": OPENCV_RENDER
         }]
 
