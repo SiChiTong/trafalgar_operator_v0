@@ -27,7 +27,7 @@ class HeartbeatsNode( Node ):
             self._heartbeats = None
             self._beat_pulsation = 1.0
 
-            self._watchdog_pub = None
+            self._pub_watchdog = None
             self._pub_shutdown = None
 
             self._peer_sub = None
@@ -96,7 +96,7 @@ class HeartbeatsNode( Node ):
             self.timer = self.create_timer( self._beat_pulsation, self._pulse)
 
             #watchdog publisher => send instruction when the operator connection status change
-            self._watchdog_pub = self.create_publisher(
+            self._pub_watchdog = self.create_publisher(
                 Bool, 
                 AVAILABLE_TOPICS.WATCHDOG.value,
                 qos_profile_sensor_data
@@ -109,7 +109,7 @@ class HeartbeatsNode( Node ):
             )
 
             self._heartbeats
-            self._watchdog_pub
+            self._pub_watchdog
             self._pub_shutdown
 
 
@@ -137,7 +137,7 @@ class HeartbeatsNode( Node ):
                 peer_status_msg = Bool()
                 peer_status_msg.data = True
 
-                self._watchdog_pub.publish(peer_status_msg)
+                self._pub_watchdog.publish(peer_status_msg)
                 
             self._is_peer_connected = True
 
@@ -149,7 +149,7 @@ class HeartbeatsNode( Node ):
                 peer_status_msg = Bool()
                 peer_status_msg.data = False
                 
-                self._watchdog_pub.publish( peer_status_msg )
+                self._pub_watchdog.publish( peer_status_msg )
 
                 #print( "operator is disconnected to the drone")
                     
