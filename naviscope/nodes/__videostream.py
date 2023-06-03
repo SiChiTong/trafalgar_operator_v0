@@ -5,6 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
+import sys
 import json
 import cv2
 
@@ -17,6 +18,7 @@ from rclpy.node import Node
 from cv_bridge import CvBridge
 from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage # Image is the message type
+from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
@@ -75,7 +77,7 @@ class VideoStreamNode( Node ):
                 String, 
                 f"/drone_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
                 self._on_peer_pulse,
-                10
+                qos_profile=qos_profile_sensor_data
             )
 
             self._sub_peer
@@ -96,7 +98,7 @@ class VideoStreamNode( Node ):
 
             if( self.get_parameter("opencv_render").value is True and self._cv_window_opened is False ):
                 
-                cv2.namedWindow("view", cv2.WINDOW_NORMAL)
+                cv2.namedWindow("view",  cv2.WINDOW_NORMAL )
                 # Configurer la fenêtre en plein écran
                 cv2.setWindowProperty("view", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
@@ -116,7 +118,9 @@ class VideoStreamNode( Node ):
 
 
         def _on_videostream( self, frame ):
-
+            
+            self.get_logger().info("should see smthg ")
+            
             if( self.get_parameter("opencv_render").value is True ):
                 
                 if self._cv_window_opened is False:

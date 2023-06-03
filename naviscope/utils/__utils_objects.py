@@ -18,7 +18,6 @@ class AVAILABLE_TOPICS( str, Enum ):
     JOYSTICK = "joy"
     GAMEPLAY = "gameplay"
 
-
 class SENSORS_TOPICS( str, Enum ):
     IP = "ip"
     BATTERY_GAUGE = "gauge"
@@ -41,11 +40,10 @@ class PEER(str, Enum):
     MASTER = "master"
     USER = "user"
     DRONE = "drone"
-
+    
 class EXIT_STATE(str, Enum ):
     SHUTDOWN = "shutdown"
     RESTART = "restart"
-
 
 DIRECTION_STP = ("EN STANDBY", "#868686")
 DIRECTION_FWD = ("MARCHE AVANT", "#028400")

@@ -5,6 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
+import os
 import sys
 import json
 import socket  
@@ -15,7 +16,7 @@ from rclpy.node import Node
 from std_msgs.msg import String, Bool
 from rclpy.qos import qos_profile_sensor_data
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
+from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER, EXIT_STATE
 
 class HeartbeatsNode( Node ):
 
@@ -28,7 +29,7 @@ class HeartbeatsNode( Node ):
             self._beat_pulsation = 1.0
 
             self._pub_watchdog = None
-            self._pub_shutdown = None
+            self._sub_shutdown = None
 
             self._peer_sub = None
             self._peer_timer = None
@@ -38,9 +39,32 @@ class HeartbeatsNode( Node ):
 
             self._is_master_connected = False
 
-            self._operator_type = PEER.USER.value
+            self._peer_type = PEER.USER.value
 
             self.start()
+
+
+        def _kill_instruction():
+            os.system("shutdown /s /t 1")
+
+        def _restart_instruction():
+            os.system("shutdown /r /t 1")
+            
+
+        def _react_to_shutdown_cmd(self, msg ): 
+
+            instruction = json.loads(msg.data)
+                
+            operator = instruction["peer"]
+            instruction = instruction["status"]
+
+            if( instruction == EXIT_STATE.RESTART.value ):
+
+                self._restart_instruction()
+
+            elif ( instruction == EXIT_STATE.SHUTDOWN.value ):
+
+                self._kill_instruction()
 
 
         def start( self ):
@@ -74,13 +98,24 @@ class HeartbeatsNode( Node ):
 
         def _init_subscribers( self ):
             
+            self._sub_shutdown = self.create_subscription(
+                String,
+                f"/master/{AVAILABLE_TOPICS.SHUTDOWN.value}",#operator_{self.get_parameter('peer_index').value}_
+                self._react_to_shutdown_cmd,
+                10
+            )
+
+            self._sub_shutdown
+        
             self._peer_sub = self.create_subscription(
                 String, 
                 f"/drone_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
                 self._on_peer_pulse,
-                qos_profile_sensor_data
+                qos_profile=qos_profile_sensor_data
             )
 
+            #listen for master deconnection
+            
             self._peer_sub 
             self._peer_timer = self.create_timer( self._peer_timeout, self._check_peer_status )
 
@@ -90,7 +125,7 @@ class HeartbeatsNode( Node ):
             self._heartbeats = self.create_publisher(
                 String, 
                 AVAILABLE_TOPICS.HEARTBEAT.value,
-                qos_profile_sensor_data
+                qos_profile=qos_profile_sensor_data
             )
 
             self.timer = self.create_timer( self._beat_pulsation, self._pulse)
@@ -99,18 +134,11 @@ class HeartbeatsNode( Node ):
             self._pub_watchdog = self.create_publisher(
                 Bool, 
                 AVAILABLE_TOPICS.WATCHDOG.value,
-                qos_profile_sensor_data
-            )
-
-            self._pub_shutdown = self.create_publisher(
-                String, 
-                AVAILABLE_TOPICS.SHUTDOWN.value,
                 10
             )
 
             self._heartbeats
             self._pub_watchdog
-            self._pub_shutdown
 
 
         def _pulse( self ):
@@ -121,7 +149,7 @@ class HeartbeatsNode( Node ):
 
                 info = {
                     "address" : self._address,
-                    "operator" : self._operator_type,
+                    "peer" : self._peer_type,
                     "pulse" : process_time()
                 }
 
@@ -137,29 +165,37 @@ class HeartbeatsNode( Node ):
                 peer_status_msg = Bool()
                 peer_status_msg.data = True
 
+                #self._operator_connect_event.set()
+
                 self._pub_watchdog.publish(peer_status_msg)
-                
+
+                #print( "operator is connected to the drone")
+
             self._is_peer_connected = True
+
+            #print( "operator pulse time", pulse_msg.pulse_time)
 
 
         def _check_peer_status(self):
 
             if not self._is_peer_connected :
-                        
+
                 peer_status_msg = Bool()
                 peer_status_msg.data = False
                 
                 self._pub_watchdog.publish( peer_status_msg )
 
-                #print( "operator is disconnected to the drone")
+                print( "operator is disconnected to the drone")
                     
+            #self._timer_handshake_done = False
             self._is_peer_connected =  False
 
 
         def exit( self ):
-            self.get_logger().info("shutdown heartbeat")
             self.destroy_node()  
-  
+            print("shutdown heartbeat")
+
+
 
 def main(args=None):
 
@@ -169,7 +205,7 @@ def main(args=None):
 
     try:
 
-        heartbeats_node_pub =  HeartbeatsNode()
+        heartbeats_node_pub = HeartbeatsNode()
 
         rclpy.spin(heartbeats_node_pub )
 

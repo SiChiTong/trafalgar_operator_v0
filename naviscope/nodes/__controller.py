@@ -227,7 +227,6 @@ class OperatorNode( Node ):
         def _drone_sensors_feedback( self, msg ): 
             
             feedback = json.loads( msg.data )
-            self.get_logger().info(feedback)
 
 
         def exit(self):

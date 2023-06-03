@@ -4,9 +4,9 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     # Declare a variable Node for each node
-    INDEX = 0
+    INDEX = 1
     VERBOSE = False
-    OPENCV_RENDER = False
+    OPENCV_RENDER = True
 
     heartbeat_node = Node(
         package="naviscope",
@@ -47,25 +47,12 @@ def generate_launch_description():
 
     )
 
-    imu_node = Node(
-        package="naviscope",
-        namespace=f"operator_{INDEX}",
-        executable="imu",
-        name='imu',
-        parameters=[{
-            "verbose" : VERBOSE,
-            "peer_index":INDEX
-        }]
-
-    )
-
 
     # Add the nodes and the process to the LaunchDescription list
     ld = [
      
         heartbeat_node,
         controller_node,
-        imu_node,
         videostream_node
     ]
 
