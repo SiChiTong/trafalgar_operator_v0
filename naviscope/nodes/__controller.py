@@ -25,14 +25,14 @@ class OperatorNode( Node ):
 
         def __init__( self, **kwargs):
 
-            super().__init__("controller", namespace="operator_0")
+            super().__init__("controller", namespace=f"{PEER.USER}_0")
           
             self._pub_propulsion = None
             self._pub_direction = None
             self._pub_orientation = None
             self._pub_pantilt = None
 
-            self._watchdog_sub = None
+            self._sub_watchdog = None
 
             self._board = None
             self._is_peer_connected = False
@@ -82,21 +82,21 @@ class OperatorNode( Node ):
             
             self._sub_sensors = self.create_subscription(
                 String,
-                f"/drone_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
+                f"/{PEER.DRONE}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
                 self._drone_sensors_feedback,
                 qos_profile=qos_profile_sensor_data
             )
 
             self._sub_sensors 
 
-            self._watchdog_sub = self.create_subscription(
+            self._sub_watchdog = self.create_subscription(
                 Bool,
                 AVAILABLE_TOPICS.WATCHDOG.value,
                 self._react_to_connections,
                 qos_profile=qos_profile_sensor_data
             )
 
-            self._watchdog_sub   
+            self._sub_watchdog   
 
 
         def _init_publishers( self ):

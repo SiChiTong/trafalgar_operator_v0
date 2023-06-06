@@ -22,7 +22,7 @@ class HeartbeatsNode( Node ):
 
         def __init__( self, **kwargs ):
 
-            super().__init__("heartbeat", namespace="operator_0")
+            super().__init__("heartbeat", namespace=f"{PEER.USER}_0")
             
             self._address  = None 
             self._heartbeats = None
@@ -30,8 +30,8 @@ class HeartbeatsNode( Node ):
 
             self._pub_watchdog = None
             self._sub_shutdown = None
+            self._sub_peer = None
 
-            self._peer_sub = None
             self._peer_timer = None
             self._peer_timeout = 2.0
             self._peer_pulse_time = 1.0
@@ -100,23 +100,23 @@ class HeartbeatsNode( Node ):
             
             self._sub_shutdown = self.create_subscription(
                 String,
-                f"/master/{AVAILABLE_TOPICS.SHUTDOWN.value}",#operator_{self.get_parameter('peer_index').value}_
+                f"/{PEER.MASTER}/{AVAILABLE_TOPICS.SHUTDOWN.value}",#operator_{self.get_parameter('peer_index').value}_
                 self._react_to_shutdown_cmd,
                 10
             )
 
             self._sub_shutdown
         
-            self._peer_sub = self.create_subscription(
+            self._sub_peer = self.create_subscription(
                 String, 
-                f"/drone_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
+                f"/{PEER.DRONE}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
                 self._on_peer_pulse,
                 qos_profile=qos_profile_sensor_data
             )
 
             #listen for master deconnection
             
-            self._peer_sub 
+            self._sub_peer 
             self._peer_timer = self.create_timer( self._peer_timeout, self._check_peer_status )
 
 

@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=odroid
 WorkingDirectory=/home/odroid/manoar_rov_ws
-ExecStart=/bin/bash -c "source /opt/ros/foxy/setup.bash && source install/local_setup.bash && ros2 launch rov_app drone_launch.py"
+ExecStart=/bin/bash -c "source /opt/ros/foxy/setup.bash && source install/local_setup.bash && ros2 launch rov_app user_0_launch.py"
 Restart=on-failure
 RestartSec=5s
 [Install]
