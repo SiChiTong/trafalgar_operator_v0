@@ -40,8 +40,8 @@ class VideoStreamNode( Node ):
             self.isGamePlayEnable = False
             self.isBlackScreenRendered = True
 
-            self.sink_0 = None
-            self.sink_1 = None 
+            self.sink_black = None
+            self.sink_drone = None 
 
             self._peer_type = PEER.USER.value
 
@@ -127,7 +127,7 @@ class VideoStreamNode( Node ):
                     self.isGamePlayEnable = False
 
                     if self.isBlackScreenRendered is False: 
-                        self.enableGameView( False )
+                        self.enableDroneView( False )
                         
 
         def OnPeerConnection( self, msg ):
@@ -139,59 +139,60 @@ class VideoStreamNode( Node ):
                 if self.isGamePlayEnable is True:
                     
                     if self.isBlackScreenRendered is True: 
-                        self.enableGameView( True )
+                        self.enableDroneView( True )
 
                 else:
 
                     if self.isBlackScreenRendered is False: 
-                        self.enableGameView( False )
+                        self.enableDroneView( False )
             else:
 
                 if self.isBlackScreenRendered is False: 
-                    self.enableGameView( False )
+                    self.enableDroneView( False )
 
 
 
         def start_render_pipeline( self ):
             
+            Gst.init(None)
+
             display_resolution = self.get_parameter('resolution').value
 
             pipeline_string = (
-                f"udpsrc port={self.updPort} ! "
+                "videotestsrc pattern=black ! "
+                f"video/x-raw, framerate=(fraction)5/1, width=(int){display_resolution[0]},height=(int){display_resolution[1]} ! "
+                "compositor name=comp sink_0::alpha=1 sink_1::alpha=0 ! "
+                "videoconvert ! autovideosink "
+                f"udpsrc port={self.udpPort} ! "
                 "application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, payload=96 ! "
                 "rtph264depay ! "
                 "decodebin ! "
                 "videoconvert ! "
                 "videoscale ! "
                 f"video/x-raw, width=(int){display_resolution[0]}, height=(int){display_resolution[1]} ! "
-                "compositor name=compnode sink_0::alpha=0 sink_1::alpha=1 ! "
-                "videoconvert ! autovideosink "
-                "videotestsrc pattern=black ! "
-                f"video/x-raw, framerate=(fraction)5/1, width={display_resolution[0]},height={display_resolution[1]} ! "
-                "comp."
+                "comp. "
             )
 
-            pipeline = Gst.parse_launch(pipeline_string)
+            self._pipeline = Gst.parse_launch(pipeline_string)
 
-            compositor = pipeline.get_by_name("comp")
+            compositor = self._pipeline.get_by_name("comp")
 
-            self.sink_0 = compositor.get_static_pad("sink_0")
-            self.sink_1 = compositor.get_static_pad("sink_1")
+            self.sink_black = compositor.get_static_pad("sink_0")
+            self.sink_drone = compositor.get_static_pad("sink_1")
 
             self.isBlackScreenRendered = True
 
-            pipeline.set_state(Gst.State.PLAYING)
+            self._pipeline.set_state(Gst.State.PLAYING)
         
 
-        def enableGameView(self, enable = True ):
+        def enableDroneView(self, enable = True ):
             
             self.isBlackScreenRendered = enable
 
             if enable:
                 
-
-                self.sink_0.set_property("alpha", 1)
-                self.sink_1.set_property("alpha", 0)
+                self.sink_black.set_property("alpha", 0)
+                self.sink_drone.set_property("alpha", 1)
             
                 self._pipeline.set_state(Gst.State.PLAYING)
 
@@ -201,8 +202,8 @@ class VideoStreamNode( Node ):
 
                 self.isBlackScreenEnable = True
 
-                self.sink_0.set_property("alpha", 0)
-                self.sink_1.set_property("alpha", 1)
+                self.sink_drone.set_property("alpha", 0)
+                self.sink_black.set_property("alpha", 1)
             
                 time.sleep(1)
                 
