@@ -25,7 +25,7 @@ class OperatorNode( Node ):
 
         def __init__( self, **kwargs):
 
-            super().__init__("controller", namespace=f"{PEER.USER}_0")
+            super().__init__("controller", namespace=f"{PEER.USER.value}_0")
           
             self._pub_propulsion = None
             self._pub_direction = None

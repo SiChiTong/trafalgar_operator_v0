@@ -5,8 +5,6 @@ def generate_launch_description():
 
     # Declare a variable Node for each node
     INDEX = 0
-    VERBOSE = False
-    OPENCV_RENDER = True
 
     heartbeat_node = Node(
         package="naviscope",
@@ -14,7 +12,6 @@ def generate_launch_description():
         executable="heartbeat",
         name='heartbeat',
         parameters=[{
-            "verbose" : VERBOSE,
             "peer_index":INDEX
         }]
 
@@ -27,7 +24,6 @@ def generate_launch_description():
         executable="controller",
         name='controller',
         parameters=[{
-            "verbose" : VERBOSE,
             "peer_index":INDEX
         }]
 
@@ -39,10 +35,8 @@ def generate_launch_description():
         executable="videostream",
         name='videostream',
         parameters=[{
-            "verbose" : VERBOSE,
             "peer_index":INDEX,
-            "resolution" : (320,240),
-            "opencv_render": OPENCV_RENDER
+            "resolution" : (320,180)
         }]
 
     )

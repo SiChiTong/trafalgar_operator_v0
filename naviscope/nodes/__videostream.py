@@ -25,7 +25,7 @@ class VideoStreamNode( Node ):
 
         def __init__( self, **kwargs):
 
-            super().__init__("videostream", namespace=f"{PEER.USER}_0")
+            super().__init__("videostream", namespace=f"{PEER.USER.value}_0")
 
             self._sub_video = None
             self._sub_watchdog = None
@@ -88,9 +88,9 @@ class VideoStreamNode( Node ):
         
             self._sub_gameplay = self.create_subscription(
                 String, 
-                f"/{PEER.MASTER}/{AVAILABLE_TOPICS.GAMEPLAY.value}",
+                f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.GAMEPLAY.value}",
                 self.OnGameplay,
-                qos_profile=qos_profile_sensor_data
+                10
             )
 
             self._sub_master
@@ -110,20 +110,22 @@ class VideoStreamNode( Node ):
 
         def OnGameplay( self, msg ):
 
-            gameplay_status = json.loads( msg.data )
+            playUpdate = json.loads( msg.data )
 
-            user_index = f"{PEER.USER}_{self.get_parameter('peer_index').value}"
-
-            if user_index in gameplay_status: 
+            if "index" in playUpdate: 
                 
-                user_info = gameplay_status[f"{user_index}"]
+                peer_index = self.get_parameter('peer_index').value
+                updateIndex = playUpdate["index"]
 
-                if "enable" in user_info and "playtime" in user_info:
+                if updateIndex == peer_index :
+                    
+                    if "enable" in playUpdate and "playtime" in playUpdate:
 
-                    self.isGamePlayEnable = user_info["enable"]
-                    self.PlayTime = user_info["playtime"]
+                        self.isGamePlayEnable = playUpdate["enable"]
+                        self.PlayTime = playUpdate["playtime"]
 
                 else:
+                    
                     self.isGamePlayEnable = False
 
                     if self.isBlackScreenRendered is False: 
@@ -251,7 +253,7 @@ def main(args=None):
         if videostream_node is not None:
             videostream_node.exit()
 
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
