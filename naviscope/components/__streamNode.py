@@ -24,11 +24,11 @@ from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
 class VideoStream( Node ):
 
-        def __init__( self, MASTER_APP):
+        def __init__( self, Master=None):
 
             super().__init__("videostream", namespace=f"{PEER.USER.value}_0")
 
-            self._master = MASTER_APP
+            self._master = Master
 
             self._sub_video = None
             self._sub_watchdog = None
