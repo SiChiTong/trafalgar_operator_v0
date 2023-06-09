@@ -19,7 +19,7 @@ from rclpy.node import Node
 from std_msgs.msg import String, Bool
 from rclpy.qos import qos_profile_sensor_data
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
+from ...utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
 class VideoStreamNode( Node ):
 

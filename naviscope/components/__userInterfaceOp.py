@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import math
 import cv2 # OpenCV library
-#import numpy as np
+
 import customtkinter
 from PIL import ImageTk, Image
 
@@ -11,8 +11,8 @@ customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-bl
     
 class Display(customtkinter.CTk):
 
-    APP_NAME = "MASTER CONTROL"
-    WIDTH = 480
+    APP_NAME = ""
+    WIDTH = 640
     HEIGHT = 480
 
     def __init__(
@@ -35,16 +35,21 @@ class Display(customtkinter.CTk):
 
         self.attributes("-fullscreen", True) 
 
-        self.canvaResolution = (480, 480) 
+        self.canvaResolution = (self.winfo_screenwidth(), self.winfo_screenheight()) 
 
         self.bind("<Control-c>", self._closing_from_gui)
 
         self._frame = None
         self.last_frame = None
         self._is_frame_updated = False
+        
+        self._blackScreen = False 
+        self._isGamePlayEnable = True
 
-        self._isGamePlayEnable = False
+        self._textToDisplay = "GAME OVER"
+        
         self._timeLeft = 0
+        self._loop_delay = 1
 
         self._initialize()
         
@@ -52,7 +57,7 @@ class Display(customtkinter.CTk):
 
         self._create_window()
         self._render_frame()
-        self._loop()
+        #self._loop()
 
 
     def _start( self ):
@@ -67,21 +72,18 @@ class Display(customtkinter.CTk):
 
         self.after(1000, self._loop)#wait for 1 second
 
-
-
     def _create_window( self ): 
 
         self.canvas = customtkinter.CTkCanvas(self, width=self.canvaResolution[0], height=self.canvaResolution[1])
-        self.canvas.pack( fill="both", expand=True )
+        self.canvas.pack( side="top", fill="both", expand=True )
 
 
     def _rosVideoUpdate( self, frame, gameplay_enable = False, playTime = 10*60 ):
         
         self._isGamePlayEnable = gameplay_enable
 
-        if( frame is not None ):
+        if( frame is not None and self._isGamePlayEnable ):
             
-            #np.asarray(frame),
             resized_frame = cv2.resize( frame, ( self.canvas.winfo_width(), self.canvas.winfo_height() ))
             color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
 
@@ -90,10 +92,27 @@ class Display(customtkinter.CTk):
 
             self._frame = img_canvas
             self._is_frame_updated = True
-            
     
-    def _render_frame(self):
+
+    def set_text( self, txt ): 
+        self._textToDisplay = txt
+    
+
+    def render_text_at_center( self ):
         
+        text = self.canvas.create_text(0, 0, text=self._textToDisplay, fill="white", font=("Arial 80 bold"), justify=customtkinter.CENTER)
+        
+        text_bbox = self.canvas.bbox(text)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        text_x = (self.canvas.winfo_width() - text_width) // 2 + text_width /2
+        text_y = (self.canvas.winfo_height() - text_height) // 2
+
+        self.canvas.coords(text, text_x, text_y)
+
+
+    def _render_frame(self):
+    
         if self._isGamePlayEnable is True:
 
             if self._is_frame_updated is True:
@@ -102,17 +121,25 @@ class Display(customtkinter.CTk):
 
                     self.last_image = self._frame
                     self.canvas.delete("all")
-                    self.canvas.create_image(0, 0, anchor="nsew", image=self.last_image)
-            
+                    self.canvas.create_image(0, 0, anchor="nw", image=self.last_image)
 
-            self._is_frame_updated = False
-            # schedule the next update
-        
+                    self._blackScreen = False
+
         else:
-            self.canvas.delete("all")
+            
+            if self._blackScreen is False: 
 
-        self.after(1, self._render_frame)
+                self.canvas.update_idletasks()
+                self.canvas.delete("all")
 
+                self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
+                self.render_text_at_center()
+
+                self._blackScreen = True
+
+        self._is_frame_updated = False
+
+        self.after(self._loop_delay, self._render_frame)
 
     def _stop(self):
         

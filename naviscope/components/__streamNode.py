@@ -17,8 +17,8 @@ from gi.repository import Gst
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String, Bool
-from rclpy.qos import qos_profile_sensor_data
+from std_msgs.msg import String
+#from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
@@ -34,7 +34,6 @@ class VideoStream( Node ):
             self._sub_watchdog = None
             self._sub_master = None
 
-            self.PlayTime = 0
             self.TimeLeft = 0
 
             self._pipeline = None
@@ -69,18 +68,6 @@ class VideoStream( Node ):
 
         def _init_subscribers( self ):
             
-            """
-            self._sub_watchdog = self.create_subscription(
-                Bool,
-                AVAILABLE_TOPICS.WATCHDOG.value,
-                self.OnPeerConnection,
-                qos_profile=qos_profile_sensor_data
-            )
-
-            self._sub_watchdog   
-
-            """
-
             self._sub_gameplay = self.create_subscription(
                 String, 
                 f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.GAMEPLAY.value}",
@@ -105,7 +92,7 @@ class VideoStream( Node ):
                     if "enable" in playUpdate and "playtime" in playUpdate:
 
                         self.isGamePlayEnable = playUpdate["enable"]
-                        self.PlayTime = playUpdate["playtime"]
+                        self._playtime = playUpdate["playtime"]
 
                 else:
                     
@@ -119,17 +106,21 @@ class VideoStream( Node ):
             buf = sample.get_buffer()
 
             caps = sample.get_caps()
+
             frame_width = caps.get_structure(0).get_value("width")
             frame_height = caps.get_structure(0).get_value("height")
+
             _, buffer = buf.map(Gst.MapFlags.READ)
 
             frame = np.frombuffer(buffer.data, dtype=np.uint8)
-            frame = frame.reshape((frame_height, frame_width, 3))
-
+            frame = frame.reshape((frame_height, frame_width,3))
+            
             if self._master._gui is not None: 
                 self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
 
+
             return Gst.FlowReturn.OK
+        
         
 
         def _render_pipeline( self ):
@@ -141,10 +132,14 @@ class VideoStream( Node ):
                 f"udpsrc port={self.udpPort} ! "
                 "application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, payload=96 ! "
                 "rtph264depay ! "
-                "decodebin ! "
+                "h264parse ! "
+                "avdec_h264 ! "
                 "videoconvert ! "
                 "videoscale ! "
-                "! appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false "
+                "video/x-raw, width=(int)320, height=(int)180 ! "
+                "videoconvert ! "
+                "video/x-raw, format=BGR ! "
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
     
             )
 

@@ -56,9 +56,7 @@ class App:
         
     def kill_ros(self):
 
-        self._node._shutdown()
         self._node.destroy_node()
-
         rclpy.shutdown()
 
 
