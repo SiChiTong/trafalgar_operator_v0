@@ -33,8 +33,9 @@ class OperatorNode( Node ):
             self._pub_pantilt = None
 
             self._board = None
-   
-            self._propulsion = 0
+            
+            self._propulsion_default = 25 #default percentage of thrust
+            self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
   
@@ -46,18 +47,16 @@ class OperatorNode( Node ):
             self._sensor_pitch =0
             self._sensor_roll =0
             
-            self._pitch = 90
-            self._yaw = 90
-            self._roll = 90
+            self._angleX = 90
+            self._angleZ = 90
 
             self.start()
 
 
         def start(self):
-  
-            self._declare_parameters()
 
-            self._init_subscribers()
+
+            self._declare_parameters()
             self._init_publishers()
 
             self._init_component()
@@ -65,17 +64,14 @@ class OperatorNode( Node ):
 
         def reset( self ):
 
-            self._propulsion = 0
+            self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
-            self._yaw = 90
-            self._pitch = 90
-    
+            self._angleX = 90
+            self._angleZ = 90
+
         def _declare_parameters( self ):
-
-            self.declare_parameter("verbose", False)
             self.declare_parameter("peer_index", 0)
-
 
         def _init_component(self):
             
@@ -123,15 +119,15 @@ class OperatorNode( Node ):
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
-            prop_msg.data = self._propulsiont
+            prop_msg.data = self._propulsion
 
             self._pub_propulsion.publish( prop_msg )
 
 
         def _update_direction( self ):
             
-            spin = int(np.clip( self._spin_direction, -1, 1 ))
-
+            spin = int(np.clip( self._direction, -1, 1 ))
+          
             if self._direction != spin: 
 
                 if( spin == 0):
@@ -145,41 +141,41 @@ class OperatorNode( Node ):
                 self._pub_direction.publish( dir_msg )
 
         def _update_orientation( self, increment = 0 ):
+            
+            if increment != 0:
+                msg = Int8()
+                msg.data = int(increment)
 
-            msg = Int8()
-            msg.data = int(increment)
+                self._pub_orientation.publish( msg )
 
-            self._pub_orientation.publish( msg )
+        def _update_panoramic( self, pan = 90, tilt=90):
 
-        def _update_panoramic( self ):
+            update_tilt = tilt
+            update_pan = pan
 
-            #tilt = np.clip( self._pitch, 0, 180 )
-            #azimuth = np.clip( self._yaw, 0, 180 )
-            tilt = self._pitch
-            azimuth = self._yaw
-            #tilt -90 to 90
             vec = Vector3()
-            vec.x = float( tilt )
-            vec.z = float( azimuth )
+            vec.x = float( update_tilt )
+            vec.z = float( update_pan )
 
             self._pub_pantilt.publish( vec )
 
 
-        def _board_datas( self, datas ): 
+        def _board_datas( self, json_datas ): 
             
-            #print(f" propulsion : {datas[ 'propulsion' ]}, propulsion : {datas[ 'orientation' ]}, direction : {datas[ 'direction' ]}")
-        
-            self.OnNewOrientation(datas["orientation"])
-            self.OnNewPropulsion(datas["orientation"])
-            self.OnButtonPress( datas["shortPress"], datas["longPress"] )
+            datas = json_datas
 
-            self._delta_yaw = datas[ "delta_yaw" ]
-            self._delta_pitch = datas["delta_pitch"]
+            self.OnNewOrientation(datas["orientation"])
+            self.OnNewPropulsion(datas["propulsion"])
+  
+            self.OnButtonPress( datas["shortPress"], datas["longPress"] )
 
             self.OnMPUDatas(
                 pitch=datas["pitch"],
-                roll = datas["roll"],
-                yaw=datas[ "yaw" ]
+                roll=datas["roll"],
+                yaw=datas[ "yaw" ],
+                delta_p = datas[ "delta_pitch" ],
+                delta_r=datas[ "delta_roll" ],
+                delta_y=datas[ "delta_yaw" ]
             )
 
         def OnNewOrientation( self, increment ):
@@ -187,17 +183,22 @@ class OperatorNode( Node ):
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
 
-            increment = self._propulsion + updateLevelIncrement
-            increment = math.floor( np.clip( increment, 0, 100 ) ) 
+            if self._direction != 0:
 
-            self._propulsion = increment
+                increment = self._propulsion + updateLevelIncrement
+                
+                if self._direction > 0:
+                    increment = math.floor( np.clip( increment, 25, 100 ) ) 
+                elif self._direction < 0 :
+                    increment = math.floor( np.clip( increment, 25, 50 ) ) 
 
-            self.get_logger().info(f"propulsion level : {self._propulsion}")
+                if increment != self._propulsion:
 
-            self._update_propulsion()
+                    self._propulsion = increment
+                    self._update_propulsion()
 
 
-        def OnButtonPress( self, shortPress, longPress):
+        def OnButtonPress( self, shortPress = False, longPress = False ):
             
             if longPress is True:
 
@@ -214,22 +215,29 @@ class OperatorNode( Node ):
 
                 self._update_direction()
 
-
-        def OnMPUDatas( self, pitch=0, roll=0, yaw=0 ):
+        def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
 
             self._sensor_yaw = yaw
             self._sensor_pitch = pitch
             self._sensor_roll = roll
 
-            self._yaw = np.clip( 90 - yaw, 0, 180)
-            self._pitch = np.clip(self._pitch + pitch, 0, 180)
-            
-            self._update_panoramic( )
+            self._delta_p = delta_p
+            self._delta_r =  delta_r
+            self._delta_y = delta_y
+
+            angle_aroundX = np.clip(90 + delta_r, 0, 180)
+            angle_aroundY = np.clip( 90 - delta_y, 0,180 )
+            angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
+
+            self._angleX = angle_aroundY
+            self._angleZ = np.clip( self._angleZ + delta_p, 0,180 )
+
+            self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
 
         def exit(self):
 
-            self.get_logger().info("shutdown controller")   
+            print("shutdown controller")   
 
 
 
