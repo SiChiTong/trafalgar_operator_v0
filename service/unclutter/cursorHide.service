@@ -1,0 +1,11 @@
+[Unit]
+Description="Remove idle cursor image from screen"
+After=graphical.target
+
+[Service]
+User=odroid
+ExecStart=/usr/bin/unclutter -idle 5
+Restart=always
+
+[Install]
+WantedBy=default.target
