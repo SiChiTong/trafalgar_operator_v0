@@ -32,8 +32,6 @@ class OperatorNode( Node ):
             self._pub_orientation = None
             self._pub_pantilt = None
 
-            self._sub_watchdog = None
-
             self._board = None
    
             self._propulsion = 0
@@ -85,18 +83,6 @@ class OperatorNode( Node ):
             self.reset()
 
             self._board._enable()
-
-
-        def _init_subscribers( self ):
-            
-            self._sub_watchdog = self.create_subscription(
-                Bool,
-                AVAILABLE_TOPICS.WATCHDOG.value,
-                self._react_to_connections,
-                qos_profile=qos_profile_sensor_data
-            )
-
-            self._sub_watchdog   
 
 
         def _init_publishers( self ):
