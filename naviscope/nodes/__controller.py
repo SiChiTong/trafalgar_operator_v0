@@ -35,10 +35,7 @@ class OperatorNode( Node ):
             self._sub_watchdog = None
 
             self._board = None
-            self._is_peer_connected = False
    
-            self._operator_type = PEER.USER.value
-
             self._propulsion = 0
             self._direction = 0
             self._orientation = 0
@@ -67,6 +64,15 @@ class OperatorNode( Node ):
 
             self._init_component()
 
+
+        def reset( self ):
+
+            self._propulsion = 0
+            self._direction = 0
+            self._orientation = 0
+            self._yaw = 90
+            self._pitch = 90
+    
         def _declare_parameters( self ):
 
             self.declare_parameter("verbose", False)
@@ -76,19 +82,13 @@ class OperatorNode( Node ):
         def _init_component(self):
             
             self._board = externalBoard( self._board_datas )
+            self.reset()
+
             self._board._enable()
+
 
         def _init_subscribers( self ):
             
-            self._sub_sensors = self.create_subscription(
-                String,
-                f"/{PEER.DRONE}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
-                self._drone_sensors_feedback,
-                qos_profile=qos_profile_sensor_data
-            )
-
-            self._sub_sensors 
-
             self._sub_watchdog = self.create_subscription(
                 Bool,
                 AVAILABLE_TOPICS.WATCHDOG.value,
@@ -128,32 +128,28 @@ class OperatorNode( Node ):
             self._pub_pantilt = self.create_publisher(
                 Vector3,
                 AVAILABLE_TOPICS.PANTILT.value,
-                10
+                qos_profile=qos_profile_sensor_data
             )
 
             self._pub_pantilt
 
 
-        def _update_propulsion( self, update_pwm = 100 ):
+        def _update_propulsion( self ):
             
-            increment = math.floor( np.clip( update_pwm, 50, 200 ) ) 
-            self._propulsion = increment
-
             prop_msg = UInt16()
-            prop_msg.data = increment
+            prop_msg.data = self._propulsiont
 
             self._pub_propulsion.publish( prop_msg )
 
 
-        def _update_direction( self, spin_direction = 0 ):
+        def _update_direction( self ):
             
-            spin = int(np.clip( spin_direction, -1, 1 ))
+            spin = int(np.clip( self._spin_direction, -1, 1 ))
 
             if self._direction != spin: 
 
                 if( spin == 0):
-                    self._yaw = 90
-                    self._pitch = 90
+                    self.reset()
 
                 self._direction = spin
 
@@ -162,14 +158,12 @@ class OperatorNode( Node ):
 
                 self._pub_direction.publish( dir_msg )
 
-
         def _update_orientation( self, increment = 0 ):
 
             msg = Int8()
             msg.data = int(increment)
 
             self._pub_orientation.publish( msg )
-
 
         def _update_panoramic( self ):
 
@@ -189,50 +183,67 @@ class OperatorNode( Node ):
             
             #print(f" propulsion : {datas[ 'propulsion' ]}, propulsion : {datas[ 'orientation' ]}, direction : {datas[ 'direction' ]}")
         
-            if datas[ "propulsion" ] != self._propulsion:
-                self._update_propulsion( datas[ "propulsion" ] )
-
-            if datas[ "orientation" ] != self._orientation:
-                self._update_orientation( datas["orientation"] )
-
-            if datas[ "direction" ] != self._direction:
-                self._update_direction( datas["direction"] )
-                        
-            self._sensor_yaw = datas[ "yaw" ]
-            self._sensor_pitch = datas["pitch"]
-            self._sensor_roll = datas["roll"]
+            self.OnNewOrientation(datas["orientation"])
+            self.OnNewPropulsion(datas["orientation"])
+            self.OnButtonPress( datas["shortPress"], datas["longPress"] )
 
             self._delta_yaw = datas[ "delta_yaw" ]
             self._delta_pitch = datas["delta_pitch"]
 
-            self._yaw = 90 - self._sensor_yaw
-            self._pitch += self._delta_pitch
+            self.OnMPUDatas(
+                pitch=datas["pitch"],
+                roll = datas["roll"],
+                yaw=datas[ "yaw" ]
+            )
 
+        def OnNewOrientation( self, increment ):
+            self._update_orientation( increment )
+
+        def OnNewPropulsion( self, updateLevelIncrement ): 
+
+            increment = self._propulsion + updateLevelIncrement
+            increment = math.floor( np.clip( increment, 0, 100 ) ) 
+
+            self._propulsion = increment
+
+            self.get_logger().info(f"propulsion level : {self._propulsion}")
+
+            self._update_propulsion()
+
+
+        def OnButtonPress( self, shortPress, longPress):
+            
+            if longPress is True:
+
+                if self._direction != -1:
+                    self._direction = -1
+                    self._update_direction()
+
+            if shortPress is True:
+
+                if self._direction == 0:
+                    self._direction = 1
+                else:
+                    self._direction = 0
+
+                self._update_direction()
+
+
+        def OnMPUDatas( self, pitch=0, roll=0, yaw=0 ):
+
+            self._sensor_yaw = yaw
+            self._sensor_pitch = pitch
+            self._sensor_roll = roll
+
+            self._yaw = np.clip( 90 - yaw, 0, 180)
+            self._pitch = np.clip(self._pitch + pitch, 0, 180)
+            
             self._update_panoramic( )
-            
-
-        def _react_to_connections( self, msg ):
-
-            self._is_peer_connected = msg.data
-
-            """
-            if self._is_peer_connected is False:
-
-                if self._component is not None:
-                    
-                    print( "peerIsConnected (drone)", self._is_peer_connected )
-            """
-
-
-        def _drone_sensors_feedback( self, msg ): 
-            
-            feedback = json.loads( msg.data )
 
 
         def exit(self):
 
             self.get_logger().info("shutdown controller")   
-            self.destroy_node()
 
 
 
@@ -266,7 +277,7 @@ def main(args=None):
         if controller_node is not None:
             controller_node.exit()
 
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':
