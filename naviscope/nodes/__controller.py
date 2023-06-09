@@ -154,6 +154,7 @@ class OperatorNode( Node ):
             update_pan = pan
 
             vec = Vector3()
+            
             vec.x = float( update_tilt )
             vec.z = float( update_pan )
 

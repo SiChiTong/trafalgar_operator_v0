@@ -7,9 +7,8 @@
 ########################################################################
 import sys
 import json
-import time
 import numpy as np
-import cv2
+
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -18,7 +17,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-#from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
@@ -38,12 +37,12 @@ class VideoStream( Node ):
 
             self._pipeline = None
 
-            self.isGamePlayEnable = False
-
             self._peer_type = PEER.USER.value
 
             self._playtime = 10 * 60
- 
+            
+            self.isGamePlayEnable = False
+
             self.start()
 
 
@@ -60,44 +59,20 @@ class VideoStream( Node ):
 
 
         def _declare_parameters( self ):
-
-            self.declare_parameter( "verbose", False )
             self.declare_parameter( "peer_index", 0 )
             self.declare_parameter( "resolution", (720,480) )
 
 
         def _init_subscribers( self ):
             
-            self._sub_gameplay = self.create_subscription(
-                String, 
-                f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.GAMEPLAY.value}",
-                self.OnGameplay,
-                10
+            self._sub_master = self.create_subscription(
+                String,
+                f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
+                self.OnMasterPulse,
+                qos_profile=qos_profile_sensor_data
             )
-
-            self._sub_master
-
-
-        def OnGameplay( self, msg ):
-
-            playUpdate = json.loads( msg.data )
-
-            if "index" in playUpdate: 
-                
-                peer_index = self.get_parameter('peer_index').value
-                updateIndex = playUpdate["index"]
-
-                if updateIndex == peer_index :
-                    
-                    if "enable" in playUpdate and "playtime" in playUpdate:
-
-                        self.isGamePlayEnable = playUpdate["enable"]
-                        self._playtime = playUpdate["playtime"]
-
-                else:
-                    
-                    self.isGamePlayEnable = False
-                        
+            
+            self._sub_master  # prevent unused variable warning
 
 
         def OnNewSample(self, sink):
@@ -150,6 +125,28 @@ class VideoStream( Node ):
 
             self._pipeline.set_state(Gst.State.PLAYING)
         
+
+        def OnMasterPulse( self, msg ):
+
+            master_pulse = json.loads( msg.data )
+
+            if peerUpdate in master_pulse: 
+
+                peers = master_pulse["peers"]
+                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
+
+                if peerUpdate in peers: 
+
+
+                    if "enable" in peerUpdate and "playtime" in peerUpdate:
+
+                        self.isGamePlayEnable = peerUpdate["enable"]
+                        self._playtime = peerUpdate["playtime"]
+
+                    else:
+                    
+                        self.isGamePlayEnable = False      
+
 
         def exit( self ):
 
