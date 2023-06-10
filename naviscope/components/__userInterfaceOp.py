@@ -76,7 +76,8 @@ class Display(customtkinter.CTk):
 
         self.canvas = customtkinter.CTkCanvas(self, width=self.canvaResolution[0], height=self.canvaResolution[1])
         self.canvas.pack( side="top", fill="both", expand=True )
-
+        
+        self.drawBlackScreen()
 
     def _rosVideoUpdate( self, frame, gameplay_enable = False, playTime = 10*60 ):
         
@@ -100,46 +101,70 @@ class Display(customtkinter.CTk):
 
     def render_text_at_center( self ):
         
-        text = self.canvas.create_text(0, 0, text=self._textToDisplay, fill="white", font=("Arial 80 bold"), justify=customtkinter.CENTER)
+        ideal_font_size = 80
+
+        window_width = self.canvas.winfo_width()
+        window_height = self.canvas.winfo_height()
+        
+        font_size = min(window_width, window_height) * ideal_font_size // 1080
+
+        text = self.canvas.create_text(
+            0, 
+            0, 
+            text=self._textToDisplay, 
+            fill="white", 
+            font=("Arial", font_size, "bold"), 
+            justify=customtkinter.CENTER
+        )
         
         text_bbox = self.canvas.bbox(text)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
-        text_x = (self.canvas.winfo_width() - text_width) // 2 + text_width /2
-        text_y = (self.canvas.winfo_height() - text_height) // 2
+        text_x = (window_width - text_width) // 2 + text_width /2
+        text_y = (window_height - text_height) // 2
 
         self.canvas.coords(text, text_x, text_y)
+
+    def drawBlackScreen( self ):
+
+        if self._blackScreen is False: 
+
+            self.canvas.update_idletasks()
+
+            self.canvas.delete("all")
+
+            self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
+            self.render_text_at_center()
+
+            self._blackScreen = True    
+      
+
+    def drawVideoFrame( self ):
+
+        if self._is_frame_updated is True:
+
+            if self.last_frame != self._frame:
+
+                self.last_image = self._frame
+                self.canvas.delete("all")
+                self.canvas.create_image(0, 0, anchor="nw", image=self.last_image)
+
+                self._blackScreen = False
 
 
     def _render_frame(self):
     
         if self._isGamePlayEnable is True:
+            self.drawVideoFrame()
 
-            if self._is_frame_updated is True:
-
-                if self.last_frame != self._frame:
-
-                    self.last_image = self._frame
-                    self.canvas.delete("all")
-                    self.canvas.create_image(0, 0, anchor="nw", image=self.last_image)
-
-                    self._blackScreen = False
-
-        else:
-            
-            if self._blackScreen is False: 
-
-                self.canvas.update_idletasks()
-                self.canvas.delete("all")
-
-                self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
-                self.render_text_at_center()
-
-                self._blackScreen = True
+        else: 
+            self.drawBlackScreen()
 
         self._is_frame_updated = False
 
         self.after(self._loop_delay, self._render_frame)
+
+
 
     def _stop(self):
         

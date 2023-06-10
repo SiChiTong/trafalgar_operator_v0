@@ -110,11 +110,11 @@ class VideoStream( Node ):
                 "h264parse ! "
                 "avdec_h264 ! "
                 "videoconvert ! "
-                "videoscale ! "
-                "video/x-raw, width=(int)320, height=(int)180 ! "
-                "videoconvert ! "
                 "video/x-raw, format=BGR ! "
-                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
+                "videoscale ! "
+                #"video/x-raw, width=(int)320, height=(int)240 ! "
+                #"videoconvert ! "
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
     
             )
 
