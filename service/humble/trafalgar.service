@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=odroid
-WorkingDirectory=/home/odroid/manoar_rov_ws
+WorkingDirectory=/home/odroid/trafalgar_ws
 ExecStart=/bin/bash -c "source /opt/ros/humble/setup.bash && source install/local_setup.bash && ros2 launch rov_app device_launch.py"
 Restart=on-failure
 RestartSec=5s
