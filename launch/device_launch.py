@@ -8,7 +8,7 @@ def generate_launch_description():
 
     heartbeat_node = Node(
         package="naviscope",
-        namespace=f"operator_{INDEX}",
+        namespace=f"user_{INDEX}",
         executable="heartbeat",
         name='heartbeat',
         parameters=[{
@@ -20,7 +20,7 @@ def generate_launch_description():
 
     controller_node = Node(
         package="naviscope",
-        namespace=f"operator_{INDEX}",
+        namespace=f"user_{INDEX}",
         executable="controller",
         name='controller',
         parameters=[{
@@ -31,7 +31,7 @@ def generate_launch_description():
 
     videostream_node = Node(
         package="naviscope",
-        namespace=f"operator_{INDEX}",
+        namespace=f"user_{INDEX}",
         executable="videostream",
         name='videostream',
         parameters=[{

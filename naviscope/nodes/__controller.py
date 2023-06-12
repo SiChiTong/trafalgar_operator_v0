@@ -7,7 +7,6 @@
 ########################################################################
 import sys
 import math
-import json
 import numpy as np
 
 import rclpy
@@ -19,7 +18,7 @@ from geometry_msgs.msg import Vector3
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
-from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
+from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
 
 class OperatorNode( Node ):
 
@@ -50,6 +49,15 @@ class OperatorNode( Node ):
             self._angleX = 90
             self._angleZ = 90
 
+            self.mpu_keys = set([
+                SENSORS_TOPICS.PITCH.value,
+                SENSORS_TOPICS.ROLL.value,
+                SENSORS_TOPICS.YAW.value,
+                SENSORS_TOPICS.DELTA_PITCH.value,
+                SENSORS_TOPICS.DELTA_ROLL.value,
+                SENSORS_TOPICS.DELTA_YAW.value
+            ]
+            )
             self.start()
 
 
@@ -126,20 +134,19 @@ class OperatorNode( Node ):
 
         def _update_direction( self ):
             
-            spin = int(np.clip( self._direction, -1, 1 ))
-          
-            if self._direction != spin: 
+            self._direction = int(np.clip( self._direction, -1, 1 ))
+            spin = self._direction
+            
+            self.get_logger().info(spin)
+            
+            if( spin == 0):
+                self.reset()
 
-                if( spin == 0):
-                    self.reset()
+            dir_msg = Int8()
+            dir_msg.data = spin
 
-                self._direction = spin
-
-                dir_msg = Int8()
-                dir_msg.data = spin
-
-                self._pub_direction.publish( dir_msg )
-
+            self._pub_direction.publish( dir_msg )
+            
         def _update_orientation( self, increment = 0 ):
             
             if increment != 0:
@@ -165,19 +172,27 @@ class OperatorNode( Node ):
             
             datas = json_datas
 
-            self.OnNewOrientation(datas["orientation"])
-            self.OnNewPropulsion(datas["propulsion"])
-  
-            self.OnButtonPress( datas["shortPress"], datas["longPress"] )
+            if SENSORS_TOPICS.ORIENTATION.value in datas:
+                self.OnNewOrientation(datas[SENSORS_TOPICS.ORIENTATION.value])
+            
+            if SENSORS_TOPICS.PROPULSION.value in datas:
+                self.OnNewPropulsion(datas[SENSORS_TOPICS.PROPULSION.value])
 
-            self.OnMPUDatas(
-                pitch=datas["pitch"],
-                roll=datas["roll"],
-                yaw=datas[ "yaw" ],
-                delta_p = datas[ "delta_pitch" ],
-                delta_r=datas[ "delta_roll" ],
-                delta_y=datas[ "delta_yaw" ]
-            )
+            if SENSORS_TOPICS.SHORT_PRESS.value in datas and SENSORS_TOPICS.LONG_PRESS.value in datas:
+                self.OnButtonPress( 
+                    datas[SENSORS_TOPICS.SHORT_PRESS.value], 
+                    datas[SENSORS_TOPICS.LONG_PRESS.value] 
+                )
+
+            if self.mpu_keys.issubset( datas.keys()):   
+                self.OnMPUDatas(
+                    pitch=datas[SENSORS_TOPICS.PITCH.value],
+                    roll=datas[SENSORS_TOPICS.ROLL.value],
+                    yaw=datas[ SENSORS_TOPICS.YAW.value ],
+                    delta_p = datas[ SENSORS_TOPICS.DELTA_PITCH.value ],
+                    delta_r=datas[ SENSORS_TOPICS.DELTA_ROLL.value ],
+                    delta_y=datas[ SENSORS_TOPICS.DELTA_YAW.value ]
+                )
 
         def OnNewOrientation( self, increment ):
             self._update_orientation( increment )

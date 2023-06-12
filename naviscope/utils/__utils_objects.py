@@ -22,6 +22,8 @@ class SENSORS_TOPICS( str, Enum ):
     IP = "ip"
     BATTERY_GAUGE = "gauge"
     BATTERY_VOLTAGE = "voltage"
+    ORIENTATION = "orientation"
+    PROPULSION = "propulsion"
     DIRECTION = "direction"
     THRUST = "thrust"
     STEERING = "steer"
@@ -32,9 +34,15 @@ class SENSORS_TOPICS( str, Enum ):
     PITCH = "pitch"
     ROLL = "roll"
     YAW = "yaw"
+    DELTA_PITCH = "delta_pitch"
+    DELTA_ROLL = "delta_pitch"
+    DELTA_YAW = "delta_pitch"
     OBSTACLE = "obstacle"
     CAM_PAN = "pan"
     CAM_TILT = "tilt"
+    SHORT_PRESS = "shortPress"
+    LONG_PRESS = "longPress"
+    
 
 class PEER(str, Enum):
     MASTER = "master"

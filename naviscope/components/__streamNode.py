@@ -30,7 +30,6 @@ class VideoStream( Node ):
             self._master = Master
 
             self._sub_video = None
-            self._sub_watchdog = None
             self._sub_master = None
 
             self.TimeLeft = 0
@@ -42,6 +41,8 @@ class VideoStream( Node ):
             self._playtime = 10 * 60
             
             self.isGamePlayEnable = False
+
+            self._isHighQualityCodec = False
 
             self.start()
 
@@ -96,27 +97,48 @@ class VideoStream( Node ):
 
             return Gst.FlowReturn.OK
         
-        
-
-        def _render_pipeline( self ):
-            
-            Gst.init(None)
+        def h264_decoder( self ):
 
             pipeline_string = (
 
-                f"udpsrc port={self.udpPort} ! "
-                "application/x-rtp, media=video, clock-rate=90000, encoding-name=H264, payload=96 ! "
+                f"udpsrc port={self.udpPort} retrieve-sender-address=false ! "
+                "application/x-rtp, media=video, encoding-name=H264, payload=96 ! "
                 "rtph264depay ! "
                 "h264parse ! "
                 "avdec_h264 ! "
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
                 "videoscale ! "
-                #"video/x-raw, width=(int)320, height=(int)240 ! "
-                #"videoconvert ! "
-                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
     
             )
+
+            return pipeline_string
+
+
+        def h265_decoder( self ):
+
+            pipeline_string = (
+
+                f"udpsrc port={self.udpPort} retrieve-sender-address=false ! "
+                "application/x-rtp, media=video, encoding-name=H265, payload=96 ! "
+                "rtph265depay ! "
+                "h265parse ! "
+                "avdec_h265 ! "
+                "videoconvert ! "
+                "video/x-raw, format=BGR ! "
+                "videoscale ! "
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
+    
+            )
+
+            return pipeline_string
+
+        def _render_pipeline( self ):
+            
+            Gst.init(None)
+
+            pipeline_string = self.h265_decoder() if self._isHighQualityCodec is True else self.h264_decoder()
 
             self._pipeline = Gst.parse_launch(pipeline_string)
 
@@ -130,7 +152,7 @@ class VideoStream( Node ):
 
             master_pulse = json.loads( msg.data )
 
-            if peerUpdate in master_pulse: 
+            if "peers" in master_pulse: 
 
                 peers = master_pulse["peers"]
                 peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
@@ -146,7 +168,9 @@ class VideoStream( Node ):
                     else:
                     
                         self.isGamePlayEnable = False      
-
+            else:
+                    self.isGamePlayEnable = False 
+                    
 
         def exit( self ):
 
