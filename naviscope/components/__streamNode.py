@@ -109,7 +109,7 @@ class VideoStream( Node ):
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
                 "videoscale ! "
-                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
     
             )
 
@@ -128,7 +128,7 @@ class VideoStream( Node ):
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
                 "videoscale ! "
-                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false"
+                "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
     
             )
 
