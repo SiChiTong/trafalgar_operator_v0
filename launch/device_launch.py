@@ -1,10 +1,12 @@
+import os
+
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
 
     # Declare a variable Node for each node
-    INDEX = 0
+    INDEX = os.environ.get('PEER_ID')
 
     heartbeat_node = Node(
         package="naviscope",
@@ -36,7 +38,7 @@ def generate_launch_description():
         name='videostream',
         parameters=[{
             "peer_index":INDEX,
-            "resolution" : (320,180)
+            "resolution" : (320,240)
         }]
 
     )
