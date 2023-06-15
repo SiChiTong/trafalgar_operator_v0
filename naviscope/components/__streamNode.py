@@ -51,6 +51,10 @@ class VideoStream( Node ):
         def udpPort( self ): 
             return 3000
         
+ 
+        @property
+        def udpPort( self ): 
+            return 3000
         
         def start(self):
             
@@ -95,6 +99,12 @@ class VideoStream( Node ):
                 self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
 
 
+            buf.unmap(buffer)
+
+            frame = None
+            sample = None
+            buf = None
+
             return Gst.FlowReturn.OK
         
         def h264_decoder( self ):
@@ -109,6 +119,7 @@ class VideoStream( Node ):
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
                 "videoscale ! "
+                "identity drop-allocation=true ! "
                 "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
     
             )
@@ -159,11 +170,12 @@ class VideoStream( Node ):
 
                 if peerUpdate in peers: 
 
+                    statusUpdate = peers[peerUpdate]
 
-                    if "enable" in peerUpdate and "playtime" in peerUpdate:
+                    if "enable" in statusUpdate and "playtime" in statusUpdate:
 
-                        self.isGamePlayEnable = peerUpdate["enable"]
-                        self._playtime = peerUpdate["playtime"]
+                        self.isGamePlayEnable = statusUpdate["enable"]
+                        self._playtime = statusUpdate["playtime"]
 
                     else:
                     
@@ -171,7 +183,24 @@ class VideoStream( Node ):
             else:
                     self.isGamePlayEnable = False 
                     
+            self.updatePipelineStatus()
 
+
+        def updatePipelineStatus(self):
+
+            if self.isGamePlayEnable is True:
+
+                if self.isPlaying is False:
+                    self.isPlaying = True
+                    self._pipeline.set_state(Gst.State.PLAYING)
+
+            else: 
+
+                if self.isPlaying is True:
+                    self.isPlaying = False
+                    self._pipeline.set_state(Gst.State.PAUSED) 
+
+                    
         def exit( self ):
 
             if self._pipeline is not None: 

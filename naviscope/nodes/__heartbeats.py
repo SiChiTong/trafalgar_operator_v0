@@ -136,7 +136,7 @@ class HeartbeatsNode( Node ):
             self._sub_peer = self.create_subscription(
                 String, 
                 f"/{PEER.DRONE.value}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
-                self._on_peer_pulse,
+                self.OnPeerPulse,
                 qos_profile=qos_profile_sensor_data
             )
 
@@ -188,7 +188,7 @@ class HeartbeatsNode( Node ):
 
             if not self._is_peer_connected :
 
-                json_msg = json.loads( pulse_msg )
+                json_msg = json.loads( pulse_msg.data  )
 
                 self._is_peer_connected = True
                 self._peer_address = json_msg["address"]
@@ -198,7 +198,7 @@ class HeartbeatsNode( Node ):
 
             if not self._is_master_connected :
 
-                json_msg = json.loads( pulse_msg )
+                json_msg = json.loads( pulse_msg.data  )
 
                 self._is_master_connected = True
                 self._master_address = json_msg["address"]
