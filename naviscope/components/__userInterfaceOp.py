@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import math
 import cv2 # OpenCV library
 
 import customtkinter
@@ -12,7 +11,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-bl
 class Display(customtkinter.CTk):
 
     APP_NAME = ""
-    WIDTH = 640
+    WIDTH = 480
     HEIGHT = 480
 
     def __init__(
@@ -101,13 +100,13 @@ class Display(customtkinter.CTk):
 
     def render_text_at_center( self ):
         
-        ideal_font_size = 80
+        #ideal_font_size = 80
 
         window_width = self.canvas.winfo_width()
         window_height = self.canvas.winfo_height()
         
-        font_size = min(window_width, window_height) * ideal_font_size // 1080
-
+        font_size = 40 #min(window_width, window_height) * ideal_font_size // 1080
+        
         text = self.canvas.create_text(
             0, 
             0, 
@@ -120,8 +119,8 @@ class Display(customtkinter.CTk):
         text_bbox = self.canvas.bbox(text)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
-        text_x = (window_width - text_width) // 2 + text_width /2
-        text_y = (window_height - text_height) // 2
+        text_x = (window_width - text_width) // 2 + text_width / 2
+        text_y = (window_height - text_height) // 2 + text_height / 2
 
         self.canvas.coords(text, text_x, text_y)
 

@@ -6,19 +6,21 @@
 # modification: 17/01/2023
 ########################################################################
 import sys
+import json
 import math
 import numpy as np
 
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String, Bool, Int8, UInt16
+from std_msgs.msg import String, Int8, UInt16
 from geometry_msgs.msg import Vector3
 
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
 from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
+from ..components.__audioManager import AudioManager
 
 class OperatorNode( Node ):
 
@@ -32,7 +34,8 @@ class OperatorNode( Node ):
             self._pub_pantilt = None
 
             self._board = None
-            
+            self._audioManager = None
+
             self._propulsion_default = 25 #default percentage of thrust
             self._propulsion = self._propulsion_default 
             self._direction = 0
@@ -49,6 +52,8 @@ class OperatorNode( Node ):
             self._angleX = 90
             self._angleZ = 90
 
+            self.isGamePlayEnable = False
+
             self.mpu_keys = set([
                 SENSORS_TOPICS.PITCH.value,
                 SENSORS_TOPICS.ROLL.value,
@@ -60,7 +65,10 @@ class OperatorNode( Node ):
             )
             self.start()
 
-
+        @property
+        def panTiltThreshold(self):
+            return 2
+        
         def start(self):
 
 
@@ -87,6 +95,11 @@ class OperatorNode( Node ):
             self.reset()
 
             self._board._enable()
+
+            self._audioManager = AudioManager()
+
+
+            #add listener to watchdog to start and stop ambiance background
 
 
         def _init_publishers( self ):
@@ -124,6 +137,17 @@ class OperatorNode( Node ):
             self._pub_pantilt
 
 
+        def _init_subscribers( self ):
+            
+            self._sub_master = self.create_subscription(
+                String,
+                f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
+                self.OnMasterPulse,
+                qos_profile=qos_profile_sensor_data
+            )
+            
+            self._sub_master  # prevent unused variable warning
+
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
@@ -134,16 +158,13 @@ class OperatorNode( Node ):
 
         def _update_direction( self ):
             
-            self._direction = int(np.clip( self._direction, -1, 1 ))
-            spin = self._direction
+            self._direction = np.clip( self._direction, -1, 1 )
             
-            self.get_logger().info(spin)
-            
-            if( spin == 0):
+            if( self._direction == 0):
                 self.reset()
 
             dir_msg = Int8()
-            dir_msg.data = spin
+            dir_msg.data = int(self._direction)
 
             self._pub_direction.publish( dir_msg )
             
@@ -241,15 +262,44 @@ class OperatorNode( Node ):
             self._delta_r =  delta_r
             self._delta_y = delta_y
 
-            angle_aroundX = np.clip(90 + delta_r, 0, 180)
-            angle_aroundY = np.clip( 90 - delta_y, 0,180 )
-            angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
+            #angle_aroundX = np.clip(90 - yaw, 0, 180)
+            #angle_aroundY = np.clip( 90 - delta_y, 0,180 )
+            #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
+            
+            angleX = np.clip(90 + yaw, 0, 180) 
+            angleZ = np.clip( self._angleZ + delta_p, 0,180 )
 
-            self._angleX = angle_aroundY
-            self._angleZ = np.clip( self._angleZ + delta_p, 0,180 )
+            if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
+           
+                self._angleX = angleX
+                self._angleZ = angleZ
+                self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
-            self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
+
+        def OnMasterPulse( self, msg ):
+
+            master_pulse = json.loads( msg.data )
+
+            if "peers" in master_pulse: 
+
+                peers = master_pulse["peers"]
+                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
+
+                if peerUpdate in peers: 
+
+                    statusUpdate = peers[peerUpdate]
+
+                    if "enable" in statusUpdate and "playtime" in statusUpdate:
+
+                        self.isGamePlayEnable = statusUpdate["enable"]
+
+                    else:
+                    
+                        self.isGamePlayEnable = False      
+            else:
+                    self.isGamePlayEnable = False 
+                    
 
         def exit(self):
 

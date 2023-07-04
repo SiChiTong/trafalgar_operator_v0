@@ -192,13 +192,13 @@ class VideoStream( Node ):
 
                 if self.isPlaying is False:
                     self.isPlaying = True
-                    self._pipeline.set_state(Gst.State.PLAYING)
+                    #self._pipeline.set_state(Gst.State.PLAYING)
 
             else: 
 
                 if self.isPlaying is True:
                     self.isPlaying = False
-                    self._pipeline.set_state(Gst.State.PAUSED) 
+                    #self._pipeline.set_state(Gst.State.PAUSED) 
 
                     
         def exit( self ):
