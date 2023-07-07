@@ -10,9 +10,6 @@ from pygame import mixer
 
 class AudioManager(object):
 
-    MUSIC_DIR = "media/audio/music"
-    SFX_DIR = "media/audio/sfx"
-
     def __init__(self, args=None ):
         
         super().__init__()
@@ -28,17 +25,35 @@ class AudioManager(object):
         mixer.init()
         self._mixer = mixer.music
 
+        self.MUSIC_DIR = os.path.join(
+        os.path.dirname(__file__),  # Répertoire actuel du fichier
+        '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
+        'install',                 # Répertoire 'install' généré par colcon build
+        'naviscope',    # Nom de votre package
+        'share',                   # Répertoire 'share' dans le package installé
+        'naviscope',    # Répertoire de votre package dans 'share'
+        'media',                   # Répertoire 'media' dans votre package
+        'audio',                   # Répertoire 'audio' dans le répertoire 'media'
+        'music'                    # Répertoire 'music' dans le répertoire 'audio'
+        )
+
+        self.SFX_DIR = os.path.join(
+        os.path.dirname(__file__),  # Répertoire actuel du fichier
+        '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
+        'install',                 # Répertoire 'install' généré par colcon build
+        'naviscope',    # Nom de votre package
+        'share',                   # Répertoire 'share' dans le package installé
+        'naviscope',    # Répertoire de votre package dans 'share'
+        'media',                   # Répertoire 'media' dans votre package
+        'audio',                   # Répertoire 'audio' dans le répertoire 'media'
+        'sfx'                    # Répertoire 'music' dans le répertoire 'audio'
+        )
+
         self._load_music()
         self._load_sfx()
 
     def _load_music( self ):
         
-        #print( os.path.join(self.MUSIC_DIR, filename) )
-
-        print('basename:    ', os.path.basename(__file__))
-        print('dirname:     ', os.path.dirname(__file__))
-
-
         self._music_playlist = [
             os.path.join(self.MUSIC_DIR, filename)
             for filename in os.listdir(self.MUSIC_DIR)
