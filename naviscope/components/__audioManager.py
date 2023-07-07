@@ -30,7 +30,6 @@ class AudioManager(object):
 
         self.MUSIC_DIR = os.path.join(
         os.getcwd(),  # Répertoire actuel du fichier
-        '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
         'install',                 # Répertoire 'install' généré par colcon build
         'naviscope',    # Nom de votre package
         'share',                   # Répertoire 'share' dans le package installé
@@ -42,7 +41,6 @@ class AudioManager(object):
 
         self.SFX_DIR = os.path.join(
         os.getcwd(),  # Répertoire actuel du fichier
-        '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
         'install',                 # Répertoire 'install' généré par colcon build
         'naviscope',    # Nom de votre package
         'share',                   # Répertoire 'share' dans le package installé
@@ -54,6 +52,7 @@ class AudioManager(object):
 
         self._load_music()
         self._load_sfx()
+        self.play_sfx("bell")
 
     def _load_music( self ):
         
