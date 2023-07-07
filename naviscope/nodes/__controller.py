@@ -54,6 +54,7 @@ class OperatorNode( Node ):
 
             self.isGamePlayEnable = False
 
+            self
             self.wheelAudioTick = 0
             self.wheelAudioThreshold = 10
 
@@ -101,6 +102,7 @@ class OperatorNode( Node ):
 
             self._audioManager = AudioManager()
             self._audioManager._enable()
+
             #add listener to watchdog to start and stop ambiance background
 
 
@@ -166,7 +168,7 @@ class OperatorNode( Node ):
                 self.reset()
 
                 self._audioManager.stop_music()
-                
+
 
             dir_msg = Int8()
             dir_msg.data = int(self._direction)
@@ -193,7 +195,8 @@ class OperatorNode( Node ):
             if self.wheelAudioTick >= self.wheelAudioThreshold: 
                 self.wheelAudioTick = 0
 
-                self._audioManager.play_sfx("wheel")
+                if( self.isGamePlayEnable is True ):
+                    self._audioManager.play_sfx("wheel")
 
 
         def _update_panoramic( self, pan = 90, tilt=90):
@@ -264,8 +267,9 @@ class OperatorNode( Node ):
                 if self._direction != -1:
                     self._direction = -1
                     self._update_direction()
-
-                    self._audioManager.play_sfx("bell")
+                    
+                    if( self.isGamePlayEnable is True ):
+                        self._audioManager.play_sfx("bell")
 
             if shortPress is True:
 
@@ -274,7 +278,8 @@ class OperatorNode( Node ):
                 else:
                     self._direction = 0
                 
-                self._audioManager.play_sfx("bell")
+                if( self.isGamePlayEnable is True ):  
+                    self._audioManager.play_sfx("bell")
 
                 self._update_direction()
 
@@ -327,7 +332,8 @@ class OperatorNode( Node ):
             else:
                     self.isGamePlayEnable = False 
                     
-
+            self._audioManager.gameplayMusic(self.isGamePlayEnable)
+            
         def exit(self):
 
             print("shutdown controller")   

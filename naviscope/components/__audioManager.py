@@ -15,7 +15,7 @@ class AudioManager(object):
         super().__init__()
 
         self._mixer = None
-        self._is_running = True
+        self._IsBackgroundEnable = False
 
         self.music_files = []
         self._music_playlist = []
@@ -56,7 +56,7 @@ class AudioManager(object):
 
         self._load_music()
         self._load_sfx()
-        self.play_sfx("bell")
+     
 
     def _load_music( self ):
         
@@ -98,6 +98,25 @@ class AudioManager(object):
             musicToPlay = self._music_playlist[music]
             self._mixer.load(musicToPlay)
             self._mixer.play(loops=-1)
+
+
+    def gameplayMusic( self, isEnable ): 
+
+        if isEnable is True:
+
+            if  self._IsBackgroundEnable is False:
+                self._IsBackgroundEnable = True
+
+                self.play_music("adventure")
+
+        else: 
+            
+            if  self._IsBackgroundEnable is True:
+                self._IsBackgroundEnable = False
+
+                self.stop_music()
+
+
 
     def stop_music( self ): 
 
