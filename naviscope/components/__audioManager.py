@@ -12,7 +12,7 @@ class AudioManager(object):
 
     def __init__(self, args=None ):
         
-        super.__init__()
+        super().__init__(None)
 
         self._mixer = None
         
