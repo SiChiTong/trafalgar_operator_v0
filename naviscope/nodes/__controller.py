@@ -97,8 +97,7 @@ class OperatorNode( Node ):
             self._board._enable()
 
             self._audioManager = AudioManager()
-
-
+            self._audioManager._enable()
             #add listener to watchdog to start and stop ambiance background
 
 

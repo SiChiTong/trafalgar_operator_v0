@@ -42,7 +42,7 @@ class AudioManager(object):
             } 
         }
  
-    def enable( self ):
+    def _enable( self ):
         
         mixer.init()
         self._mixer = mixer.music
@@ -52,6 +52,13 @@ class AudioManager(object):
         # Obtenir le répertoire d'exécution du code
         self._execution_dir = os.path.dirname(os.path.abspath(__file__))
 
+        wav_file_path = os.path.join(
+            os.path.dirname(__file__),  # Répertoire actuel du fichier
+            'media',                    # Répertoire "media"
+            'bell.wav'  # Nom de votre fichier WAV
+        )
+
+        print(wav_file_path )
         # Construire le chemin vers le répertoire contenant les fichiers audio
         self._playlist_dir = os.path.join(self._execution_dir, '../media/audio')
 
@@ -99,7 +106,7 @@ class AudioManager(object):
             self._music["isPlaying"] = True
 
 
-    def disable( self ):
+    def _disable( self ):
         
         if self._mixer is not None:
             self._mixer.music.stop()
