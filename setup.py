@@ -18,7 +18,8 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*launch.[pxy][yma]*')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
-        (os.path.join('share', package_name, 'media'), glob('media/*.wav'))
+        (os.path.join('share', package_name, 'media', 'audio', 'music'), glob('media/audio/music/*.wav')),
+        (os.path.join('share', package_name, 'media', 'audio', 'sfx'), glob('media/audio/sfx/*.wav')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

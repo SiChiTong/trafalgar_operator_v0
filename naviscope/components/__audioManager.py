@@ -10,110 +10,62 @@ from pygame import mixer
 
 class AudioManager(object):
 
+    MUSIC_DIR = "media/audio/music"
+    SFX_DIR = "media/audio/sfx"
+
     def __init__(self, args=None ):
         
-        super().__init__(None)
+        super().__init__()
 
         self._mixer = None
-        
-        self._sfx = {
-            "track" : "",
-            "player" : None,
-            "isPlaying" : False
-        }
-
-        self._music = {
-            "track" : "",
-            "player" : None,
-            "isPlaying" : False
-        }
-
         self._is_running = True
+        self._music_playlist = []
+        self._sfx_playlist = []
 
-        self._playlist = {
-            "music" :
-            {
-            "adventure" :  "adventure.wav",
-            "combat" :  "combat.wav"
-            },
-            "sfx":{
-            "bell" :  "bell.wav",
-            "wheel" :  "wheel.wav",
-            } 
-        }
- 
+    
     def _enable( self ):
         
         mixer.init()
         self._mixer = mixer.music
 
-        self.load_music( )
+        self._load_music()
+        self._load_sfx()
 
-        # Obtenir le répertoire d'exécution du code
-        self._execution_dir = os.path.dirname(os.path.abspath(__file__))
+    def _load_music( self ):
 
-        wav_file_path = os.path.join(
-            os.path.dirname(__file__),  # Répertoire actuel du fichier
-            'media',                    # Répertoire "media"
-            'bell.wav'  # Nom de votre fichier WAV
-        )
+        self._music_playlist = [
+            os.path.join(self.MUSIC_DIR, filename)
+            for filename in os.listdir(self.MUSIC_DIR)
+            if filename.endswith(".wav")
+        ]
 
-        print(wav_file_path )
-        # Construire le chemin vers le répertoire contenant les fichiers audio
-        self._playlist_dir = os.path.join(self._execution_dir, '../media/audio')
+    def _load_sfx( self ):
 
-
-    def load_music( self ):
-
-        for playsong in self._playlist["music"].values():
-            self._mixer.load( os.path.join(self._playlist_dir, playsong ) )
-
-
-    def load_sfx( self ):
-
-        for playsong in self._playlist["sfx"].values():
-            self._mixer.load( os.path.join(self._playlist_dir, playsong ) )
+        self._sfx_playlist = [
+            os.path.join(self.SFX_DIR, filename)
+            for filename in os.listdir(self.SFX_DIR)
+            if filename.endswith(".wav")
+        ]
 
 
     def play_sfx( self, sfx = None ): 
 
-        if self._mixer is not None and sfx is not None : 
-
-            if sfx != self._sfx["track"]:
-                
-                if sfx in self._playlist["sfx"].keys():
-                    self._sfx["track"] = self._playlist["sfx"][sfx]
-                    self._sfx["player"] = self._mixer.Sound(  self._sfx["track"] )     
-
-            self._sfx["player"].play()
+        if self._mixer and sfx in self._sfx_playlist:
+            self._mixer.Sound(sfx).play()
 
 
     def play_music( self, music = None ): 
 
-        if self._mixer is not None and music is not None : 
-            
-            if self._music["isPlaying"] is True:
-                self._music["player"].stop()
-                self._music["isPlaying"] = False
-
-            if music != self._music["track"]:
-                
-                if music in self._playlist["music"].keys():
-                    self._music["track"] = self._playlist["music"][music]
-                    self._music["player"] = self._mixer.music.load(  self._music["track"] )     
-
-            self._music["player"].play()
-            self._music["isPlaying"] = True
-
+        if self._mixer and music in self._music_playlist:
+            if self._mixer.get_busy():
+                self._mixer.stop()
+            self._mixer.load(music)
+            self._mixer.play(loops=-1)
 
     def stop_music( self ): 
 
-        if self._mixer is not None: 
-            
-            if self._music["isPlaying"] is True:
-                self._music["player"].stop()
-                self._music["isPlaying"] = False
-
+        if self._mixer and self._mixer.get_busy():
+            self._mixer.stop()
 
     def _disable( self ):
         
