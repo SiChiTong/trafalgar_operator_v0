@@ -25,8 +25,11 @@ class AudioManager(object):
         mixer.init()
         self._mixer = mixer.music
 
+        print('basename:    ', os.path.basename(__file__))
+        print('dirname:     ', os.path.dirname(__file__))
+
         self.MUSIC_DIR = os.path.join(
-        os.path.dirname(__file__),  # Répertoire actuel du fichier
+        os.getcwd(),  # Répertoire actuel du fichier
         '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
         'install',                 # Répertoire 'install' généré par colcon build
         'naviscope',    # Nom de votre package
@@ -38,7 +41,7 @@ class AudioManager(object):
         )
 
         self.SFX_DIR = os.path.join(
-        os.path.dirname(__file__),  # Répertoire actuel du fichier
+        os.getcwd(),  # Répertoire actuel du fichier
         '..',                      # Remonter d'un niveau pour trouver le répertoire d'installation
         'install',                 # Répertoire 'install' généré par colcon build
         'naviscope',    # Nom de votre package
