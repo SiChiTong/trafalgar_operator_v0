@@ -16,7 +16,11 @@ class AudioManager(object):
 
         self._mixer = None
         self._is_running = True
+
+        self.music_files = []
         self._music_playlist = []
+
+        self.sfx_files = []
         self._sfx_playlist = []
 
     
@@ -56,32 +60,31 @@ class AudioManager(object):
 
     def _load_music( self ):
         
-        self._music_playlist = [
+        music_files = [
             os.path.join(self.MUSIC_DIR, filename)
             for filename in os.listdir(self.MUSIC_DIR)
             if filename.endswith(".wav")
         ]
+        
+        self._music_playlist = {os.path.splitext(os.path.basename(file))[0]: file for file in music_files}
+
 
     def _load_sfx( self ):
 
-        dirs = os.listdir(self.SFX_DIR )
-
-        for file in dirs:
-            print(file)
-
-        self._sfx_playlist = [
+        sfx_files = [
             os.path.join(self.SFX_DIR, filename)
             for filename in os.listdir(self.SFX_DIR)
             if filename.endswith(".wav")
         ]
 
-        for key in self._sfx_playlist: 
-            print(key)
+        self._sfx_playlist = {os.path.splitext(os.path.basename(file))[0]: file for file in sfx_files}
+
 
     def play_sfx( self, sfx = None ): 
-
+        
         if self._mixer and sfx in self._sfx_playlist:
-            self._mixer.Sound(sfx).play()
+            sfx_file = self._sfx_playlist[sfx]
+            self._mixer.Sound(sfx_file).play()
 
 
     def play_music( self, music = None ): 
@@ -89,7 +92,9 @@ class AudioManager(object):
         if self._mixer and music in self._music_playlist:
             if self._mixer.get_busy():
                 self._mixer.stop()
-            self._mixer.load(music)
+            
+            musicToPlay = self._music_playlist[music]
+            self._mixer.load(musicToPlay)
             self._mixer.play(loops=-1)
 
     def stop_music( self ): 
