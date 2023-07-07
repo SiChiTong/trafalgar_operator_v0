@@ -64,12 +64,19 @@ class AudioManager(object):
 
     def _load_sfx( self ):
 
+        dirs = os.listdir(self.SFX_DIR )
+
+        for file in dirs:
+            print(file)
+
         self._sfx_playlist = [
             os.path.join(self.SFX_DIR, filename)
             for filename in os.listdir(self.SFX_DIR)
             if filename.endswith(".wav")
         ]
 
+        for key in self._sfx_playlist: 
+            print(key)
 
     def play_sfx( self, sfx = None ): 
 
