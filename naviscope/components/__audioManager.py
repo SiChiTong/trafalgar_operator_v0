@@ -32,6 +32,12 @@ class AudioManager(object):
         self._load_sfx()
 
     def _load_music( self ):
+        
+        #print( os.path.join(self.MUSIC_DIR, filename) )
+
+        print('basename:    ', os.path.basename(__file__))
+        print('dirname:     ', os.path.dirname(__file__))
+
 
         self._music_playlist = [
             os.path.join(self.MUSIC_DIR, filename)
