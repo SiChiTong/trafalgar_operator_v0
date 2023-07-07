@@ -106,6 +106,15 @@ class AudioManager(object):
             self._music["isPlaying"] = True
 
 
+    def stop_music( self ): 
+
+        if self._mixer is not None: 
+            
+            if self._music["isPlaying"] is True:
+                self._music["player"].stop()
+                self._music["isPlaying"] = False
+
+
     def _disable( self ):
         
         if self._mixer is not None:

@@ -30,7 +30,7 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
-
+<!-- 
   <install>
     <file>
       <install_path>share/${PROJECT_NAME}/media</install_path>
@@ -38,6 +38,7 @@
       <exec_depend>ros2pkg</exec_depend>
     </file>
   </install>
+-->
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 

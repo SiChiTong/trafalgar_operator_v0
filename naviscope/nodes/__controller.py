@@ -54,6 +54,9 @@ class OperatorNode( Node ):
 
             self.isGamePlayEnable = False
 
+            self.wheelAudioTick = 0
+            self.wheelAudioThreshold = 10
+
             self.mpu_keys = set([
                 SENSORS_TOPICS.PITCH.value,
                 SENSORS_TOPICS.ROLL.value,
@@ -162,11 +165,16 @@ class OperatorNode( Node ):
             if( self._direction == 0):
                 self.reset()
 
+                self._audioManager.stop_music()
+                
+
             dir_msg = Int8()
             dir_msg.data = int(self._direction)
 
             self._pub_direction.publish( dir_msg )
-            
+        
+
+
         def _update_orientation( self, increment = 0 ):
             
             if increment != 0:
@@ -174,6 +182,19 @@ class OperatorNode( Node ):
                 msg.data = int(increment)
 
                 self._pub_orientation.publish( msg )
+
+                self._updateWheelAudio( increment )
+
+
+        def _updateWheelAudio( self, increment ): 
+
+            self.wheelAudioTick += increment
+
+            if self.wheelAudioTick >= self.wheelAudioThreshold: 
+                self.wheelAudioTick = 0
+
+                self._audioManager.play_sfx("wheel")
+
 
         def _update_panoramic( self, pan = 90, tilt=90):
 
@@ -215,7 +236,9 @@ class OperatorNode( Node ):
                 )
 
         def OnNewOrientation( self, increment ):
+
             self._update_orientation( increment )
+
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
 
@@ -242,14 +265,19 @@ class OperatorNode( Node ):
                     self._direction = -1
                     self._update_direction()
 
+                    self._audioManager.play_sfx("bell")
+
             if shortPress is True:
 
                 if self._direction == 0:
                     self._direction = 1
                 else:
                     self._direction = 0
+                
+                self._audioManager.play_sfx("bell")
 
                 self._update_direction()
+
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
 
