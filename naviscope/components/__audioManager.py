@@ -83,8 +83,10 @@ class AudioManager(object):
     def play_sfx( self, sfx = None ): 
         
         if self._mixer and sfx in self._sfx_playlist:
-            sfx_file = self._sfx_playlist[sfx]
-            self._mixer.Sound(sfx_file).play()
+            
+            sfx_path = self._sfx_playlist[sfx]
+            sfxClip = mixer.Sound( sfx_path )
+            sfxClip.play()
 
 
     def play_music( self, music = None ): 
