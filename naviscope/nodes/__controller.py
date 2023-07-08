@@ -298,7 +298,7 @@ class OperatorNode( Node ):
             #angle_aroundY = np.clip( 90 - delta_y, 0,180 )
             #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
             
-            angleX = np.clip(90 + yaw, 0, 180) 
+            angleX = np.clip(90 + roll, 0, 180) 
             angleZ = np.clip( self._angleZ + delta_p, 0,180 )
 
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
