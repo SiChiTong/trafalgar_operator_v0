@@ -9,6 +9,7 @@ import sys
 import json
 import math
 import numpy as np
+import socket
 
 import rclpy
 from rclpy.node import Node
@@ -27,11 +28,14 @@ class OperatorNode( Node ):
         def __init__( self, **kwargs):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
-          
+
+            self._address = ""
+            
             self._pub_propulsion = None
             self._pub_direction = None
             self._pub_orientation = None
             self._pub_pantilt = None
+            self._pub_sensor = None
 
             self._board = None
             self._audioManager = None
@@ -75,7 +79,7 @@ class OperatorNode( Node ):
         
         def start(self):
 
-
+            self.get_local_ip()
             self._declare_parameters()
             self._init_publishers()
 
@@ -92,6 +96,20 @@ class OperatorNode( Node ):
 
         def _declare_parameters( self ):
             self.declare_parameter("peer_index", 0)
+
+        def get_local_ip( self ):
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+            try:
+
+                s.connect(('8.8.8.8', 80))
+                self._address = s.getsockname()[0]
+            except socket.error:
+                # Si la connexion échoue, nous renvoyons l'adresse IP de la machine locale
+                self._address = socket.gethostbyname(socket.gethostname())
+            finally:
+                s.close()
 
         def _init_component(self):
             
@@ -139,6 +157,15 @@ class OperatorNode( Node ):
             )
 
             self._pub_pantilt
+
+
+            self.pub_sensor = self.create_subscription(
+                String,
+                AVAILABLE_TOPICS.SENSOR.value,
+                qos_profile = qos_profile_sensor_data
+            )
+
+            self._pub_sensor   
 
 
         def _init_subscribers( self ):
@@ -238,6 +265,8 @@ class OperatorNode( Node ):
                     delta_y=datas[ SENSORS_TOPICS.DELTA_YAW.value ]
                 )
 
+            self._send_sensors_datas(json_datas)
+
         def OnNewOrientation( self, increment ):
 
             self._update_orientation( increment )
@@ -308,6 +337,23 @@ class OperatorNode( Node ):
                 self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
 
+        def _send_sensors_datas( self, sensor_json ):
+            
+            sensor_msg = String()
+            
+            if self._sensors_id is None:
+                self._sensors_id = self.get_parameter("peer_index").value
+
+            sensor_json[f"{SENSORS_TOPICS.IP}"] = f"{self._address}"
+            #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
+            sensors_datas = {
+                "index" : self._sensors_id,
+                "datas" : sensor_json
+            }
+
+            sensor_msg.data = json.dumps( sensors_datas )
+
+            self._pub_sensors.publish( sensor_msg )
 
         def OnMasterPulse( self, msg ):
 
