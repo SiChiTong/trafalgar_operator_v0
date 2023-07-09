@@ -29,8 +29,8 @@ class AudioManager(object):
         mixer.init()
         self._mixer = mixer.music
 
-        print('basename:    ', os.path.basename(__file__))
-        print('dirname:     ', os.path.dirname(__file__))
+        #print('basename:    ', os.path.basename(__file__))
+        #print('dirname:     ', os.path.dirname(__file__))
 
         self.MUSIC_DIR = os.path.join(
         os.getcwd(),  # Répertoire actuel du fichier
