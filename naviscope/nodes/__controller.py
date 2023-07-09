@@ -159,7 +159,7 @@ class OperatorNode( Node ):
             self._pub_pantilt
 
 
-            self.pub_sensor = self.create_subscription(
+            self.pub_sensor = self.create_publisher(
                 String,
                 AVAILABLE_TOPICS.SENSOR.value,
                 qos_profile = qos_profile_sensor_data
