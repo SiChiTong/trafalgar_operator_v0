@@ -97,7 +97,7 @@ class VideoStream( Node ):
             
             if self._master._gui is not None: 
                 self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
-
+                self._master._gui._isGamePlayEnable = self.isGamePlayEnable
 
             buf.unmap(buffer)
 
@@ -178,8 +178,9 @@ class VideoStream( Node ):
                         self.isGamePlayEnable = statusUpdate["enable"]
                         self._playtime = statusUpdate["playtime"]
 
-                        self._master._gui._isGamePlayEnable = self.isGamePlayEnable
-                        
+                        if self._master._gui is not None: 
+                            self._master._gui._isGamePlayEnable = statusUpdate["enable"]
+
                     else:
                     
                         self.isGamePlayEnable = False      

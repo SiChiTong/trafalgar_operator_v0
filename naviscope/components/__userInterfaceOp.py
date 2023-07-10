@@ -46,7 +46,8 @@ class Display(customtkinter.CTk):
         self._isGamePlayEnable = False
 
         self._textToDisplay = "GAME OVER"
-        
+        self.iddleLoop = False
+
         self._timeLeft = 0
         self._loop_delay = 1
 
@@ -56,7 +57,7 @@ class Display(customtkinter.CTk):
 
         self._create_window()
         self._render_frame()
-        #self._loop()
+        self._loop()
 
 
     def _start( self ):
@@ -67,7 +68,7 @@ class Display(customtkinter.CTk):
     def _loop( self ):
         
         if self._isGamePlayEnable is True:
-            print("elapsedTime")
+            self.iddleLoop = False
 
         self.after(1000, self._loop)#wait for 1 second
 

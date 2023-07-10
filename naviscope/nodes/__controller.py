@@ -21,7 +21,7 @@ from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
 from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
-from ..components.__audioManager import AudioManager
+#from ..components.__audioManager import AudioManager
 
 class OperatorNode( Node ):
 
