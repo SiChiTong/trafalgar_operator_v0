@@ -40,7 +40,7 @@ class VideoStream( Node ):
 
             self._playtime = 10 * 60
             
-            self.isGamePlayEnable = False
+            self.isGamePlayEnable = True
 
             self._isHighQualityCodec = False
 
@@ -205,10 +205,11 @@ class VideoStream( Node ):
                             self.isGamePlayEnable = statusUpdate["enable"]
                             self._playtime = statusUpdate["playtime"]
 
+                            """
                             if self._master._gui is not None: 
                                 self._master._gui._isGamePlayEnable = statusUpdate["enable"]
                                 self.get_logger().info(f"video should be {self.isGamePlayEnable}")
-
+                            """
                         else:
                     
                             self.isGamePlayEnable = False      

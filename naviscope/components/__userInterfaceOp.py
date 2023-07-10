@@ -81,7 +81,7 @@ class Display(customtkinter.CTk):
 
     def _rosVideoUpdate( self, frame, gameplay_enable = False, playTime = 10*60 ):
         
-        self._isGamePlayEnable = gameplay_enable
+        self._isGamePlayEnable = True#gameplay_enable
 
         if( frame is not None and self._isGamePlayEnable ):
             
