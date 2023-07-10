@@ -134,7 +134,7 @@ class Display(customtkinter.CTk):
             self.canvas.delete("all")
 
             self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
-            self.render_text_at_center()
+            #self.render_text_at_center()
 
             self._blackScreen = True    
       
