@@ -118,6 +118,7 @@ class VideoStream( Node ):
                 "avdec_h264 ! "
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
+                "videoflip method=2 ! "
                 "videoscale ! "
                 "identity drop-allocation=true ! "
                 "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
@@ -177,6 +178,8 @@ class VideoStream( Node ):
                         self.isGamePlayEnable = statusUpdate["enable"]
                         self._playtime = statusUpdate["playtime"]
 
+                        self._master._gui._isGamePlayEnable = self.isGamePlayEnable
+                        
                     else:
                     
                         self.isGamePlayEnable = False      
@@ -200,8 +203,8 @@ class VideoStream( Node ):
                     self.isPlaying = False
                     #self._pipeline.set_state(Gst.State.PAUSED) 
 
-            self._master._gui._isGamePlayEnable = self.isGamePlayEnable
             
+
                     
         def exit( self ):
 
