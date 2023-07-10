@@ -8,7 +8,7 @@
 import sys
 import json
 import numpy as np
-
+from threading import Lock
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -43,6 +43,8 @@ class VideoStream( Node ):
             self.isGamePlayEnable = False
 
             self._isHighQualityCodec = False
+
+            self._lock = Lock()
 
             self.start()
 
@@ -80,35 +82,37 @@ class VideoStream( Node ):
             
             self._sub_master  # prevent unused variable warning
             self.get_logger().info("subscriber is running")
-            
+
 
         def OnNewSample(self, sink):
-
-            sample = sink.emit("pull-sample")
-            buf = sample.get_buffer()
-
-            caps = sample.get_caps()
-
-            frame_width = caps.get_structure(0).get_value("width")
-            frame_height = caps.get_structure(0).get_value("height")
-
-            _, buffer = buf.map(Gst.MapFlags.READ)
-
-            frame = np.frombuffer(buffer.data, dtype=np.uint8)
-            frame = frame.reshape((frame_height, frame_width,3))
             
-            if self._master._gui is not None: 
-                self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
-                self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
-                self._master._gui._isGamePlayEnable = self.isGamePlayEnable
+            with self._lock:
 
-            buf.unmap(buffer)
+                sample = sink.emit("pull-sample")
+                buf = sample.get_buffer()
 
-            frame = None
-            sample = None
-            buf = None
+                caps = sample.get_caps()
 
-            return Gst.FlowReturn.OK
+                frame_width = caps.get_structure(0).get_value("width")
+                frame_height = caps.get_structure(0).get_value("height")
+
+                _, buffer = buf.map(Gst.MapFlags.READ)
+
+                frame = np.frombuffer(buffer.data, dtype=np.uint8)
+                frame = frame.reshape((frame_height, frame_width,3))
+            
+                if self._master._gui is not None: 
+                    self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
+                    self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
+                    self._master._gui._isGamePlayEnable = self.isGamePlayEnable
+
+                buf.unmap(buffer)
+
+                frame = None
+                sample = None
+                buf = None
+
+                return Gst.FlowReturn.OK
         
         def h264_decoder( self ):
 
@@ -164,34 +168,36 @@ class VideoStream( Node ):
         
 
         def OnMasterPulse( self, msg ):
+            
+            with self._lock:
 
-            master_pulse = json.loads( msg.data )
-            self.get_logger().info("masterPulse")
-            if "peers" in master_pulse: 
+                master_pulse = json.loads( msg.data )
+                self.get_logger().info("masterPulse")
+                if "peers" in master_pulse: 
 
-                peers = master_pulse["peers"]
-                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
+                    peers = master_pulse["peers"]
+                    peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
                 
-                if peerUpdate in peers: 
+                    if peerUpdate in peers: 
 
-                    statusUpdate = peers[peerUpdate]
+                        statusUpdate = peers[peerUpdate]
 
-                    if "enable" in statusUpdate and "playtime" in statusUpdate:
+                        if "enable" in statusUpdate and "playtime" in statusUpdate:
 
-                        self.isGamePlayEnable = statusUpdate["enable"]
-                        self._playtime = statusUpdate["playtime"]
+                            self.isGamePlayEnable = statusUpdate["enable"]
+                            self._playtime = statusUpdate["playtime"]
 
-                        if self._master._gui is not None: 
-                            self._master._gui._isGamePlayEnable = statusUpdate["enable"]
-                            self.get_logger().info(f"video should be {self.isGamePlayEnable}")
+                            if self._master._gui is not None: 
+                                self._master._gui._isGamePlayEnable = statusUpdate["enable"]
+                                self.get_logger().info(f"video should be {self.isGamePlayEnable}")
 
-                    else:
+                        else:
                     
-                        self.isGamePlayEnable = False      
-            else:
-                    self.isGamePlayEnable = False 
+                            self.isGamePlayEnable = False      
+                else:
+                        self.isGamePlayEnable = False 
                     
-            self.updatePipelineStatus()
+                self.updatePipelineStatus()
 
 
         def updatePipelineStatus(self):
@@ -200,13 +206,13 @@ class VideoStream( Node ):
 
                 if self.isPlaying is False:
                     self.isPlaying = True
-                    self._pipeline.set_state(Gst.State.PLAYING)
+                    #self._pipeline.set_state(Gst.State.PLAYING)
 
             else: 
 
                 if self.isPlaying is True:
                     self.isPlaying = False
-                    self._pipeline.set_state(Gst.State.PAUSED) 
+                    #self._pipeline.set_state(Gst.State.PAUSED) 
 
             
 
