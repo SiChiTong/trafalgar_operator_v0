@@ -63,7 +63,7 @@ class VideoStream( Node ):
             
             self._declare_parameters()
             self._init_subscribers()
-            self._start_pipeline()
+            self._render_pipeline()
 
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
@@ -86,7 +86,7 @@ class VideoStream( Node ):
 
         def OnNewSample(self, sink):
             
-            with self._lock:
+            #with self._lock:
 
                 sample = sink.emit("pull-sample")
                 buf = sample.get_buffer()
@@ -172,7 +172,7 @@ class VideoStream( Node ):
 
             self._pipeline.set_state(Gst.State.PLAYING)
 
-        
+            """
             try:
                 while True:
                     pass  # Garder le thread actif
@@ -181,7 +181,7 @@ class VideoStream( Node ):
             finally:
                 self._pipeline.set_state(Gst.State.NULL)
                 self._pipeline = None       
-            
+            """
 
 
 
