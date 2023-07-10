@@ -8,7 +8,7 @@
 import sys
 import json
 import numpy as np
-from threading import Lock
+from threading import Thread, Lock
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -44,6 +44,7 @@ class VideoStream( Node ):
 
             self._isHighQualityCodec = False
 
+            self._thread = None
             self._lock = Lock()
 
             self.start()
@@ -61,10 +62,9 @@ class VideoStream( Node ):
         def start(self):
             
             self._declare_parameters()
-
-            self._render_pipeline()
             self._init_subscribers()
-
+            self._start_pipeline()
+            
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
             self.declare_parameter( "resolution", (720,480) )
@@ -153,6 +153,12 @@ class VideoStream( Node ):
 
             return pipeline_string
 
+        def _start_pipeline( self ): 
+
+            self._thread = Thread(target=self._render_pipeline)
+            self._thread.daemon = True  # Définit le thread en tant que thread démon
+            self._thread.start()
+
         def _render_pipeline( self ):
             
             Gst.init(None)
@@ -166,6 +172,15 @@ class VideoStream( Node ):
 
             self._pipeline.set_state(Gst.State.PLAYING)
         
+            try:
+                while True:
+                    pass  # Garder le thread actif
+            except KeyboardInterrupt:
+                pass  # Permettre l'interruption du thread lorsque le programme principal est interrompu
+            finally:
+                self._pipeline.set_state(Gst.State.NULL)
+                self._pipeline = None
+
 
         def OnMasterPulse( self, msg ):
             
