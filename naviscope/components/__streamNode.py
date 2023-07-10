@@ -8,7 +8,7 @@
 import sys
 import json
 import numpy as np
-from threading import Thread, Lock
+
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -39,14 +39,8 @@ class VideoStream( Node ):
             self._peer_type = PEER.USER.value
 
             self._playtime = 10 * 60
-            
-            self.isGamePlayEnable = True
-            self.forceStreamDebug = True
-            
-            self._isHighQualityCodec = False
 
-            self._thread = None
-            self._lock = Lock()
+            self._isHighQualityCodec = False
 
             self.start()
 
@@ -81,8 +75,7 @@ class VideoStream( Node ):
                 qos_profile=qos_profile_sensor_data
             )
             
-            self._sub_master  # prevent unused variable warning
-            #self.get_logger().info("subscriber is running")
+            self._sub_master  
 
 
         def OnNewSample(self, sink):
@@ -102,10 +95,7 @@ class VideoStream( Node ):
                 frame = np.frombuffer(buffer.data, dtype=np.uint8)
                 frame = frame.reshape((frame_height, frame_width,3))
             
-                if self._master._gui is not None: 
-                   # self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
-                    self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
-                    self._master._gui._isGamePlayEnable = self.isGamePlayEnable
+                self._master._rosVideoUpdate( frame, self._playtime )
 
                 buf.unmap(buffer)
 
@@ -154,11 +144,6 @@ class VideoStream( Node ):
 
             return pipeline_string
 
-        def _start_pipeline( self ): 
-
-            self._thread = Thread(target=self._render_pipeline)
-            self._thread.daemon = True  # Définit le thread en tant que thread démon
-            self._thread.start()
 
         def _render_pipeline( self ):
             
@@ -172,18 +157,6 @@ class VideoStream( Node ):
             appsink.connect("new-sample", self.OnNewSample)
 
             self._pipeline.set_state(Gst.State.PLAYING)
-
-            """
-            try:
-                while True:
-                    pass  # Garder le thread actif
-            except KeyboardInterrupt:
-                pass  # Permettre l'interruption du thread lorsque le programme principal est interrompu
-            finally:
-                self._pipeline.set_state(Gst.State.NULL)
-                self._pipeline = None       
-            """
-
 
 
         def OnMasterPulse( self, msg ):
@@ -203,26 +176,21 @@ class VideoStream( Node ):
 
                         if "enable" in statusUpdate and "playtime" in statusUpdate:
 
-                            self.isGamePlayEnable = self.forceStreamDebug #statusUpdate["enable"]
+                            self._master._isGamePlayEnable = statusUpdate["enable"]
                             self._playtime = statusUpdate["playtime"]
 
-                            """
-                            if self._master._gui is not None: 
-                                self._master._gui._isGamePlayEnable = statusUpdate["enable"]
-                                self.get_logger().info(f"video should be {self.isGamePlayEnable}")
-                            """
                         else:
                     
-                            self.isGamePlayEnable = self.forceStreamDebug      
+                            self._master._isGamePlayEnable = False    
                 else:
-                        self.isGamePlayEnable = self.forceStreamDebug 
+                        self._master._isGamePlayEnable = False
                     
                 self.updatePipelineStatus()
 
 
         def updatePipelineStatus(self):
 
-            if self.isGamePlayEnable is True:
+            if self._master._isGamePlayEnable is True:
 
                 if self.isPlaying is False:
                     self.isPlaying = True
