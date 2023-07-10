@@ -30,26 +30,26 @@ class App:
 
     def run(self):
 
-        self._gui = Display( Master=self )
 
         self._thread = Thread(target=self.ros_thread)
         self._thread.daemon=True
         self._thread.start()
-        
+
+        self._gui = Display( Master=self )
         self._gui._start( )
 
 
     def ros_thread(self):
+        with self._lock:
+            try:
 
-        try:
+                rclpy.spin( self._node )
 
-            rclpy.spin( self._node )
+            except Exception as exception:
+                print( "an exception has been raised while spinning the movement node : ", exception)
 
-        except Exception as exception:
-            print( "an exception has been raised while spinning the movement node : ", exception)
-
-        except KeyboardInterrupt:
-            print("user force interruption")
+            except KeyboardInterrupt:
+                print("user force interruption")
         
         
     def kill_ros(self):
@@ -61,15 +61,17 @@ class App:
     def shutdown( self ):
         
         if self._node is not None:
+            with self._lock:
+                try:
+                    self.kill_ros() 
 
-            try:
-                self.kill_ros() 
-                
-                if self._thread is not None: 
-                    self._thread.join()
-            
-            except Exception:
-                pass
+                    print("ros node has been killed")
+                    
+                    if self._thread is not None: 
+                        self._thread.join()
+                    
+                except Exception:
+                    pass
                  
                  
 def main(args=None):
@@ -79,9 +81,6 @@ def main(args=None):
     try:
 
         app.run()
-
-        while True:
-            pass  # Garder le thread actif
     
     except KeyboardInterrupt:
         pass  # Permettre l'interruption du thread lorsque le programme principal est interrompu
