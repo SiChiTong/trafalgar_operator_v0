@@ -63,8 +63,8 @@ class VideoStream( Node ):
             
             self._declare_parameters()
             self._init_subscribers()
-            self._start_pipeline()
-            
+            #self._start_pipeline()
+
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
             self.declare_parameter( "resolution", (720,480) )
