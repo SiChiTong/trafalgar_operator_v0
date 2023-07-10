@@ -82,7 +82,7 @@ class VideoStream( Node ):
             )
             
             self._sub_master  # prevent unused variable warning
-            self.get_logger().info("subscriber is running")
+            #self.get_logger().info("subscriber is running")
 
 
         def OnNewSample(self, sink):
@@ -103,7 +103,7 @@ class VideoStream( Node ):
                 frame = frame.reshape((frame_height, frame_width,3))
             
                 if self._master._gui is not None: 
-                    self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
+                   # self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
                     self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
                     self._master._gui._isGamePlayEnable = self.isGamePlayEnable
 
@@ -191,7 +191,7 @@ class VideoStream( Node ):
             with self._lock:
 
                 master_pulse = json.loads( msg.data )
-                self.get_logger().info("masterPulse")
+                #self.get_logger().info("masterPulse")
                 if "peers" in master_pulse: 
 
                     peers = master_pulse["peers"]
