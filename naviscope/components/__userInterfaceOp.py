@@ -43,7 +43,7 @@ class Display(customtkinter.CTk):
         self._is_frame_updated = False
         
         self._blackScreen = False 
-        self._isGamePlayEnable = False
+        self._isGamePlayEnable = True
 
         self._textToDisplay = "GAME OVER"
         self.iddleLoop = False

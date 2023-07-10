@@ -40,8 +40,8 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 30 #default percentage of thrust
-            self._propulsion_max = 50
+            self._propulsion_default = 40 #default percentage of thrust
+            self._propulsion_max = 60
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
