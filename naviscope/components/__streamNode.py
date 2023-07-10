@@ -163,12 +163,12 @@ class VideoStream( Node ):
         def OnMasterPulse( self, msg ):
 
             master_pulse = json.loads( msg.data )
-
+            self.get_logger().info("masterPulse")
             if "peers" in master_pulse: 
 
                 peers = master_pulse["peers"]
                 peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
-
+                
                 if peerUpdate in peers: 
 
                     statusUpdate = peers[peerUpdate]
