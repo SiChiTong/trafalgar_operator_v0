@@ -160,7 +160,7 @@ class OperatorNode( Node ):
             self._pub_pantilt
 
 
-            self.pub_sensor = self.create_publisher(
+            self._pub_sensor = self.create_publisher(
                 String,
                 AVAILABLE_TOPICS.SENSOR.value,
                 qos_profile = qos_profile_sensor_data
@@ -358,7 +358,7 @@ class OperatorNode( Node ):
 
             sensor_msg.data = json.dumps( sensors_datas )
 
-            self._pub_sensors.publish( sensor_msg )
+            self._pub_sensor.publish( sensor_msg )
 
         def OnMasterPulse( self, msg ):
 
