@@ -30,7 +30,7 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self._address = ""
-            
+            self._sensors_id = None
             self._pub_propulsion = None
             self._pub_direction = None
             self._pub_orientation = None

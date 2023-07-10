@@ -200,6 +200,8 @@ class VideoStream( Node ):
                     self.isPlaying = False
                     #self._pipeline.set_state(Gst.State.PAUSED) 
 
+            self._master._gui._isGamePlayEnable = self.isGamePlayEnable
+            
                     
         def exit( self ):
 
