@@ -40,7 +40,8 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 25 #default percentage of thrust
+            self._propulsion_default = 30 #default percentage of thrust
+            self._propulsion_max = 50
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
@@ -182,7 +183,7 @@ class OperatorNode( Node ):
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
-            prop_msg.data = self._propulsion
+            prop_msg.data = np.clip(self._propulsion, self._propulsion_default, self._propulsion_max)
 
             self._pub_propulsion.publish( prop_msg )
 
