@@ -63,7 +63,7 @@ class VideoStream( Node ):
             
             self._declare_parameters()
             self._init_subscribers()
-            self._render_pipeline()
+            self._start_pipeline()
 
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
@@ -172,8 +172,8 @@ class VideoStream( Node ):
 
             self._pipeline.set_state(Gst.State.PLAYING)
 
-            """
-                 try:
+        
+            try:
                 while True:
                     pass  # Garder le thread actif
             except KeyboardInterrupt:
@@ -181,7 +181,7 @@ class VideoStream( Node ):
             finally:
                 self._pipeline.set_state(Gst.State.NULL)
                 self._pipeline = None       
-            """
+            
 
 
 
