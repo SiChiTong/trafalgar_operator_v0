@@ -118,8 +118,8 @@ class OperatorNode( Node ):
 
             self._board._enable()
 
-            self._audioManager = AudioManager()
-            self._audioManager._enable()
+            #self._audioManager = AudioManager()
+            #self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
 
@@ -194,7 +194,8 @@ class OperatorNode( Node ):
             if( self._direction == 0):
                 self.reset()
 
-                self._audioManager.stop_music()
+                if self._audioManager is not None:
+                    self._audioManager.stop_music()
 
 
             dir_msg = Int8()
@@ -223,7 +224,8 @@ class OperatorNode( Node ):
                 self.wheelAudioTick = 0
 
                 if( self.isGamePlayEnable is True ):
-                    self._audioManager.play_sfx("wheel")
+                    if self._audioManager is not None:
+                        self._audioManager.play_sfx("wheel")
 
 
         def _update_panoramic( self, pan = 90, tilt=90):
@@ -298,7 +300,8 @@ class OperatorNode( Node ):
                     self._update_direction()
                     
                     if( self.isGamePlayEnable is True ):
-                        self._audioManager.play_sfx("bell")
+                        if self._audioManager is not None:
+                            self._audioManager.play_sfx("bell")
 
             if shortPress is True:
 
@@ -308,7 +311,8 @@ class OperatorNode( Node ):
                     self._direction = 0
                 
                 if( self.isGamePlayEnable is True ):  
-                    self._audioManager.play_sfx("bell")
+                    if self._audioManager is not None:
+                        self._audioManager.play_sfx("bell")
 
                 self._update_direction()
 
@@ -378,7 +382,8 @@ class OperatorNode( Node ):
             else:
                     self.isGamePlayEnable = False 
                     
-            self._audioManager.gameplayMusic(self.isGamePlayEnable)
+            if self._audioManager is not None:
+                self._audioManager.gameplayMusic(self.isGamePlayEnable)
             
         def exit(self):
 
