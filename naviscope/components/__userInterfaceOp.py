@@ -57,7 +57,7 @@ class Display(customtkinter.CTk):
 
         self._create_window()
         self._render_frame()
-        self._loop()
+        #self._loop()
 
 
     def _start( self ):

@@ -180,6 +180,7 @@ class VideoStream( Node ):
 
                         if self._master._gui is not None: 
                             self._master._gui._isGamePlayEnable = statusUpdate["enable"]
+                            self.get_logger().info("video should be disable")
 
                     else:
                     
