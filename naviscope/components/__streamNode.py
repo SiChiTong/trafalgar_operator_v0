@@ -63,7 +63,7 @@ class VideoStream( Node ):
             
             self._declare_parameters()
             self._init_subscribers()
-            #self._start_pipeline()
+            self._render_pipeline()
 
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
@@ -171,15 +171,18 @@ class VideoStream( Node ):
             appsink.connect("new-sample", self.OnNewSample)
 
             self._pipeline.set_state(Gst.State.PLAYING)
-        
-            try:
+
+            """
+                 try:
                 while True:
                     pass  # Garder le thread actif
             except KeyboardInterrupt:
                 pass  # Permettre l'interruption du thread lorsque le programme principal est interrompu
             finally:
                 self._pipeline.set_state(Gst.State.NULL)
-                self._pipeline = None
+                self._pipeline = None       
+            """
+
 
 
         def OnMasterPulse( self, msg ):

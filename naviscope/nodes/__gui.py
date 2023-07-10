@@ -76,14 +76,18 @@ def main(args=None):
 
     app = App(args)
 
-    try :
+    try:
 
         app.run()
+
+        while True:
+            pass  # Garder le thread actif
+    
+    except KeyboardInterrupt:
+        pass  # Permettre l'interruption du thread lorsque le programme principal est interrompu
+    
+    finally:
         app.shutdown()
-
-    except Exception as ex: 
-        print( ex )
-
 
 
 if __name__ == '__main__':
