@@ -41,7 +41,8 @@ class VideoStream( Node ):
             self._playtime = 10 * 60
             
             self.isGamePlayEnable = True
-
+            self.forceStreamDebug = True
+            
             self._isHighQualityCodec = False
 
             self._thread = None
@@ -202,7 +203,7 @@ class VideoStream( Node ):
 
                         if "enable" in statusUpdate and "playtime" in statusUpdate:
 
-                            self.isGamePlayEnable = statusUpdate["enable"]
+                            self.isGamePlayEnable = self.forceStreamDebug #statusUpdate["enable"]
                             self._playtime = statusUpdate["playtime"]
 
                             """
@@ -212,9 +213,9 @@ class VideoStream( Node ):
                             """
                         else:
                     
-                            self.isGamePlayEnable = False      
+                            self.isGamePlayEnable = self.forceStreamDebug      
                 else:
-                        self.isGamePlayEnable = False 
+                        self.isGamePlayEnable = self.forceStreamDebug 
                     
                 self.updatePipelineStatus()
 
