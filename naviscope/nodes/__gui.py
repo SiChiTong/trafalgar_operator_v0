@@ -26,7 +26,7 @@ class App:
         self._is_running = True
 
         rclpy.init(args=args)
-    
+        self._node = VideoStream(Master=self) 
 
     def run(self):
 
@@ -40,8 +40,6 @@ class App:
 
 
     def ros_thread(self):
-
-        self._node = VideoStream(Master=self) 
 
         try:
 
