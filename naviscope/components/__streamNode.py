@@ -59,9 +59,9 @@ class VideoStream( Node ):
         def start(self):
             
             self._declare_parameters()
-            self._init_subscribers()
-            self._render_pipeline()
 
+            self._render_pipeline()
+            self._init_subscribers()
 
         def _declare_parameters( self ):
             self.declare_parameter( "peer_index", 0 )
@@ -70,6 +70,7 @@ class VideoStream( Node ):
 
         def _init_subscribers( self ):
             
+
             self._sub_master = self.create_subscription(
                 String,
                 f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
@@ -78,7 +79,8 @@ class VideoStream( Node ):
             )
             
             self._sub_master  # prevent unused variable warning
-
+            self.get_logger().info("subscriber is running")
+            
 
         def OnNewSample(self, sink):
 
