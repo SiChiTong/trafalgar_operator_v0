@@ -96,6 +96,7 @@ class VideoStream( Node ):
             frame = frame.reshape((frame_height, frame_width,3))
             
             if self._master._gui is not None: 
+                self.get_logger().info(f"new sample video should be {self.isGamePlayEnable}")
                 self._master._gui._rosVideoUpdate( frame, self.isGamePlayEnable, self._playtime )
                 self._master._gui._isGamePlayEnable = self.isGamePlayEnable
 
@@ -197,13 +198,13 @@ class VideoStream( Node ):
 
                 if self.isPlaying is False:
                     self.isPlaying = True
-                    #self._pipeline.set_state(Gst.State.PLAYING)
+                    self._pipeline.set_state(Gst.State.PLAYING)
 
             else: 
 
                 if self.isPlaying is True:
                     self.isPlaying = False
-                    #self._pipeline.set_state(Gst.State.PAUSED) 
+                    self._pipeline.set_state(Gst.State.PAUSED) 
 
             
 
