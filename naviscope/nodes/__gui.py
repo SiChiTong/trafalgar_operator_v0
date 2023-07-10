@@ -61,17 +61,18 @@ class Display(customtkinter.CTk):
         
     def _initialize( self ):    
 
-        self._create_node()
         self._create_window()
         self._render_frame()
-
+    
     def _start( self ):
         self.mainloop()
+    
+    def _startNode( self):
 
-    def _create_node( self ):
-
-        if self._node is None:
-            self._node = VideoStream(Master=self) 
+        self._thread = Thread( target=self.ros_thread)
+        self._thread.daemon = True
+        self._thread.start()
+        
 
     def _create_window( self ): 
 
@@ -196,8 +197,9 @@ class Display(customtkinter.CTk):
     
     def kill_ros(self):
 
-        self._node.destroy_node()
-        rclpy.shutdown()
+        if self._node is not None:
+            self._node.destroy_node()
+            rclpy.shutdown()
 
 
     def ros_thread(self):
