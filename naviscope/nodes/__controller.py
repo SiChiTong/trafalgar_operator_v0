@@ -29,6 +29,8 @@ class OperatorNode( Node ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
+            self.EnableAudio = False
+
             self._address = ""
             self._sensors_id = None
             self._pub_propulsion = None
@@ -121,9 +123,10 @@ class OperatorNode( Node ):
             self.reset()
 
             self._board._enable()
-     
-            self._audioManager = AudioManager()
-            self._audioManager._enable()
+
+            if self.EnableAudio is True: 
+                self._audioManager = AudioManager()
+                self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
 

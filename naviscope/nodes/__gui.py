@@ -23,6 +23,8 @@ class Display(customtkinter.CTk):
         
         super().__init__()
         
+        self.EnableText = False
+
         self._navigation_marker = None
 
         self._drone_index = None
@@ -130,7 +132,9 @@ class Display(customtkinter.CTk):
             self.canvas.delete("all")
 
             self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
-            self.render_text_at_center()
+            
+            if self.EnableText is True:
+                self.render_text_at_center()
 
             self._blackScreen = True    
       
