@@ -37,12 +37,13 @@ class OperatorNode( Node ):
             self._pub_pantilt = None
             self._pub_sensor = None
 
-            self.controllerOrientationMultiplier = 1
-            
+            self.controllerOrientationMultiplier = 1 #use it to invert direction
+            self.controllerPropulsionMultiplier = 1 
+
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 40 #default percentage of thrust
+            self._propulsion_default = 30 #default percentage of thrust
             self._propulsion_max = 60
             self._propulsion = self._propulsion_default 
             self._direction = 0
@@ -185,7 +186,7 @@ class OperatorNode( Node ):
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
-            prop_msg.data = np.clip(self._propulsion, self._propulsion_default, self._propulsion_max)
+            prop_msg.data = np.clip(self._propulsion, self._propulsion_default, self._propulsion_max) * self.controllerPropulsionMultiplier
 
             self._pub_propulsion.publish( prop_msg )
 
