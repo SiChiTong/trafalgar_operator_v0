@@ -195,9 +195,6 @@ class OperatorNode( Node ):
             if( self._direction == 0):
                 self.reset()
 
-                #if self._audioManager is not None:
-                #    self._audioManager.stop_music()
-
 
             dir_msg = Int8()
             dir_msg.data = int(self._direction)
@@ -384,7 +381,7 @@ class OperatorNode( Node ):
                     self.isGamePlayEnable = False 
                     
             if self._audioManager is not None:
-                self._audioManager.gameplayMusic(self.isGamePlayEnable)
+                self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
             
         def exit(self):
 
