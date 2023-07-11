@@ -44,7 +44,8 @@ class VideoStream( Node ):
             self._playtime = 10 * 60
 
             self._isHighQualityCodec = False
-
+            
+            self.isPlaying = False
             self.start()
 
 
@@ -83,7 +84,6 @@ class VideoStream( Node ):
 
         def OnNewSample(self, sink):
             
-            #with self._lock:
 
             sample = sink.emit("pull-sample")
             buf = sample.get_buffer()
@@ -160,35 +160,33 @@ class VideoStream( Node ):
             appsink.connect("new-sample", self.OnNewSample)
 
             self._pipeline.set_state(Gst.State.PLAYING)
-
+            self.isPlaying = True
 
         def OnMasterPulse( self, msg ):
             
-            with self._lock:
+            master_pulse = json.loads( msg.data )
+            #self.get_logger().info("masterPulse")
+            if "peers" in master_pulse: 
 
-                master_pulse = json.loads( msg.data )
-                #self.get_logger().info("masterPulse")
-                if "peers" in master_pulse: 
-
-                    peers = master_pulse["peers"]
-                    peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
+                peers = master_pulse["peers"]
+                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
                 
-                    if peerUpdate in peers: 
+                if peerUpdate in peers: 
 
-                        statusUpdate = peers[peerUpdate]
+                    statusUpdate = peers[peerUpdate]
 
-                        if "enable" in statusUpdate and "playtime" in statusUpdate:
+                    if "enable" in statusUpdate and "playtime" in statusUpdate:
 
-                            self._master._isGamePlayEnable = statusUpdate["enable"]
-                            self._playtime = statusUpdate["playtime"]
+                        self._master._isGamePlayEnable = statusUpdate["enable"]
+                        self._playtime = statusUpdate["playtime"]
 
-                        else:
+                    else:
                     
-                            self._master._isGamePlayEnable = False    
-                else:
-                        self._master._isGamePlayEnable = False
+                        self._master._isGamePlayEnable = False    
+            else:
+                    self._master._isGamePlayEnable = False
                     
-                self.updatePipelineStatus()
+            self.updatePipelineStatus()
 
 
         def updatePipelineStatus(self):
@@ -197,13 +195,13 @@ class VideoStream( Node ):
 
                 if self.isPlaying is False:
                     self.isPlaying = True
-                    #self._pipeline.set_state(Gst.State.PLAYING)
+                    self._pipeline.set_state(Gst.State.PLAYING)
 
             else: 
 
                 if self.isPlaying is True:
                     self.isPlaying = False
-                    #self._pipeline.set_state(Gst.State.PAUSED) 
+                    self._pipeline.set_state(Gst.State.PAUSED) 
 
             
 

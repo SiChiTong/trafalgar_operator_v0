@@ -21,7 +21,7 @@ from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
 from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
-#from ..components.__audioManager import AudioManager
+from ..components.__audioManager import AudioManager
 
 class OperatorNode( Node ):
 
@@ -59,7 +59,6 @@ class OperatorNode( Node ):
 
             self.isGamePlayEnable = False
 
-            self
             self.wheelAudioTick = 0
             self.wheelAudioThreshold = 10
 
@@ -83,7 +82,7 @@ class OperatorNode( Node ):
             self.get_local_ip()
             self._declare_parameters()
             self._init_publishers()
-
+            self._init_subscribers()
             self._init_component()
 
 
@@ -119,9 +118,9 @@ class OperatorNode( Node ):
             self.reset()
 
             self._board._enable()
-
-            #self._audioManager = AudioManager()
-            #self._audioManager._enable()
+     
+            self._audioManager = AudioManager()
+            self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
 
@@ -196,8 +195,8 @@ class OperatorNode( Node ):
             if( self._direction == 0):
                 self.reset()
 
-                if self._audioManager is not None:
-                    self._audioManager.stop_music()
+                #if self._audioManager is not None:
+                #    self._audioManager.stop_music()
 
 
             dir_msg = Int8()
@@ -364,7 +363,7 @@ class OperatorNode( Node ):
         def OnMasterPulse( self, msg ):
 
             master_pulse = json.loads( msg.data )
-
+            
             if "peers" in master_pulse: 
 
                 peers = master_pulse["peers"]
