@@ -46,8 +46,8 @@ def generate_launch_description():
     ld = [
      
         heartbeat_node,
-        controller_node,
-        gui_node
+        gui_node,
+        controller_node
     ]
 
     return LaunchDescription(ld)
