@@ -87,6 +87,8 @@ class AudioManager(object):
             
             sfx_path = self._sfx_playlist[sfx]
             sfxClip = mixer.Sound( sfx_path )
+
+            sfxClip.set_volume(1)
             sfxClip.play()
 
 
@@ -98,6 +100,9 @@ class AudioManager(object):
             
             musicToPlay = self._music_playlist[music]
             self._mixer.load(musicToPlay)
+            
+            self._mixer.set_volume(0.6)
+
             self._mixer.play(loops=-1)
 
 
