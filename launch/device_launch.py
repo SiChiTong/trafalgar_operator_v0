@@ -36,7 +36,8 @@ def generate_launch_description():
         package="naviscope",
         namespace=f"user_{INDEX}",
         executable="gui",
-        name='gui'
+        name='gui',
+        output='screen'
 
     )
   
