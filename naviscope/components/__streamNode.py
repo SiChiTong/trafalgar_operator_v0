@@ -119,7 +119,7 @@ class VideoStream( Node ):
                 "avdec_h264 ! "
                 "videoconvert ! "
                 "video/x-raw, format=BGR ! "
-                "videoflip method=2 ! "
+                #"videoflip method=2 ! "
                 "videoscale ! "
                 "identity drop-allocation=true ! "
                 "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
