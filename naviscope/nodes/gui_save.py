@@ -61,7 +61,7 @@ class Display(customtkinter.CTk):
         
     def _initialize( self ):    
 
-        self._start_rosNode()
+        self._startNode()
         self._create_window()
         self._render_frame()
 
@@ -69,6 +69,12 @@ class Display(customtkinter.CTk):
     def _start( self ):
         self.mainloop()
     
+    def _startNode( self):
+
+        self._thread = Thread( target=self.ros_thread)
+        self._thread.daemon = True
+        self._thread.start()
+
 
     def _create_window( self ): 
 
@@ -168,7 +174,7 @@ class Display(customtkinter.CTk):
         if self._node is not None:
             with self._lock:
                 try:
-                    self._kill_rosNode() 
+                    self.kill_ros() 
 
                     print("ros node has been killed")
                     
@@ -191,14 +197,14 @@ class Display(customtkinter.CTk):
         self._stop()
 
     
+    def kill_ros(self):
 
-    def _start_rosNode( self):
+        if self._node is not None:
+            self._node.destroy_node()
+            rclpy.shutdown()
 
-        self._thread = Thread( target=self._rosNode_thread)
-        self._thread.daemon = True
-        self._thread.start()
 
-    def _rosNode_thread(self):
+    def ros_thread(self):
 
         if self._node is None:
             self._node = VideoStream(Master=self) 
@@ -216,15 +222,7 @@ class Display(customtkinter.CTk):
 
             except KeyboardInterrupt:
                 print("user force interruption")
-
         
-    def _kill_rosNode(self):
-
-        if self._node is not None:
-            self._node.destroy_node()
-            rclpy.shutdown()
-
-
 
 
 def main(args=None):

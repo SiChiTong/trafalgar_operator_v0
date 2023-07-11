@@ -5,6 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
+import os
 import sys
 import json
 import numpy as np
@@ -21,11 +22,13 @@ from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
 
+INDEX = int(os.environ.get('PEER_ID'))
+
 class VideoStream( Node ):
 
         def __init__( self, Master=None):
 
-            super().__init__("videostream", namespace=f"{PEER.USER.value}_0")
+            super().__init__("videostream", namespace=f"{PEER.USER.value}_{INDEX}")
 
             self._master = Master
 
@@ -61,7 +64,7 @@ class VideoStream( Node ):
             self._render_pipeline()
 
         def _declare_parameters( self ):
-            self.declare_parameter( "peer_index", 0 )
+            self.declare_parameter( "peer_index", INDEX )
             self.declare_parameter( "resolution", (720,480) )
 
 
@@ -82,28 +85,28 @@ class VideoStream( Node ):
             
             #with self._lock:
 
-                sample = sink.emit("pull-sample")
-                buf = sample.get_buffer()
+            sample = sink.emit("pull-sample")
+            buf = sample.get_buffer()
 
-                caps = sample.get_caps()
+            caps = sample.get_caps()
 
-                frame_width = caps.get_structure(0).get_value("width")
-                frame_height = caps.get_structure(0).get_value("height")
+            frame_width = caps.get_structure(0).get_value("width")
+            frame_height = caps.get_structure(0).get_value("height")
 
-                _, buffer = buf.map(Gst.MapFlags.READ)
+            _, buffer = buf.map(Gst.MapFlags.READ)
 
-                frame = np.frombuffer(buffer.data, dtype=np.uint8)
-                frame = frame.reshape((frame_height, frame_width,3))
+            frame = np.frombuffer(buffer.data, dtype=np.uint8)
+            frame = frame.reshape((frame_height, frame_width,3))
             
-                self._master._rosVideoUpdate( frame, self._playtime )
+            self._master._rosVideoUpdate( frame, self._playtime )
 
-                buf.unmap(buffer)
+            buf.unmap(buffer)
 
-                frame = None
-                sample = None
-                buf = None
+            frame = None
+            sample = None
+            buf = None
 
-                return Gst.FlowReturn.OK
+            return Gst.FlowReturn.OK
         
         def h264_decoder( self ):
 

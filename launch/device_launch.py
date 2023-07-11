@@ -31,25 +31,22 @@ def generate_launch_description():
 
     )
 
-    videostream_node = Node(
+
+    gui_node = Node(
         package="naviscope",
         namespace=f"user_{INDEX}",
-        executable="videostream",
-        name='videostream',
-        parameters=[{
-            "peer_index":INDEX,
-            "resolution" : (320,240)
-        }]
+        executable="gui",
+        name='gui'
 
     )
-
+  
 
     # Add the nodes and the process to the LaunchDescription list
     ld = [
      
         heartbeat_node,
         controller_node,
-        videostream_node
+        gui_node
     ]
 
     return LaunchDescription(ld)

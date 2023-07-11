@@ -32,7 +32,7 @@ setup(
         'console_scripts': [
             'heartbeat = naviscope.nodes.__heartbeats:main',
             'controller = naviscope.nodes.__controller:main',
-            'videostream = naviscope.nodes.__gui:main'
+            'gui = naviscope.nodes.__gui:main'
         ],
     }
 )
