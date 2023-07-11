@@ -33,7 +33,7 @@ class Display(customtkinter.CTk):
         self.geometry(str( self.winfo_screenwidth()  ) + "x" + str(self.winfo_screenheight() ))
         self.minsize(Display.WIDTH, Display.HEIGHT)
 
-        #self.attributes("-fullscreen", True) 
+        self.attributes("-fullscreen", True) 
 
         self.canvaResolution = (self.winfo_screenwidth(), self.winfo_screenheight()) 
 

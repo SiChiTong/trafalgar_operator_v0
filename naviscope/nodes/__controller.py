@@ -37,6 +37,8 @@ class OperatorNode( Node ):
             self._pub_pantilt = None
             self._pub_sensor = None
 
+            self.controllerOrientationMultiplier = 1
+            
             self._board = None
             self._audioManager = None
 
@@ -195,6 +197,9 @@ class OperatorNode( Node ):
             if( self._direction == 0):
                 self.reset()
 
+                #if self._audioManager is not None:
+                #    self._audioManager.stop_music()
+
 
             dir_msg = Int8()
             dir_msg.data = int(self._direction)
@@ -207,7 +212,7 @@ class OperatorNode( Node ):
             
             if increment != 0:
                 msg = Int8()
-                msg.data = int(increment)
+                msg.data = int(increment * self.controllerOrientationMultiplier )
 
                 self._pub_orientation.publish( msg )
 
