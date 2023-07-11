@@ -65,7 +65,7 @@ class OperatorNode( Node ):
             self.isGamePlayEnable = False
 
             self.wheelAudioTick = 0
-            self.wheelAudioThreshold = 10
+            self.wheelAudioThreshold = 30
 
             self.mpu_keys = set([
                 SENSORS_TOPICS.PITCH.value,
@@ -225,7 +225,7 @@ class OperatorNode( Node ):
 
         def _updateWheelAudio( self, increment ): 
 
-            self.wheelAudioTick += increment
+            self.wheelAudioTick += abs(increment)
 
             if self.wheelAudioTick >= self.wheelAudioThreshold: 
                 self.wheelAudioTick = 0
