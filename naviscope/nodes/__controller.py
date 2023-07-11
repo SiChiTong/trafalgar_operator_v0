@@ -21,7 +21,7 @@ from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
 from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
-from ..components.__audioManager import AudioManager
+#from ..components.__audioManager import AudioManager
 
 class OperatorNode( Node ):
 
@@ -97,7 +97,7 @@ class OperatorNode( Node ):
 
         def _declare_parameters( self ):
             self.declare_parameter("peer_index", 0)
-            
+
 
         def get_local_ip( self ):
 
@@ -120,8 +120,8 @@ class OperatorNode( Node ):
 
             self._board._enable()
 
-            self._audioManager = AudioManager()
-            self._audioManager._enable()
+            #self._audioManager = AudioManager()
+            #self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
 
