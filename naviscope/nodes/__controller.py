@@ -42,6 +42,9 @@ class OperatorNode( Node ):
             self.controllerOrientationMultiplier = 1 #use it to invert direction
             self.controllerPropulsionMultiplier = 1 
 
+            self.MPU_TiltMultiplier = 1
+            self.MPU_PanMultiplier = 1
+
             self._board = None
             self._audioManager = None
 
@@ -338,8 +341,9 @@ class OperatorNode( Node ):
             #angle_aroundY = np.clip( 90 - delta_y, 0,180 )
             #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
             
-            angleX = np.clip(90 + roll, 0, 180) 
-            angleZ = np.clip( self._angleZ + delta_p, 0,180 )
+            
+            angleX = np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) 
+            angleZ = np.clip( self._angleZ * self.MPU_PanMultiplier + delta_p, 0,180 )
 
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
            
