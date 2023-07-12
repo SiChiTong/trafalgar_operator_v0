@@ -48,8 +48,8 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 30 #default percentage of thrust
-            self._propulsion_max = 60
+            self._propulsion_default = 45 #default percentage of thrust
+            self._propulsion_max = 70
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
@@ -389,9 +389,14 @@ class OperatorNode( Node ):
 
                     else:
                     
-                        self.isGamePlayEnable = False      
+                        self.isGamePlayEnable = False   
+                        self._direction = 0
+                        self._update_direction()
+
             else:
                     self.isGamePlayEnable = False 
+                    self._direction = 0
+                    self._update_direction()
                     
             if self._audioManager is not None:
                 self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
