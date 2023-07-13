@@ -30,6 +30,7 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self.EnableAudio = True
+            self.forceStopFromGsc = False
 
             self._address = ""
             self._sensors_id = None
@@ -209,19 +210,21 @@ class OperatorNode( Node ):
 
         def _update_direction( self ):
             
-            self._direction = np.clip( self._direction, -1, 1 )
+            if self.forceStopFromGsc is False:
+
+                self._direction = np.clip( self._direction, -1, 1 )
             
-            if( self._direction == 0):
-                self.reset()
+                if( self._direction == 0):
+                    self.reset()
 
                 #if self._audioManager is not None:
                 #    self._audioManager.stop_music()
 
 
-            dir_msg = Int8()
-            dir_msg.data = int(self._direction)
+                dir_msg = Int8()
+                dir_msg.data = int(self._direction)
 
-            self._pub_direction.publish( dir_msg )
+                self._pub_direction.publish( dir_msg )
         
 
 
@@ -409,10 +412,17 @@ class OperatorNode( Node ):
 
                     statusUpdate = peers[peerUpdate]
 
+                    if "stop" in statusUpdate: 
+
+                        self.forceStopFromGsc = statusUpdate["stop"]
+
+                        if self.forceStopFromGsc is True and self._direction != 0:
+                            self._direction = 0
+
                     if "enable" in statusUpdate and "playtime" in statusUpdate:
 
                         self.isGamePlayEnable = statusUpdate["enable"]
-
+                        
                     else:
                     
                         self.isGamePlayEnable = False   
