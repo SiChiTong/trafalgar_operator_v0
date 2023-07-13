@@ -79,11 +79,34 @@ class Display(customtkinter.CTk):
         
         self.drawBlackScreen()
 
-    def _rosVideoUpdate( self, frame, playTime = 10*60 ):
+    def crop_from_center(self, frame, frame_width, frame_height, ZoomLevel ):
+
+        if ZoomLevel == 0:
+            return frame
+
+        elif ZoomLevel == 100:
+            ZoomLevel = 90
+
+        crop_width = int(frame_width * ZoomLevel/100)
+        crop_height = int(frame_height * ZoomLevel/100)
+
+        start_x = (frame_width - crop_width) // 2
+        start_y = (frame_height - crop_height) // 2
+
+        end_x = start_x + crop_width
+        end_y = start_y + crop_height
+    
+        cropped_image = frame[start_y:end_y, start_x:end_x]
+    
+        return cropped_image
+
+
+    def _rosVideoUpdate( self, frame, frameWidth, frameHeight, playTime = 10*60 ):
 
         if( frame is not None and self._isGamePlayEnable is True ):
-            
-            resized_frame = cv2.resize( frame, ( self.canvas.winfo_width(), self.canvas.winfo_height() ))
+
+            cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, 0)
+            resized_frame = cv2.resize(  cropFrame , ( self.canvas.winfo_width(), self.canvas.winfo_height() ))
             color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
 
             img = Image.fromarray(color_conv)

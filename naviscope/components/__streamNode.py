@@ -98,7 +98,7 @@ class VideoStream( Node ):
             frame = np.frombuffer(buffer.data, dtype=np.uint8)
             frame = frame.reshape((frame_height, frame_width,3))
             
-            self._master._rosVideoUpdate( frame, self._playtime )
+            self._master._rosVideoUpdate( frame,frame_width,frame_height, self._playtime )
 
             buf.unmap(buffer)
 
