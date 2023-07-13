@@ -83,7 +83,7 @@ class OperatorNode( Node ):
 
         @property
         def panTiltThreshold(self):
-            return 2
+            return 10
         
         def start(self):
 
