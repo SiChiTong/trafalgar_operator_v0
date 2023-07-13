@@ -189,6 +189,16 @@ class OperatorNode( Node ):
             
             self._sub_master  # prevent unused variable warning
 
+            self._sub_drone_sensor = self.create_subscription(
+                String,
+                f"/{PEER.DRONE.value}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
+                self.OnDroneDatas,
+                qos_profile=qos_profile_sensor_data
+            )
+
+            self._sub_drone_sensor
+
+
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
@@ -369,6 +379,32 @@ class OperatorNode( Node ):
             sensor_msg.data = json.dumps( sensors_datas )
 
             self._pub_sensor.publish( sensor_msg )
+
+
+        def OnDroneDatas( self, msg ):
+            
+            drone_sensors = json.loads( msg.data )
+
+            if( "index" in drone_sensors and "datas" in drone_sensors ):
+    
+                sensor_datas = drone_sensors["datas"]
+
+                for topic in sensor_datas:
+
+                    if(topic == SENSORS_TOPICS.DIRECTION  ):
+                        self.onDirectionUpdate( sensor_datas[topic])
+
+
+        def onSensorsUpdate( self, sensor_datas ):
+
+
+            for topic in sensor_datas:
+
+                if(topic == SENSORS_TOPICS.DIRECTION  ):
+                    self.onDirectionUpdate( sensor_datas[topic])
+
+     
+
 
         def OnMasterPulse( self, msg ):
 
