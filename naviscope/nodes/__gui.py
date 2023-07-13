@@ -24,6 +24,7 @@ class Display(customtkinter.CTk):
         super().__init__()
         
         self.EnableText = False
+        self.ZoomLevel = 10
 
         self._navigation_marker = None
 
@@ -105,7 +106,7 @@ class Display(customtkinter.CTk):
 
         if( frame is not None and self._isGamePlayEnable is True ):
 
-            cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, 0)
+            cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, self.ZoomLevel )
             resized_frame = cv2.resize(  cropFrame , ( self.canvas.winfo_width(), self.canvas.winfo_height() ))
             color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
 
