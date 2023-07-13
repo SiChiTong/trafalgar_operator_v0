@@ -81,7 +81,9 @@ class Display(customtkinter.CTk):
         self.drawBlackScreen()
 
     def crop_from_center(self, frame, frame_width, frame_height, ZoomLevel ):
-
+        
+        ZoomLevel = 100 - ZoomLevel
+        
         if ZoomLevel == 0:
             return frame
 
