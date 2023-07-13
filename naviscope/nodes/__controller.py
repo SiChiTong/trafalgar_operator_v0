@@ -29,7 +29,7 @@ class OperatorNode( Node ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
-            self.EnableAudio = False
+            self.EnableAudio = True
 
             self._address = ""
             self._sensors_id = None

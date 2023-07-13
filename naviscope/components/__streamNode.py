@@ -121,7 +121,6 @@ class VideoStream( Node ):
                 "video/x-raw, format=(string)BGR ! "
                 #"videoflip method=2 ! "
                 "videoscale ! "
-                "video/x-raw, width=(string)720, height=(int)480 ! "
                 "identity drop-allocation=true ! "
                 "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
     
