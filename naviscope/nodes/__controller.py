@@ -392,17 +392,7 @@ class OperatorNode( Node ):
                 for topic in sensor_datas:
 
                     if(topic == SENSORS_TOPICS.DIRECTION  ):
-                        self.onDirectionUpdate( sensor_datas[topic])
-
-
-        def onSensorsUpdate( self, sensor_datas ):
-
-
-            for topic in sensor_datas:
-
-                if(topic == SENSORS_TOPICS.DIRECTION  ):
-                    self.onDirectionUpdate( sensor_datas[topic])
-
+                        self.droneDirection = sensor_datas[topic]
      
 
 
