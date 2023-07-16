@@ -11,6 +11,8 @@ import math
 import numpy as np
 import socket
 
+#from filterpy.kalman import KalmanFilter
+
 import rclpy
 from rclpy.node import Node
 
@@ -30,6 +32,8 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self.EnableAudio = True
+            #self.EnableFilter = True
+            
             self.forceStopFromGsc = False
 
             self._address = ""
@@ -54,7 +58,9 @@ class OperatorNode( Node ):
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
-  
+
+            self._filter = None
+
             self._delta_yaw = 0
             self._delta_roll = 0
             self._delta_pitch = 0
@@ -123,6 +129,9 @@ class OperatorNode( Node ):
 
         def _init_component(self):
             
+            #if self.EnableFilter is True:
+            #    self._init_filter()
+
             self._board = externalBoard( self._board_datas )
             self.reset()
 
@@ -133,7 +142,36 @@ class OperatorNode( Node ):
                 self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
+        """
+         def _init_filter( self ): 
+            
+            self._filter = KalmanFilter(dim_x=3, dim_z=3)
 
+            if self._filter is not None:
+
+                self._filter.F = np.eye(3)  # Matrice de transition, généralement identité
+                self._filter.H = np.eye(3)  # Matrice de mesure, généralement identité
+                
+                # Initialisez les variables du filtre de Kalman
+                initial_state = np.array([0, -90, 0])  # Initialisez l'état initial
+                self._filter.x = initial_state
+                self._filter.P *= 0.1  # Matrice de covariance de l'état initial
+       
+
+
+
+        def smooth_imu_data(self, pitch, roll, yaw):
+            # Mettez à jour le filtre de Kalman avec les nouvelles mesures IMU
+            self._filter.predict()
+            self._filter.update(np.array([pitch, roll, yaw]))
+
+            # Obtenez les valeurs filtrées de l'état du système
+            filtered_state = self._filter.x
+
+            return filtered_state[0], filtered_state[1], filtered_state[2]
+
+        
+        """
 
         def _init_publishers( self ):
 
@@ -341,7 +379,10 @@ class OperatorNode( Node ):
 
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
-
+            
+            #if self._filter is not None:
+            #    pitch, roll, yaw = self.smooth_imu_data(pitch, roll, yaw)
+            
             self._sensor_yaw = yaw
             self._sensor_pitch = pitch
             self._sensor_roll = roll
