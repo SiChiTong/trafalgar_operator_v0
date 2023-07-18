@@ -77,6 +77,7 @@ class OperatorNode( Node ):
             self._angleX = 0
             self._angleZ = 0
 
+            self._obstacleInFront = False
             self._playtime = 0
 
             self.isGamePlayEnable = False
@@ -447,13 +448,23 @@ class OperatorNode( Node ):
 
                         self.droneDirection = sensor_datas[topic]
 
-                        if self.droneDirection != self._direction: 
-                            self._update_direction()
+                    elif(topic == SENSORS_TOPICS.OBSTACLE  ):
 
+                        sensor_obstacle = sensor_datas[topic]
+
+                        if sensor_obstacle < 150 and sensor_obstacle > 30: 
+                            self._obstacleInFront = True
                         else:
+                            self._obstacleInFront = False
+            
+            if self.droneDirection != self._direction : 
+                if self._obstacleInFront is False: 
+                    self._update_direction()
 
-                            if self._audioManager is not None:
-                                self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
+            else:
+
+                if self._audioManager is not None:
+                    self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
                 
 
         def OnMasterPulse( self, msg ):
