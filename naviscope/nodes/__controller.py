@@ -507,7 +507,7 @@ class OperatorNode( Node ):
                             self._update_direction(0)
 
                             if self._audioManager is not None:
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, 0 )
+                                self._audioManager.gameplayMusic( enableUpdate, 0 )
                         
                         self.isGamePlayEnable = enableUpdate 
                         
