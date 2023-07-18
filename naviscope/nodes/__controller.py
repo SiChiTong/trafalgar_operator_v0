@@ -440,8 +440,12 @@ class OperatorNode( Node ):
                 for topic in sensor_datas:
 
                     if(topic == SENSORS_TOPICS.DIRECTION  ):
+                        
                         self.droneDirection = sensor_datas[topic]
-     
+
+                        if self._audioManager is not None:
+                            self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
+                
 
 
         def OnMasterPulse( self, msg ):
@@ -481,7 +485,7 @@ class OperatorNode( Node ):
                     
             if self._audioManager is not None:
                 self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
-            
+                
         def exit(self):
 
             print("shutdown controller")   
