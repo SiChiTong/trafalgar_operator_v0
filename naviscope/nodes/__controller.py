@@ -358,7 +358,7 @@ class OperatorNode( Node ):
             
             if updateLevelIncrement != 0 and self._direction != 0:
             
-                increment = self._propulsion + (updateLevelIncrement/5)
+                increment = self._propulsion + (updateLevelIncrement/5) * 2
     
                 if self._direction > 0:
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
@@ -507,7 +507,7 @@ class OperatorNode( Node ):
                             self._update_direction(0)
 
                             if self._audioManager is not None:
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, 0 )
                         
                         self.isGamePlayEnable = enableUpdate 
                         
