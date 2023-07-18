@@ -53,7 +53,7 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 30 #default percentage of thrust
+            self._propulsion_default = 40 #default percentage of thrust
 
             self._propulsion_max = 50
             self._propulsion_max_backard = 40
@@ -256,20 +256,33 @@ class OperatorNode( Node ):
             self._pub_propulsion.publish( prop_msg )
 
 
-        def _update_direction( self ):
+        def _update_direction( self, updateDirection = 0 ):
             
-            if self.forceStopFromGsc is False:
+            updateDirection = np.clip( updateDirection, -1, 1 )
 
-                self._direction = np.clip( self._direction, -1, 1 )
+            if self.forceStopFromGsc is False:
+                
+                if updateDirection != self._direction:
+
+                    if self._audioManager is not None:
+                        self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDirection )
+
+                self._direction = updateDirection
             
                 if( self._direction == 0):
                     self.reset()
-
 
                 dir_msg = Int8()
                 dir_msg.data = int(self._direction)
 
                 self._pub_direction.publish( dir_msg )
+            
+            else :
+
+                if self._direction != 0: 
+
+                    if self._audioManager is not None:
+                        self._audioManager.gameplayMusic( self.isGamePlayEnable, 0 )
         
 
         def _update_orientation( self, increment = 0 ):
@@ -362,8 +375,7 @@ class OperatorNode( Node ):
             if longPress is True:
 
                 if self._direction != -1:
-                    self._direction = -1
-                    self._update_direction()
+                    self._update_direction(-1)
                     
                     if( self.isGamePlayEnable is True ):
                         if self._audioManager is not None:
@@ -372,15 +384,13 @@ class OperatorNode( Node ):
             if shortPress is True:
 
                 if self._direction == 0:
-                    self._direction = 1
+                    self._update_direction(1)
                 else:
-                    self._direction = 0
+                    self._update_direction(0)
                 
                 if( self.isGamePlayEnable is True ):  
                     if self._audioManager is not None:
                         self._audioManager.play_sfx("bell")
-
-                self._update_direction()
 
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
@@ -445,12 +455,7 @@ class OperatorNode( Node ):
                         update_direction = sensor_datas[topic]
 
                         if update_direction != self.droneDirection: 
-
                             self.droneDirection = update_direction
-
-                            if self._audioManager is not None:
-                                self._audioManager.gameplayMusic( self.droneDirection )
-
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE  ):
 
@@ -461,13 +466,12 @@ class OperatorNode( Node ):
                         else:
                             self._obstacleInFront = False
             
+            #self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
-            self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
-            
             if self.droneDirection != self._direction : 
 
                 if self._obstacleInFront is False: 
-                    self._update_direction()
+                    self._update_direction( self._direction )
 
  
 
@@ -500,9 +504,10 @@ class OperatorNode( Node ):
 
                         if enableUpdate is True and self.isGamePlayEnable is False:
 
-                            self._direction = 0
-                            self._update_direction()
-                            self._audioManager.gameplayMusic( self._direction )
+                            self._update_direction(0)
+
+                            if self._audioManager is not None:
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
                         
                         self.isGamePlayEnable = enableUpdate 
                         
@@ -512,14 +517,20 @@ class OperatorNode( Node ):
                         self.isGamePlayEnable = False
 
                         if self._direction != 0:   
-                            self._direction = 0
-                            self._update_direction()
+                            self._update_direction(0)
+
+                            if self._audioManager is not None:
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
 
             else:
                     self.isGamePlayEnable = False 
+
                     if self._direction != 0:   
-                        self._direction = 0
-                        self._update_direction()
+                        self._update_direction(0)
+                        
+                        if self._audioManager is not None:
+                            self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
+                    
 
             if self.isGamePlayEnable is False:
                 self._audioManager.stop_music( )

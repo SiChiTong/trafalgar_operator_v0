@@ -108,27 +108,31 @@ class AudioManager(object):
             self._mixer.play(loops=-1)
 
 
-    def gameplayMusic( self, direction ): 
+    def gameplayMusic( self, Enable, direction ): 
 
-        if direction != 0:
+        if Enable is True:
+            if direction != 0:
 
-            if self.IsIdlePlaying is True:
-                self.stop_music()
-                self.IsIdlePlaying = False
+                if self.IsIdlePlaying is True:
+                    self.stop_music()
+                    self.IsIdlePlaying = False
 
-            if self.IsAdventurePlaying is False:
-                self.IsAdventurePlaying = True
-                self.play_music("adventure")
+                if self.IsAdventurePlaying is False:
+                    self.IsAdventurePlaying = True
+                    self.play_music("adventure")
 
+            else:
+
+                if self.IsAdventurePlaying is True:
+                    self.stop_music()
+                    self.IsAdventurePlaying = False
+
+                if self.IsIdlePlaying is False:
+                    self.IsIdlePlaying = True
+                    self.play_music("idle")
         else:
-
-            if self.IsAdventurePlaying is True:
-                self.stop_music()
-                self.IsAdventurePlaying = False
-
-            if self.IsIdlePlaying is False:
-                self.IsIdlePlaying = True
-                self.play_music("idle")
+            
+            self.stop_music()
                     
 
     def stop_music( self ): 
