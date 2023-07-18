@@ -54,7 +54,8 @@ class OperatorNode( Node ):
             self._audioManager = None
 
             self._propulsion_default = 45 #default percentage of thrust
-            self._propulsion_max = 70
+            self._propulsion_max = 55
+            self._propulsion_max_backard = 40
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
@@ -336,20 +337,23 @@ class OperatorNode( Node ):
 
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
-
+            
+            self.get_logger().info("propulsion increment has been received : {updateLevelIncrement}")
+            
             if self._direction != 0:
 
                 increment = self._propulsion + updateLevelIncrement
                 
                 if self._direction > 0:
-                    increment = math.floor( np.clip( increment, 25, 100 ) ) 
-                elif self._direction < 0 :
-                    increment = math.floor( np.clip( increment, 25, 50 ) ) 
 
-                if increment != self._propulsion:
+                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
 
-                    self._propulsion = increment
-                    self._update_propulsion()
+                else :
+                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max_backard ) ) 
+
+
+                self._propulsion = increment
+                self._update_propulsion()
 
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
