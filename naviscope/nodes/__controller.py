@@ -443,8 +443,8 @@ class OperatorNode( Node ):
 
                         self.droneDirection = sensor_datas[topic]
 
-                        #if self.droneDirection != self._direction: 
-                            #self._update_direction()
+                        if self.droneDirection != self._direction: 
+                            self._update_direction()
 
                         if self._audioManager is not None:
                             self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
