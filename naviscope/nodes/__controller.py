@@ -53,10 +53,12 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 45 #default percentage of thrust
-            self._propulsion_max = 55
+            self._propulsion_default = 35 #default percentage of thrust
+
+            self._propulsion_max = 50
             self._propulsion_max_backard = 40
-            self._propulsion = self._propulsion_default 
+            self._propulsion = self._propulsion_default
+
             self._direction = 0
             self._orientation = 0
 
@@ -231,8 +233,6 @@ class OperatorNode( Node ):
             
             self._sub_master  # prevent unused variable warning
 
-
-            """
             self._sub_drone_sensor = self.create_subscription(
                 String,
                 f"/{PEER.DRONE.value}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
@@ -242,7 +242,6 @@ class OperatorNode( Node ):
 
             self._sub_drone_sensor   
             
-            """
 
 
         def _update_propulsion( self ):
@@ -262,16 +261,12 @@ class OperatorNode( Node ):
                 if( self._direction == 0):
                     self.reset()
 
-                #if self._audioManager is not None:
-                #    self._audioManager.stop_music()
-
 
                 dir_msg = Int8()
                 dir_msg.data = int(self._direction)
 
                 self._pub_direction.publish( dir_msg )
         
-
 
         def _update_orientation( self, increment = 0 ):
             
@@ -344,10 +339,10 @@ class OperatorNode( Node ):
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
             
-            #self.get_logger().info(f"propulsion increment has been received : {updateLevelIncrement}")
+            if updateLevelIncrement != 0 and self._direction != 0:
             
-            if self._direction != 0:
-
+                self.get_logger().info(f"propulsion increment has been received : {updateLevelIncrement}")
+            
                 increment = self._propulsion + updateLevelIncrement
                 
                 if self._direction > 0:
@@ -359,6 +354,7 @@ class OperatorNode( Node ):
 
 
                 self._propulsion = increment
+
                 self._update_propulsion()
 
 
@@ -449,13 +445,14 @@ class OperatorNode( Node ):
 
                         self.droneDirection = sensor_datas[topic]
 
-                        #if self.droneDirection != self._direction: 
-                            #self._update_direction()
+                        if self.droneDirection != self._direction: 
+                            self._update_direction()
 
-                        #if self._audioManager is not None:
-                            #self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
+                        else:
+
+                            if self._audioManager is not None:
+                                self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
                 
-
 
         def OnMasterPulse( self, msg ):
 
@@ -483,17 +480,20 @@ class OperatorNode( Node ):
                         
                     else:
                     
-                        self.isGamePlayEnable = False   
-                        self._direction = 0
-                        self._update_direction()
+                        self.isGamePlayEnable = False
+
+                        if self._direction != 0:   
+                            self._direction = 0
+                            self._update_direction()
 
             else:
                     self.isGamePlayEnable = False 
-                    self._direction = 0
-                    self._update_direction()
+                    if self._direction != 0:   
+                        self._direction = 0
+                        self._update_direction()
                     
-            if self._audioManager is not None:
-                self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
+            #if self._audioManager is not None:
+                #self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
                 
         def exit(self):
 
