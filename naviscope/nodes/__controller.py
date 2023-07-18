@@ -53,7 +53,7 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 35 #default percentage of thrust
+            self._propulsion_default = 30 #default percentage of thrust
 
             self._propulsion_max = 50
             self._propulsion_max_backard = 40
@@ -345,8 +345,7 @@ class OperatorNode( Node ):
             
             if updateLevelIncrement != 0 and self._direction != 0:
             
-
-                increment = self._propulsion + updateLevelIncrement
+                increment = self._propulsion + (updateLevelIncrement/5)
                 self.get_logger().info(f"thrust value to send : {increment}")
             
                 if self._direction > 0:
