@@ -338,7 +338,7 @@ class OperatorNode( Node ):
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
             
-            self.get_logger().info(f"propulsion increment has been received : {updateLevelIncrement}")
+            #self.get_logger().info(f"propulsion increment has been received : {updateLevelIncrement}")
             
             if self._direction != 0:
 
@@ -445,7 +445,7 @@ class OperatorNode( Node ):
 
                         if self.droneDirection != self._direction: 
                             self._update_direction()
-                            
+
                         if self._audioManager is not None:
                             self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
                 
