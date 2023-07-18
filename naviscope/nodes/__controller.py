@@ -74,8 +74,10 @@ class OperatorNode( Node ):
             self._sensor_pitch =0
             self._sensor_roll =0
             
-            self._angleX = 90
-            self._angleZ = 90
+            self._angleX = 0
+            self._angleZ = 0
+
+            self._playtime = 0
 
             self.isGamePlayEnable = False
 
@@ -473,10 +475,20 @@ class OperatorNode( Node ):
 
                         if self.forceStopFromGsc is True and self._direction != 0:
                             self._direction = 0
+                    
+                    if "playtime" in statusUpdate:
+                        self._playtime =  statusUpdate["playtime"]
 
-                    if "enable" in statusUpdate and "playtime" in statusUpdate:
+                    if "enable" in statusUpdate:
+                        
+                        enableUpdate = statusUpdate["enable"]
 
-                        self.isGamePlayEnable = statusUpdate["enable"]
+                        if enableUpdate is True and self.isGamePlayEnable is False:
+                            self._direction = 0
+                            self._update_direction()
+                        
+                        self.isGamePlayEnable = enableUpdate 
+                        
                         
                     else:
                     
