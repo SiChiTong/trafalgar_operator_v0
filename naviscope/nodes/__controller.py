@@ -231,6 +231,8 @@ class OperatorNode( Node ):
             
             self._sub_master  # prevent unused variable warning
 
+
+            """
             self._sub_drone_sensor = self.create_subscription(
                 String,
                 f"/{PEER.DRONE.value}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
@@ -238,7 +240,9 @@ class OperatorNode( Node ):
                 qos_profile=qos_profile_sensor_data
             )
 
-            self._sub_drone_sensor
+            self._sub_drone_sensor   
+            
+            """
 
 
         def _update_propulsion( self ):
