@@ -60,6 +60,8 @@ class OperatorNode( Node ):
             self._direction = 0
             self._orientation = 0
 
+            self.droneDirection = 0
+            
             self._filter = None
 
             self._delta_yaw = 0
