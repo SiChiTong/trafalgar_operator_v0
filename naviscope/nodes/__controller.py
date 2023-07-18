@@ -493,7 +493,7 @@ class OperatorNode( Node ):
                         self.forceStopFromGsc = statusUpdate["stop"]
 
                         if self.forceStopFromGsc is True and self._direction != 0:
-                            self._direction = 0
+                            self._update_direction(0)
                     
                     if "playtime" in statusUpdate:
                         self._playtime =  statusUpdate["playtime"]
