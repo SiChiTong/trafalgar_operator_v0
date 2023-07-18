@@ -250,7 +250,7 @@ class OperatorNode( Node ):
         def _update_propulsion( self ):
             
             prop_msg = UInt16()
-            prop_msg.data = np.clip(self._propulsion, self._propulsion_default, self._propulsion_max) * self.controllerPropulsionMultiplier
+            prop_msg.data = np.clip(self._propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
 
             self._pub_propulsion.publish( prop_msg )
 
@@ -344,22 +344,20 @@ class OperatorNode( Node ):
             
             if updateLevelIncrement != 0 and self._direction != 0:
             
-                self.get_logger().info(f"propulsion increment has been received : {updateLevelIncrement}")
-            
+
                 increment = self._propulsion + updateLevelIncrement
-                
+                self.get_logger().info(f"thrust value to send : {increment}")
+            
                 if self._direction > 0:
-
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
-
                 else :
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max_backard ) ) 
-
 
                 self._propulsion = increment
 
                 self._update_propulsion()
-
+                self.get_logger().info(f"propulsion value sent to update : {self._propulsion}")
+            
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
