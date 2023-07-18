@@ -346,8 +346,7 @@ class OperatorNode( Node ):
             if updateLevelIncrement != 0 and self._direction != 0:
             
                 increment = self._propulsion + (updateLevelIncrement/5)
-                self.get_logger().info(f"thrust value to send : {increment}")
-            
+    
                 if self._direction > 0:
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
                 else :
@@ -356,8 +355,7 @@ class OperatorNode( Node ):
                 self._propulsion = increment
 
                 self._update_propulsion()
-                self.get_logger().info(f"propulsion value sent to update : {self._propulsion}")
-            
+    
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
