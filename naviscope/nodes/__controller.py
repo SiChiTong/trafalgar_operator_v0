@@ -249,8 +249,9 @@ class OperatorNode( Node ):
 
         def _update_propulsion( self ):
             
+            propulsion = np.clip(self._propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
             prop_msg = UInt16()
-            prop_msg.data = np.clip(self._propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
+            prop_msg.data = int( propulsion )
 
             self._pub_propulsion.publish( prop_msg )
 
