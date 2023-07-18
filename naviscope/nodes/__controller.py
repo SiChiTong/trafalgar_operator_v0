@@ -441,8 +441,16 @@ class OperatorNode( Node ):
                 for topic in sensor_datas:
 
                     if(topic == SENSORS_TOPICS.DIRECTION  ):
+                        
+                        update_direction = sensor_datas[topic]
 
-                        self.droneDirection = sensor_datas[topic]
+                        if update_direction != self.droneDirection: 
+
+                            self.droneDirection = sensor_datas[topic]
+
+                            if self._audioManager is not None:
+                                self._audioManager.gameplayMusic( self.droneDirection )
+
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE  ):
 
@@ -454,14 +462,11 @@ class OperatorNode( Node ):
                             self._obstacleInFront = False
             
             if self.droneDirection != self._direction : 
+
                 if self._obstacleInFront is False: 
                     self._update_direction()
 
-            else:
-
-                if self._audioManager is not None:
-                    self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
-                
+ 
 
         def OnMasterPulse( self, msg ):
 
@@ -510,9 +515,10 @@ class OperatorNode( Node ):
                     if self._direction != 0:   
                         self._direction = 0
                         self._update_direction()
-                    
-            #if self._audioManager is not None:
-                #self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
+
+            if self.isGamePlayEnable is False:
+                self._audioManager.stop_music( )
+
                 
         def exit(self):
 

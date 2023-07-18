@@ -24,6 +24,8 @@ class AudioManager(object):
         self.sfx_files = []
         self._sfx_playlist = []
 
+        self.last_direction_save = 0
+
     
     def _enable( self ):
         
@@ -106,42 +108,36 @@ class AudioManager(object):
             self._mixer.play(loops=-1)
 
 
-    def gameplayMusic( self, isEnable, direction ): 
+    def gameplayMusic( self, direction ): 
 
-        if isEnable is True:
+        if direction != 0:
 
-            if direction != 0:
+            if self.IsIdlePlaying is True:
+                self.stop_music()
+                self.IsIdlePlaying = False
 
-                if self.IsIdlePlaying is True:
-                    self.stop_music()
-                    self.IsIdlePlaying = False
+            if self.IsAdventurePlaying is False:
+                self.IsAdventurePlaying = True
+                self.play_music("adventure")
 
-                if self.IsAdventurePlaying is False:
-                    self.IsAdventurePlaying = True
-                    self.play_music("adventure")
+        else:
 
-            else:
+            if self.IsAdventurePlaying is True:
+                self.stop_music()
+                self.IsAdventurePlaying = False
 
-                if self.IsAdventurePlaying is True:
-                    self.stop_music()
-                    self.IsAdventurePlaying = False
-
-                if self.IsIdlePlaying is False:
-                    self.IsIdlePlaying = True
-                    self.play_music("idle")
+            if self.IsIdlePlaying is False:
+                self.IsIdlePlaying = True
+                self.play_music("idle")
                     
-        else: 
-            
-            self.IsAdventurePlaying = False
-            self.IsIdlePlaying = False
-
-            self.stop_music()
-
-
 
     def stop_music( self ): 
 
         if self._mixer and self._mixer.get_busy():
+
+            self.IsAdventurePlaying = False
+            self.IsIdlePlaying = False
+
             self._mixer.stop()
 
     def _disable( self ):
