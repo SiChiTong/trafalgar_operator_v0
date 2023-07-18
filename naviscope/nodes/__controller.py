@@ -445,11 +445,11 @@ class OperatorNode( Node ):
 
                         self.droneDirection = sensor_datas[topic]
 
-                        if self.droneDirection != self._direction: 
-                            self._update_direction()
+                        #if self.droneDirection != self._direction: 
+                            #self._update_direction()
 
-                        if self._audioManager is not None:
-                            self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
+                        #if self._audioManager is not None:
+                            #self._audioManager.gameplayMusic(self.isGamePlayEnable, self.droneDirection )
                 
 
 
@@ -488,8 +488,8 @@ class OperatorNode( Node ):
                     self._direction = 0
                     self._update_direction()
                     
-            #if self._audioManager is not None:
-            #    self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
+            if self._audioManager is not None:
+                self._audioManager.gameplayMusic(self.isGamePlayEnable, self._direction )
                 
         def exit(self):
 
