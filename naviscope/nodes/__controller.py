@@ -358,7 +358,7 @@ class OperatorNode( Node ):
             
             if updateLevelIncrement != 0 and self._direction != 0:
             
-                increment = self._propulsion + (updateLevelIncrement/5) * 2
+                increment = self._propulsion + (updateLevelIncrement/5) 
     
                 if self._direction > 0:
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
