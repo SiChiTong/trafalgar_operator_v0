@@ -53,10 +53,10 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 40 #default percentage of thrust
+            self._propulsion_default = 35 #default percentage of thrust
 
             self._propulsion_max = 50
-            self._propulsion_max_backard = 40
+            self._propulsion_max_backward = 40
             self._propulsion = self._propulsion_default
 
             self._direction = 0
@@ -363,7 +363,7 @@ class OperatorNode( Node ):
                 if self._direction > 0:
                     increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
                 else :
-                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max_backard ) ) 
+                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max_backward ) ) 
 
                 self._propulsion = increment
 
