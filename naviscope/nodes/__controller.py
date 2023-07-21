@@ -53,7 +53,7 @@ class OperatorNode( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 35 #default percentage of thrust
+            self._propulsion_default = 40 #default percentage of thrust
 
             self._propulsion_max = 50
             self._propulsion_max_backward = 40
@@ -451,11 +451,7 @@ class OperatorNode( Node ):
                 for topic in sensor_datas:
 
                     if( topic == SENSORS_TOPICS.DIRECTION ):
-                        
-                        update_direction = sensor_datas[topic]
-
-                        if update_direction != self.droneDirection: 
-                            self.droneDirection = update_direction
+                        self.droneDirection = sensor_datas[topic] 
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE  ):
 
@@ -473,7 +469,6 @@ class OperatorNode( Node ):
                 if self._obstacleInFront is False: 
                     self._update_direction( self._direction )
 
- 
 
         def OnMasterPulse( self, msg ):
 
