@@ -35,7 +35,8 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self.EnableAudio = True
-            #self.EnableFilter = True
+            self.EnableAngleKillSwitch = True
+            self.EnableFilter = False
             
             self.forceStopFromGsc = False
 
@@ -103,6 +104,12 @@ class OperatorNode( Node ):
         def panTiltThreshold(self):
             return 10
         
+
+        @property
+        def killSwitchAngleThreshold(self):
+            return 40
+   
+
         def start(self):
 
             self.get_local_ip()
@@ -188,10 +195,8 @@ class OperatorNode( Node ):
                 self._audioManager = AudioManager()
                 self._audioManager._enable()
 
-            #add listener to watchdog to start and stop ambiance background
-        
         """
-         def _init_filter( self ): 
+        def _init_filter( self ): 
             
             self._filter = KalmanFilter(dim_x=3, dim_z=3)
 
@@ -206,8 +211,6 @@ class OperatorNode( Node ):
                 self._filter.P *= 0.1  # Matrice de covariance de l'état initial
        
 
-
-
         def smooth_imu_data(self, pitch, roll, yaw):
             # Mettez à jour le filtre de Kalman avec les nouvelles mesures IMU
             self._filter.predict()
@@ -217,9 +220,9 @@ class OperatorNode( Node ):
             filtered_state = self._filter.x
 
             return filtered_state[0], filtered_state[1], filtered_state[2]
-
-        
         """
+        
+        
 
         def _init_publishers( self ):
 
@@ -458,8 +461,24 @@ class OperatorNode( Node ):
            
                 self._angleX = angleX
                 self._angleZ = angleZ
+
+                if self.EnableAngleKillSwitch is True: 
+                    self._checkAngleKillSwitch( )
+                
                 self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
+
+        def _checkAngleKillSwitch( self, angle ):
+
+            if self.droneDirection != 0: 
+
+                if self.EnableAngleKillSwitch is True and self._angleX < self.killSwitchAngleThreshold:
+
+                    if self._direction != 0:
+
+                        self._direction = 0
+                        self._update_direction( self._direction )
+                    
 
         def _send_sensors_datas( self, sensor_json ):
             
