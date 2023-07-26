@@ -12,6 +12,9 @@ import numpy as np
 import socket
 
 #from filterpy.kalman import KalmanFilter
+import subprocess
+import re
+import netifaces
 
 import rclpy
 from rclpy.node import Node
@@ -123,6 +126,8 @@ class OperatorNode( Node ):
 
         def get_local_ip( self ):
 
+            self.get_wifi_interfaces()
+
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
             try:
@@ -134,6 +139,40 @@ class OperatorNode( Node ):
                 self._address = socket.gethostbyname(socket.gethostname())
             finally:
                 s.close()
+
+
+        def get_wifi_interfaces( self ):
+            
+            wifi_interfaces = []
+            interfaces = netifaces.interfaces()
+            
+            for interface in interfaces:
+                if "wl" in interface:
+                    wifi_interfaces.append(interface)
+            
+            self._wifiInterfaces = wifi_interfaces
+
+
+        def get_rssi(self ):
+
+            if len( self._wifiInterfaces ) > 0:
+
+                interface = self._wifiInterfaces[ 0 ]
+
+                try:
+                    output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
+                    signal_strength_match = re.search(r"Signal level=(-\d+) dBm", output)
+                    
+                    if signal_strength_match:
+                        return int(signal_strength_match.group(1))
+                    
+                except subprocess.CalledProcessError as e:
+                    print(f"Erreur lors de la récupération de la puissance du signal : {e}")
+                except Exception as ex:
+                    print(f"Erreur inattendue : {ex}")
+
+            return None
+        
 
         def _init_component(self):
             
@@ -150,6 +189,7 @@ class OperatorNode( Node ):
                 self._audioManager._enable()
 
             #add listener to watchdog to start and stop ambiance background
+        
         """
          def _init_filter( self ): 
             
@@ -262,10 +302,10 @@ class OperatorNode( Node ):
 
             if self.forceStopFromGsc is False:
                 
-                if updateDirection != self._direction:
+                #if updateDirection != self._direction:
 
-                    if self._audioManager is not None:
-                        self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDirection )
+                    #if self._audioManager is not None:
+                    #    self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDirection )
 
                 self._direction = updateDirection
             
@@ -429,6 +469,7 @@ class OperatorNode( Node ):
                 self._sensors_id = self.get_parameter("peer_index").value
 
             sensor_json[f"{SENSORS_TOPICS.IP}"] = f"{self._address}"
+            sensor_json["rssi"] = self.get_rssi()
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
                 "index" : self._sensors_id,
@@ -451,7 +492,15 @@ class OperatorNode( Node ):
                 for topic in sensor_datas:
 
                     if( topic == SENSORS_TOPICS.DIRECTION ):
-                        self.droneDirection = sensor_datas[topic] 
+
+                        updateDroneDirection = sensor_datas[topic] 
+
+                        if self != self.droneDirection:
+
+                            self.droneDirection = updateDroneDirection
+
+                            if self._audioManager is not None:
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE  ):
 
@@ -462,7 +511,7 @@ class OperatorNode( Node ):
                         else:
                             self._obstacleInFront = False
             
-            #self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
+            self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
             if self.droneDirection != self._direction : 
 
