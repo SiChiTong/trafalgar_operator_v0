@@ -1,5 +1,8 @@
 from enum import Enum
 
+#change direction / orientation / propulsion to cmd_vel -> twist msg
+#change pantilt to cmd_cam
+
 class AVAILABLE_TOPICS( str, Enum ):
     PROPULSION = "propulsion"
     DIRECTION = "direction"
@@ -20,6 +23,7 @@ class AVAILABLE_TOPICS( str, Enum ):
 
 class SENSORS_TOPICS( str, Enum ):
     IP = "ip"
+    WIFI = "rssi"
     BATTERY_GAUGE = "gauge"
     BATTERY_VOLTAGE = "voltage"
     ORIENTATION = "orientation"
@@ -42,13 +46,14 @@ class SENSORS_TOPICS( str, Enum ):
     CAM_TILT = "tilt"
     SHORT_PRESS = "shortPress"
     LONG_PRESS = "longPress"
-    
+
 
 class PEER(str, Enum):
     MASTER = "master"
     USER = "user"
     DRONE = "drone"
     XR = "xr"
+    
 class EXIT_STATE(str, Enum ):
     SHUTDOWN = "shutdown"
     RESTART = "restart"
@@ -57,12 +62,12 @@ DIRECTION_STP = ("EN STANDBY", "#868686")
 DIRECTION_FWD = ("MARCHE AVANT", "#028400")
 DIRECTION_BWD = ("MARCHE ARRIERE", "#CB4D00")
 
+
 DRONES_NAMES = [
     ("Aucun", ( "#000000", "#ffffff" )), 
     ("Bounty", ("#A6A6A6", "#EA8E38" )),
     ("Daisy Jack", ( "#197600", "#DADADA" )),
     ("Arjeroc", ("#1967FF", "#4B4B4B" )),
     ("Lady Idosia", ( "#DFB40C", "#0C83DF" )),
-    ( "Rei Pelluci", ( "#FC431B", "#FFAA19" )), 
-    ("Obsidian", ("#4F4F4F", "#E7E7E7" ))
+    ( "Rei Pelluci", ( "#FC431B", "#FFAA19" ))
 ]
