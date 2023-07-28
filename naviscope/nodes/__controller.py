@@ -174,9 +174,9 @@ class OperatorNode( Node ):
                         return int(signal_strength_match.group(1))
                     
                 except subprocess.CalledProcessError as e:
-                    print(f"Erreur lors de la récupération de la puissance du signal : {e}")
+                    self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {e}")
                 except Exception as ex:
-                    print(f"Erreur inattendue : {ex}")
+                    self.get_logger().info(f"Erreur inattendue : {ex}")
 
             return None
         
@@ -601,7 +601,7 @@ class OperatorNode( Node ):
                 
         def exit(self):
 
-            print("shutdown controller")   
+            self.get_logger().info("shutdown controller")   
 
 
 

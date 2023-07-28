@@ -5,8 +5,8 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-import os
 import sys
+import subprocess
 import json
 import socket  
 #from time import process_time
@@ -61,27 +61,35 @@ class HeartbeatsNode( Node ):
             self.start()
 
 
-        def _kill_instruction():
-            os.system("shutdown /s /t 1")
+        def OnShutdownCommand(self, msg ): 
 
-        def _restart_instruction():
-            os.system("shutdown /r /t 1")
+            instructionMsg = json.loads(msg.data)
             
+            peer = f"{self._peer_type}_{self.get_parameter('peer_index').value}"
 
-        def _react_to_shutdown_cmd(self, msg ): 
+            if peer in instructionMsg.keys():
 
-            instruction = json.loads(msg.data)
+                instruction = peer["exitInstruction"]
+
+                if( instruction == EXIT_STATE.RESTART.value ):
+                    self._shutdown_instruction( "sudo reboot -h now" )
+
+                elif ( instruction == EXIT_STATE.SHUTDOWN.value ):
+                    self._shutdown_instruction( "sudo shutdown -h now" )
                 
-            operator = instruction["peer"]
-            instruction = instruction["status"]
 
-            if( instruction == EXIT_STATE.RESTART.value ):
 
-                self._restart_instruction()
+        def _shutdown_instruction( self, CMD ):
 
-            elif ( instruction == EXIT_STATE.SHUTDOWN.value ):
+            try:
+                # Exécute la commande en utilisant le module subprocess
+                subprocess.run(CMD, shell=True, check=True, text=True)
+        
+            except subprocess.CalledProcessError as e:
+                self.get_logger().info(f"Une erreur s'est produite lors de l'exécution de la commande : {e}")
 
-                self._kill_instruction()
+            finally:
+                return None
 
 
         def start( self ):
@@ -127,7 +135,7 @@ class HeartbeatsNode( Node ):
             self._sub_shutdown = self.create_subscription(
                 String,
                 f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.SHUTDOWN.value}",#operator_{self.get_parameter('peer_index').value}_
-                self._react_to_shutdown_cmd,
+                self.OnShutdownCommand,
                 10
             )
 
