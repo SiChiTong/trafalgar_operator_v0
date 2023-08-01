@@ -33,6 +33,7 @@ class SENSORS_TOPICS( str, Enum ):
     STEERING = "steer"
     LAT = "latitude"
     LON = "longitude"
+    SAT = "sat"
     AZI = "azimuth"
     SPEED = "speed"
     PITCH = "pitch"
@@ -46,13 +47,17 @@ class SENSORS_TOPICS( str, Enum ):
     CAM_TILT = "tilt"
     SHORT_PRESS = "shortPress"
     LONG_PRESS = "longPress"
-
+    TEMPERATURE = "temperature"
 
 class PEER(str, Enum):
     MASTER = "master"
     USER = "user"
     DRONE = "drone"
     XR = "xr"
+
+class MAP_MARKERS( str, Enum ):
+    NAVIGATION = "navigationMarker"
+    AREA = "gameAreaMarker"
     
 class EXIT_STATE(str, Enum ):
     SHUTDOWN = "shutdown"

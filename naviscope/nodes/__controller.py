@@ -180,6 +180,23 @@ class OperatorNode( Node ):
 
             return None
         
+        
+        def _adjust_fan_points( self):
+            command = "echo 30000 | sudo tee /sys/devices/virtual/thermal/thermal_zone{0,1,2,3}/trip_point_0_temp"
+            self.__sub_cmd( command )
+
+        def _adjust_fan_speed( self):
+            command = 'echo "0 204 220 240" | sudo tee /sys/devices/platform/pwm-fan/hwmon/hwmon0/fan_speed'
+            self.__sub_cmd( command )
+
+
+        def __sub_cmd( self, command ):
+            # Exécution de la commande avec subprocess
+            try:
+                subprocess.run(command, shell=True, check=True)
+                print("La commande a été exécutée avec succès.")
+            except subprocess.CalledProcessError as e:
+                print("Une erreur s'est produite lors de l'exécution de la commande :", e)
 
         def _init_component(self):
             
