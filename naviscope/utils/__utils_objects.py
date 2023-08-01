@@ -1,29 +1,25 @@
 from enum import Enum
 
-#change direction / orientation / propulsion to cmd_vel -> twist msg
-#change pantilt to cmd_cam
-
 class AVAILABLE_TOPICS( str, Enum ):
-    PROPULSION = "propulsion"
-    DIRECTION = "direction"
-    ORIENTATION = "orientation"
-    STEER_ANGLE = "steerAngle"
-    STEER_INCREMENT = "steerIncrement"
+    VELOCITY = "cmd_vel"
+    PANTILT = "cmd_cam"
+    NAVTARGET = "cmd_navtarget"
+    SHUTDOWN = "cmd_shutdown"
     STREAM = "videostream"
-    IMU = "imu",
-    PANTILT = "pantilt"
-    NAVTARGET = "navtarget"
+    IMU = "imu_sensor",
     HEARTBEAT = "heartbeat"
     WATCHDOG = "watchdog"
     SENSOR = "sensor"
-    SHUTDOWN = "shutdown"
-    BUZZER = "buzzer"
     JOYSTICK = "joy"
     GAMEPLAY = "gameplay"
+
 
 class SENSORS_TOPICS( str, Enum ):
     IP = "ip"
     WIFI = "rssi"
+    OFF_AREA = "isOutsideOfArea"
+    INDEX = "index"
+    DATAS = "datas"
     BATTERY_GAUGE = "gauge"
     BATTERY_VOLTAGE = "voltage"
     ORIENTATION = "orientation"
@@ -49,30 +45,52 @@ class SENSORS_TOPICS( str, Enum ):
     LONG_PRESS = "longPress"
     TEMPERATURE = "temperature"
 
+
+class DISPATCH_TOPICS( str, Enum ):
+    DIRECTION = "cmd_dir"
+    PROPULSION = "cmd_prop"
+    STEERING = "cmd_steer"
+    CAM_TILT = "cmd_tilt"
+    CAM_PAN = "cmd_pan"
+    STATUS = "cmd_status"
+    NAVTARGET = "cmd_target"
+
+
 class PEER(str, Enum):
     MASTER = "master"
     USER = "user"
     DRONE = "drone"
     XR = "xr"
 
+
 class MAP_MARKERS( str, Enum ):
     NAVIGATION = "navigationMarker"
     AREA = "gameAreaMarker"
+
     
 class EXIT_STATE(str, Enum ):
+    ALIVE = "alive"
     SHUTDOWN = "shutdown"
     RESTART = "restart"
 
-DIRECTION_STP = ("EN STANDBY", "#868686")
-DIRECTION_FWD = ("MARCHE AVANT", "#028400")
-DIRECTION_BWD = ("MARCHE ARRIERE", "#CB4D00")
 
+class DIRECTION_STATE(Enum):
+    BACKWARD = -1
+    STOP = 0
+    FORWARD = 1
+
+
+DIRECTION_STP = ("IDDLE", "#868686")
+DIRECTION_FWD = ("FORWARD", "#028400")
+DIRECTION_BWD = ("BACKWARD", "#CB4D00")
+
+WIFI_INTERFACE = "wl"
 
 DRONES_NAMES = [
     ("Aucun", ( "#000000", "#ffffff" )), 
-    ("Bounty", ("#A6A6A6", "#EA8E38" )),
+    ("Bounty", ( "#E3735E", "#A6A6A6")),
+    ("Arjeroc", ( "#1967FF", "#4B4B4B" )),    
     ("Daisy Jack", ( "#197600", "#DADADA" )),
-    ("Arjeroc", ("#1967FF", "#4B4B4B" )),
     ("Lady Idosia", ( "#DFB40C", "#0C83DF" )),
-    ( "Rei Pelluci", ( "#FC431B", "#FFAA19" ))
+    ( "Rei Pelluci", ( "#E21E1E", "#FFAA19" ))
 ]

@@ -19,13 +19,13 @@ import netifaces
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import String, Int8, UInt16
-from geometry_msgs.msg import Vector3
+from std_msgs.msg import String
+from geometry_msgs.msg import Vector3, Twist
 
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
-from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER
+from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE
 from ..components.__audioManager import AudioManager
 
 class OperatorNode( Node ):
@@ -39,14 +39,17 @@ class OperatorNode( Node ):
             self.EnableFilter = False
             
             self.forceStopFromGsc = False
+            self.isDroneOutOfGameArea = False
 
             self._address = ""
             self._sensors_id = None
-            self._pub_propulsion = None
-            self._pub_direction = None
-            self._pub_orientation = None
-            self._pub_pantilt = None
+
+            self._pub_vel = None
+
+            self._pub_cam = None
             self._pub_sensor = None
+
+            self._msg_velocity = Twist()
 
             self.controllerOrientationMultiplier = 1 #use it to invert direction
             self.controllerPropulsionMultiplier = 1 
@@ -101,6 +104,14 @@ class OperatorNode( Node ):
             self.start()
 
         @property
+        def droneRangeSensorMinThreshold(self):
+            return 30
+
+        @property
+        def droneRangeSensorMaxThreshold(self):
+            return 130
+
+        @property
         def panTiltThreshold(self):
             return 10
         
@@ -141,6 +152,7 @@ class OperatorNode( Node ):
 
                 s.connect(('8.8.8.8', 80))
                 self._address = s.getsockname()[0]
+
             except socket.error:
                 # Si la connexion échoue, nous renvoyons l'adresse IP de la machine locale
                 self._address = socket.gethostbyname(socket.gethostname())
@@ -154,7 +166,8 @@ class OperatorNode( Node ):
             interfaces = netifaces.interfaces()
             
             for interface in interfaces:
-                if "wl" in interface:
+
+                if WIFI_INTERFACE in interface:
                     wifi_interfaces.append(interface)
             
             self._wifiInterfaces = wifi_interfaces
@@ -212,68 +225,25 @@ class OperatorNode( Node ):
                 self._audioManager = AudioManager()
                 self._audioManager._enable()
 
-        """
-        def _init_filter( self ): 
-            
-            self._filter = KalmanFilter(dim_x=3, dim_z=3)
 
-            if self._filter is not None:
-
-                self._filter.F = np.eye(3)  # Matrice de transition, généralement identité
-                self._filter.H = np.eye(3)  # Matrice de mesure, généralement identité
-                
-                # Initialisez les variables du filtre de Kalman
-                initial_state = np.array([0, -90, 0])  # Initialisez l'état initial
-                self._filter.x = initial_state
-                self._filter.P *= 0.1  # Matrice de covariance de l'état initial
-       
-
-        def smooth_imu_data(self, pitch, roll, yaw):
-            # Mettez à jour le filtre de Kalman avec les nouvelles mesures IMU
-            self._filter.predict()
-            self._filter.update(np.array([pitch, roll, yaw]))
-
-            # Obtenez les valeurs filtrées de l'état du système
-            filtered_state = self._filter.x
-
-            return filtered_state[0], filtered_state[1], filtered_state[2]
-        """
-        
-        
 
         def _init_publishers( self ):
 
-            self._pub_propulsion  = self.create_publisher(
-                UInt16, 
-                AVAILABLE_TOPICS.PROPULSION.value,
+            self._pub_vel  = self.create_publisher(
+                Twist, 
+                AVAILABLE_TOPICS.VELOCITY.value,
                 qos_profile=qos_profile_sensor_data
             )
             
-            self._pub_propulsion
+            self._pub_vel 
 
-            self._pub_direction = self.create_publisher(
-                Int8, 
-                AVAILABLE_TOPICS.DIRECTION.value,
-                qos_profile=qos_profile_sensor_data
-            )
-            
-            self._pub_direction
-
-            self._pub_orientation  = self.create_publisher(
-                Int8, 
-                AVAILABLE_TOPICS.ORIENTATION.value,
-                qos_profile=qos_profile_sensor_data
-            )
-            
-            self._pub_orientation
-
-            self._pub_pantilt = self.create_publisher(
+            self._pub_cam = self.create_publisher(
                 Vector3,
                 AVAILABLE_TOPICS.PANTILT.value,
                 qos_profile=qos_profile_sensor_data
             )
 
-            self._pub_pantilt
+            self._pub_cam
 
 
             self._pub_sensor = self.create_publisher(
@@ -306,21 +276,11 @@ class OperatorNode( Node ):
             self._sub_drone_sensor   
             
 
-
-        def _update_propulsion( self ):
-            
-            propulsion = np.clip(self._propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
-            prop_msg = UInt16()
-            prop_msg.data = int( propulsion )
-
-            self._pub_propulsion.publish( prop_msg )
-
-
-        def _update_direction( self, updateDirection = 0 ):
+        def _update_direction( self, updateDirection = DIRECTION_STATE.STOP ):
             
             updateDirection = np.clip( updateDirection, -1, 1 )
 
-            if self.forceStopFromGsc is False:
+            if self.forceStopFromGsc is False and self.isDroneOutOfGameArea is False:
                 
                 #if updateDirection != self._direction:
 
@@ -331,11 +291,8 @@ class OperatorNode( Node ):
             
                 if( self._direction == 0):
                     self.reset()
-
-                dir_msg = Int8()
-                dir_msg.data = int(self._direction)
-
-                self._pub_direction.publish( dir_msg )
+                
+                self._send_controller_cmd()
             
             else :
 
@@ -344,16 +301,6 @@ class OperatorNode( Node ):
                     if self._audioManager is not None:
                         self._audioManager.gameplayMusic( self.isGamePlayEnable, 0 )
         
-
-        def _update_orientation( self, increment = 0 ):
-            
-            if increment != 0:
-                msg = Int8()
-                msg.data = int(increment * self.controllerOrientationMultiplier )
-
-                self._pub_orientation.publish( msg )
-
-                self._updateWheelAudio( increment )
 
 
         def _updateWheelAudio( self, increment ): 
@@ -375,10 +322,10 @@ class OperatorNode( Node ):
 
             vec = Vector3()
             
-            vec.x = float( update_tilt )
+            vec.y = float( update_tilt )
             vec.z = float( update_pan )
 
-            self._pub_pantilt.publish( vec )
+            self._pub_cam.publish( vec )
 
 
         def _board_datas( self, json_datas ): 
@@ -409,33 +356,48 @@ class OperatorNode( Node ):
 
             self._send_sensors_datas(json_datas)
 
+
         def OnNewOrientation( self, increment ):
 
-            self._update_orientation( increment )
+            if increment != 0:
+                
+                if self._msg_velocity is not None:
+                    
+                    self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
+                    self._send_controller_cmd()
+                
+                self._updateWheelAudio( increment )
 
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
             
             if updateLevelIncrement != 0 and self._direction != 0:
             
-                increment = self._propulsion + (updateLevelIncrement/5) 
+                update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
-                if self._direction > 0:
-                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max ) ) 
+                if self._direction >= 0:
+
+                    update_propulsion = math.floor( np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) 
+
                 else :
-                    increment = math.floor( np.clip( increment, self._propulsion_default, self._propulsion_max_backward ) ) 
 
-                self._propulsion = increment
+                    update_propulsion = math.floor( np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) 
 
-                self._update_propulsion()
+
+                update_propulsion = np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
+            
+                if update_propulsion != self._propulsion:
+
+                    self._propulsion = update_propulsion
+                    self._send_controller_cmd()
     
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
             if longPress is True:
 
-                if self._direction != -1:
-                    self._update_direction(-1)
+                if self._direction != DIRECTION_STATE.BACKWARD:
+                    self._update_direction(DIRECTION_STATE.BACKWARD)
                     
                     if( self.isGamePlayEnable is True ):
                         if self._audioManager is not None:
@@ -443,10 +405,10 @@ class OperatorNode( Node ):
 
             if shortPress is True:
 
-                if self._direction == 0:
-                    self._update_direction(1)
+                if self._direction == DIRECTION_STATE.STOP:
+                    self._update_direction(DIRECTION_STATE.FORWARD)
                 else:
-                    self._update_direction(0)
+                    self._update_direction(DIRECTION_STATE.STOP)
                 
                 if( self.isGamePlayEnable is True ):  
                     if self._audioManager is not None:
@@ -497,6 +459,24 @@ class OperatorNode( Node ):
                         self._update_direction( self._direction )
                     
 
+        def _send_controller_cmd( self ):
+
+            """
+            In Unity, the X axis points right, Y up, and Z forward. 
+            ROS, on the other hand, supports various coordinate frames: 
+            in the most commonly-used one, X points forward, Y left, and Z up. In ROS terminology, 
+            this frame is called "FLU" (forward, left, up), 
+            whereas the Unity coordinate frame would be "RUF" (right, up, forward).
+            """
+
+            if self._msg_velocity is not None:
+                    
+                self._msg_velocity.linear.x = self._direction * self._propulsion
+                self._msg_velocity.angular.z = self._last_steering
+
+                self._pub_vel.publish( self._msg_velocity )
+
+
         def _send_sensors_datas( self, sensor_json ):
             
             sensor_msg = String()
@@ -504,12 +484,13 @@ class OperatorNode( Node ):
             if self._sensors_id is None:
                 self._sensors_id = self.get_parameter("peer_index").value
 
-            sensor_json[f"{SENSORS_TOPICS.IP}"] = f"{self._address}"
-            sensor_json["rssi"] = self.get_rssi()
+            sensor_json[SENSORS_TOPICS.IP.value] = f"{self._address}"
+            sensor_json[SENSORS_TOPICS.WIFI.value] = self.get_rssi()
+
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
-                "index" : self._sensors_id,
-                "datas" : sensor_json
+                SENSORS_TOPICS.INDEX.value : self._sensors_id,
+                SENSORS_TOPICS.DATAS.value : sensor_json
             }
 
             sensor_msg.data = json.dumps( sensors_datas )
@@ -521,9 +502,17 @@ class OperatorNode( Node ):
             
             drone_sensors = json.loads( msg.data )
 
-            if( "index" in drone_sensors and "datas" in drone_sensors ):
+            if( SENSORS_TOPICS.OFF_AREA.value in drone_sensors ):
+
+                self.isDroneOutOfGameArea = drone_sensors[SENSORS_TOPICS.OFF_AREA.value]
+
+                if self.isDroneOutOfGameArea is True and self._direction != 0:
+                    self._update_direction(DIRECTION_STATE.STOP)
+
+
+            if( SENSORS_TOPICS.INDEX.value in drone_sensors and SENSORS_TOPICS.DATAS.value in drone_sensors ):
     
-                sensor_datas = drone_sensors["datas"]
+                sensor_datas = drone_sensors[SENSORS_TOPICS.DATAS.value]
 
                 for topic in sensor_datas:
 
@@ -542,11 +531,12 @@ class OperatorNode( Node ):
 
                         sensor_obstacle = sensor_datas[topic]
 
-                        if sensor_obstacle < 150 and sensor_obstacle > 30: 
+                        if sensor_obstacle < self.droneRangeSensorMaxThreshold and sensor_obstacle >= self.droneRangeSensorMinThreshold: 
                             self._obstacleInFront = True
                         else:
                             self._obstacleInFront = False
             
+
             self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
             if self.droneDirection != self._direction : 
@@ -573,7 +563,7 @@ class OperatorNode( Node ):
                         self.forceStopFromGsc = statusUpdate["stop"]
 
                         if self.forceStopFromGsc is True and self._direction != 0:
-                            self._update_direction(0)
+                            self._update_direction(DIRECTION_STATE.STOP)
                     
                     if "playtime" in statusUpdate:
                         self._playtime =  statusUpdate["playtime"]
@@ -584,7 +574,7 @@ class OperatorNode( Node ):
 
                         if enableUpdate is True and self.isGamePlayEnable is False:
 
-                            self._update_direction(0)
+                            self._update_direction(DIRECTION_STATE.STOP)
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( enableUpdate, 0 )
@@ -596,8 +586,8 @@ class OperatorNode( Node ):
                     
                         self.isGamePlayEnable = False
 
-                        if self._direction != 0:   
-                            self._update_direction(0)
+                        if self._direction != DIRECTION_STATE.STOP.value:   
+                            self._update_direction(DIRECTION_STATE.STOP)
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
@@ -606,7 +596,7 @@ class OperatorNode( Node ):
                     self.isGamePlayEnable = False 
 
                     if self._direction != 0:   
-                        self._update_direction(0)
+                        self._update_direction(DIRECTION_STATE.STOP)
                         
                         if self._audioManager is not None:
                             self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
@@ -657,3 +647,31 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+"""
+        def _init_filter( self ): 
+            
+            self._filter = KalmanFilter(dim_x=3, dim_z=3)
+
+            if self._filter is not None:
+
+                self._filter.F = np.eye(3)  # Matrice de transition, généralement identité
+                self._filter.H = np.eye(3)  # Matrice de mesure, généralement identité
+                
+                # Initialisez les variables du filtre de Kalman
+                initial_state = np.array([0, -90, 0])  # Initialisez l'état initial
+                self._filter.x = initial_state
+                self._filter.P *= 0.1  # Matrice de covariance de l'état initial
+       
+
+        def smooth_imu_data(self, pitch, roll, yaw):
+            # Mettez à jour le filtre de Kalman avec les nouvelles mesures IMU
+            self._filter.predict()
+            self._filter.update(np.array([pitch, roll, yaw]))
+
+            # Obtenez les valeurs filtrées de l'état du système
+            filtered_state = self._filter.x
+
+            return filtered_state[0], filtered_state[1], filtered_state[2]
+"""
