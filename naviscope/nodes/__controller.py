@@ -101,6 +101,11 @@ class OperatorNode( Node ):
                 SENSORS_TOPICS.DELTA_YAW.value
             ]
             )
+
+            self.pwm_fan_value = 0
+            self._cpu_temperature = 30
+            self.timeout_cpu_temperature = 30
+
             self.start()
 
         @property
@@ -119,7 +124,26 @@ class OperatorNode( Node ):
         @property
         def killSwitchAngleThreshold(self):
             return 40
-   
+    
+        @property
+        def fanspeed_stop(self):
+            return 0
+        
+        @property
+        def fanspeed_low(self):
+            return 128
+        
+        @property
+        def fanspeed_medium(self):
+            return 204
+        
+        @property
+        def fanspeed_full(self):
+            return 255
+
+        @property
+        def fanspeed_gameplay( self ):
+            return 240
 
         def start(self):
 
@@ -160,6 +184,7 @@ class OperatorNode( Node ):
                 s.close()
 
 
+
         def get_wifi_interfaces( self ):
             
             wifi_interfaces = []
@@ -194,22 +219,55 @@ class OperatorNode( Node ):
             return None
         
         
-        def _adjust_fan_points( self):
-            command = "echo 30000 | sudo tee /sys/devices/virtual/thermal/thermal_zone{0,1,2,3}/trip_point_0_temp"
-            self.__sub_cmd( command )
+        def _control_cpu_temperature( self ):
+            
+            if self.isGamePlayEnable is True:
+      
+                self.set_pwm(self.fanspeed_gameplay)
 
-        def _adjust_fan_speed( self):
-            command = 'echo "0 204 220 240" | sudo tee /sys/devices/platform/pwm-fan/hwmon/hwmon0/fan_speed'
-            self.__sub_cmd( command )
+            else:
 
+                sensors_output = subprocess.check_output("sensors", shell=True).decode()
+                temp_lines = [line for line in sensors_output.split("\n") if "temp1" in line]
 
-        def __sub_cmd( self, command ):
-            # Exécution de la commande avec subprocess
-            try:
-                subprocess.run(command, shell=True, check=True)
-                print("La commande a été exécutée avec succès.")
-            except subprocess.CalledProcessError as e:
-                print("Une erreur s'est produite lors de l'exécution de la commande :", e)
+                if temp_lines:
+   
+                    temp = temp_lines[0].split("+")[1].replace("°C", "")
+                    temp = float( temp )
+
+                    if temp is not None:
+
+                        self._cpu_temperature = float(temp)
+
+                        try:
+
+                            if temp > 70.0:
+                                self.set_pwm( self.fanspeed_full )  # Max fan speed
+                            elif temp > 45.0:
+                                self.set_pwm( self.fanspeed_medium )  # Max fan speed
+                            elif temp >= 30.0:
+                                self.set_pwm( self.fanspeed_low ) 
+                            else:
+                                self.set_pwm( self.fanspeed_stop ) 
+
+                        except ValueError as e:
+
+                            self.set_pwm(self.fanspeed_low)
+                            pass
+                
+                else:
+                
+                    self.set_pwm(self.fanspeed_low)
+    
+
+        def set_pwm(self, value):
+            
+            if value != self.pwm_fan_value:
+
+                self.pwm_fan_value = value
+                cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value}"
+                subprocess.run(cmd, shell=True, check=True)
+
 
         def _init_component(self):
             
@@ -225,7 +283,8 @@ class OperatorNode( Node ):
                 self._audioManager = AudioManager()
                 self._audioManager._enable()
 
-
+            self.create_timer(self.timeout_cpu_temperature, self._control_cpu_temperature )
+            
 
         def _init_publishers( self ):
 
@@ -278,7 +337,7 @@ class OperatorNode( Node ):
 
         def _update_direction( self, updateDirection = DIRECTION_STATE.STOP ):
             
-            updateDirection = np.clip( updateDirection, -1, 1 )
+            updateDirection = np.clip( updateDirection, DIRECTION_STATE.BACKWARD, DIRECTION_STATE.FORWARD )
 
             if self.forceStopFromGsc is False and self.isDroneOutOfGameArea is False:
                 
@@ -289,17 +348,17 @@ class OperatorNode( Node ):
 
                 self._direction = updateDirection
             
-                if( self._direction == 0):
+                if( self._direction == DIRECTION_STATE.STOP):
                     self.reset()
                 
                 self._send_controller_cmd()
             
             else :
 
-                if self._direction != 0: 
+                if self._direction != DIRECTION_STATE.STOP: 
 
                     if self._audioManager is not None:
-                        self._audioManager.gameplayMusic( self.isGamePlayEnable, 0 )
+                        self._audioManager.gameplayMusic( self.isGamePlayEnable, DIRECTION_STATE.STOP )
         
 
 
@@ -371,7 +430,7 @@ class OperatorNode( Node ):
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
             
-            if updateLevelIncrement != 0 and self._direction != 0:
+            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP:
             
                 update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
@@ -449,13 +508,13 @@ class OperatorNode( Node ):
 
         def _checkAngleKillSwitch( self, angle ):
 
-            if self.droneDirection != 0: 
+            if self.droneDirection != DIRECTION_STATE.STOP: 
 
                 if self.EnableAngleKillSwitch is True and self._angleX < self.killSwitchAngleThreshold:
 
-                    if self._direction != 0:
+                    if self._direction != DIRECTION_STATE.STOP:
 
-                        self._direction = 0
+                        self._direction = DIRECTION_STATE.STOP
                         self._update_direction( self._direction )
                     
 
@@ -506,7 +565,7 @@ class OperatorNode( Node ):
 
                 self.isDroneOutOfGameArea = drone_sensors[SENSORS_TOPICS.OFF_AREA.value]
 
-                if self.isDroneOutOfGameArea is True and self._direction != 0:
+                if self.isDroneOutOfGameArea is True and self._direction != DIRECTION_STATE.STOP:
                     self._update_direction(DIRECTION_STATE.STOP)
 
 
@@ -562,7 +621,7 @@ class OperatorNode( Node ):
 
                         self.forceStopFromGsc = statusUpdate["stop"]
 
-                        if self.forceStopFromGsc is True and self._direction != 0:
+                        if self.forceStopFromGsc is True and self._direction != DIRECTION_STATE.STOP:
                             self._update_direction(DIRECTION_STATE.STOP)
                     
                     if "playtime" in statusUpdate:
@@ -595,7 +654,7 @@ class OperatorNode( Node ):
             else:
                     self.isGamePlayEnable = False 
 
-                    if self._direction != 0:   
+                    if self._direction != DIRECTION_STATE.STOP:   
                         self._update_direction(DIRECTION_STATE.STOP)
                         
                         if self._audioManager is not None:
