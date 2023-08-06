@@ -233,6 +233,8 @@ class OperatorNode( Node ):
                 if temp_lines:
    
                     temp = temp_lines[0].split("+")[1].replace("°C", "")
+                    temp = temp.split()[0]
+                    
                     temp = float( temp )
 
                     if temp is not None:
