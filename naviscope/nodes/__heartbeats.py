@@ -9,9 +9,10 @@ import traceback
 import subprocess
 import json
 import socket  
-#from time import process_time
+
 
 import rclpy
+from rclpy.time import Time
 from rclpy.node import Node
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
@@ -37,8 +38,9 @@ class HeartbeatsNode( Node ):
             self._peer_timer = None
             self._peer_timeout = 3.0
             self._on_lost_connection_timeout = 2.0
-            
-            self._is_peer_connected = False
+
+            self._last_master_pulse_time = Time()
+            self._last_peer_pulse_time = Time()
 
             self._is_master_connected = False
             self._is_peer_connected = False
@@ -194,40 +196,40 @@ class HeartbeatsNode( Node ):
 
 
         def OnPeerPulse( self, pulse_msg ):
+            
+            self._is_peer_connected =  True
+            self._last_peer_pulse_time = self.get_clock().now()
 
-            if not self._is_peer_connected :
-
-                json_msg = json.loads( pulse_msg.data  )
-
-                self._is_peer_connected = True
+            json_msg = json.loads( pulse_msg.data  )
+            
+            if json_msg is not None:
                 self._peer_address = json_msg["address"]
 
 
         def OnMasterPulse( self, pulse_msg ):
+            
+            self._is_master_connected =  True
+            self._last_master_pulse_time = self.get_clock().now()
 
-            if not self._is_master_connected :
+            if json_msg is not None:
 
                 json_msg = json.loads( pulse_msg.data  )
-
-                self._is_master_connected = True
                 self._master_address = json_msg["address"]
 
 
         def _check_peers_status(self):
+            
+            current_time = self.get_clock().now()
 
-            for peer_key, peer_values in self._peers_connections.items():
-                
-                if not peer_values["isConnected"]:
-                    # Si la connexion n'est pas établie, attendre un moment et réessayer
-                    self.get_logger().info(f"La connexion avec {peer_key} semble perdue, réessayer...")
-                    rclpy.sleep( self._on_lost_connection_timeout )  # Attendre une seconde avant de réessayer
+            if self._is_master_connected is True:
 
-                    if not peer_values["isConnected"]:
-                        self.get_logger().warn(f"La connexion avec {peer_key} est définitivement perdue!")
+                if (current_time - self._last_master_pulse_time).seconds > 5.0:
+                    self._is_master_connected =  False
 
-                    else:
-                        self.get_logger().info(f"La connexion avec {peer_key} a été rétablie.")
-
+            if self._is_peer_connected is True:
+          
+                if (current_time - self._last_peer_pulse_time).seconds > 5.0:
+                    self._is_peer_connected =  False
 
             self._peers_connections[f"{PEER.MASTER.value}" ] = {
                 "isConnected" : self._is_master_connected,
@@ -243,10 +245,6 @@ class HeartbeatsNode( Node ):
             peers_status_msg.data = json.dumps( self._peers_connections )
             
             self._pub_watchdog.publish( peers_status_msg )
-
-            self._is_peer_connected =  False
-            self._is_master_connected =  False
-
 
 
         def exit( self ):
@@ -265,7 +263,7 @@ def main(args=None):
 
         heartbeats_node_pub = HeartbeatsNode()
 
-        rclpy.spin(heartbeats_node_pub )
+        rclpy.spin( heartbeats_node_pub )
 
     except Exception as e:
         traceback.print_exc()
