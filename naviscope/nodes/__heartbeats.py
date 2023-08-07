@@ -62,24 +62,21 @@ class HeartbeatsNode( Node ):
 
             self.start()
 
-
         def OnShutdownCommand(self, msg ): 
-
-            instructionMsg = json.loads(msg.data)
             
-            peer = f"{self._peer_type}_{self.get_parameter('peer_index').value}"
+            instructionMsg = json.loads(msg.data) 
+            device = f"{self._peer_type}_{self.get_parameter('peer_index').value}"
 
-            if peer in instructionMsg.keys():
+            if device in instructionMsg.keys():
 
-                instruction = peer["exitInstruction"]
+                instruction = instructionMsg[device]
 
                 if( instruction == EXIT_STATE.RESTART.value ):
                     self._shutdown_instruction( "sudo reboot -h now" )
 
                 elif ( instruction == EXIT_STATE.SHUTDOWN.value ):
                     self._shutdown_instruction( "sudo shutdown -h now" )
-                
-
+                    
 
         def _shutdown_instruction( self, CMD ):
 
