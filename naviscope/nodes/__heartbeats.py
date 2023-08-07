@@ -36,8 +36,7 @@ class HeartbeatsNode( Node ):
             self._sub_master_pulse = None
 
             self._peer_timer = None
-            self._peer_timeout = 3.0
-            self._on_lost_connection_timeout = 2.0
+            self._peer_timeout = 5.0
 
             self._last_master_pulse_time = Time()
             self._last_peer_pulse_time = Time()
@@ -223,13 +222,14 @@ class HeartbeatsNode( Node ):
 
             if self._is_master_connected is True:
 
-                if (current_time - self._last_master_pulse_time).seconds > 5.0:
+                if (current_time - self._last_master_pulse_time).nanoseconds / 1e9 > self._peer_timeout:
                     self._is_master_connected =  False
 
             if self._is_peer_connected is True:
           
-                if (current_time - self._last_peer_pulse_time).seconds > 5.0:
+                if (current_time - self._last_peer_pulse_time).nanoseconds / 1e9 > self._peer_timeout:
                     self._is_peer_connected =  False
+
 
             self._peers_connections[f"{PEER.MASTER.value}" ] = {
                 "isConnected" : self._is_master_connected,
