@@ -29,7 +29,7 @@ class SENSORS_TOPICS( str, Enum ):
     STEERING = "steer"
     LAT = "latitude"
     LON = "longitude"
-    SAT = "sat"
+    SAT = "satellites"
     AZI = "azimuth"
     SPEED = "speed"
     PITCH = "pitch"
@@ -38,7 +38,8 @@ class SENSORS_TOPICS( str, Enum ):
     DELTA_PITCH = "delta_pitch"
     DELTA_ROLL = "delta_pitch"
     DELTA_YAW = "delta_pitch"
-    OBSTACLE = "obstacle"
+    OBSTACLE_DISTANCE = "obstacle_distance"
+    OBSTACLE_ANGLE = "obstacle_angle"
     CAM_PAN = "pan"
     CAM_TILT = "tilt"
     SHORT_PRESS = "shortPress"
@@ -46,15 +47,50 @@ class SENSORS_TOPICS( str, Enum ):
     TEMPERATURE = "temperature"
 
 
-class DISPATCH_TOPICS( str, Enum ):
-    DIRECTION = "cmd_dir"
-    PROPULSION = "cmd_prop"
-    STEERING = "cmd_steer"
-    CAM_TILT = "cmd_tilt"
-    CAM_PAN = "cmd_pan"
-    STATUS = "cmd_status"
-    NAVTARGET = "cmd_target"
+    
 
+class DISPATCH_TOPICS( str, Enum ):
+    CMD_DIRECTION = "cmd_dir"
+    CMD_PROPULSION = "cmd_prop"
+    CMD_STEERING = "cmd_steer"
+    CMD_CAM_PAN = "cmd_pan"
+    CMD_CAM_TILT = "cmd_tilt"
+    CMD_PILOT = "cmd_pilot"
+    CMD_NAVTARGET = "cmd_target"
+    ENA_RANGE = "ena_lidar"
+    STAT_BATTERY = "stat_bat"
+    STAT_PROP = "stat_prop"
+    STAT_GPS = "stat_gps"
+    STAT_IMU = "stat_imu"
+    STAT_CAM = "stat_cam"
+    STAT_RANGE = "stat_range"
+
+
+BOARD_SENSORS_DATAS = {
+
+    SENSORS_TOPICS.IP.value : "",
+    SENSORS_TOPICS.WIFI.value : 0,
+    SENSORS_TOPICS.OFF_AREA.value : "",
+    SENSORS_TOPICS.BATTERY_GAUGE.value : 0,
+    SENSORS_TOPICS.BATTERY_VOLTAGE.value : 0,
+    SENSORS_TOPICS.DIRECTION.value : 0,
+    SENSORS_TOPICS.THRUST.value : 0,
+    SENSORS_TOPICS.STEERING.value  : 0,
+    SENSORS_TOPICS.LAT.value  : 0,
+    SENSORS_TOPICS.LON.value  : 0,
+    SENSORS_TOPICS.SAT.value  : 0,
+    SENSORS_TOPICS.AZI.value : 0,
+    SENSORS_TOPICS.SPEED.value  : 0,
+    SENSORS_TOPICS.PITCH.value  : 0,
+    SENSORS_TOPICS.ROLL.value  : 0,
+    SENSORS_TOPICS.YAW.value  : 0,
+    SENSORS_TOPICS.TEMPERATURE.value  : 0,
+    SENSORS_TOPICS.OBSTACLE_DISTANCE.value  : 0,
+    SENSORS_TOPICS.OBSTACLE_ANGLE.value  : 0,
+    SENSORS_TOPICS.CAM_PAN.value : 0,
+    SENSORS_TOPICS.CAM_TILT.value  : 0
+
+}
 
 class PEER(str, Enum):
     MASTER = "master"
@@ -73,7 +109,6 @@ class EXIT_STATE(str, Enum ):
     SHUTDOWN = "shutdown"
     RESTART = "restart"
 
-
 class DIRECTION_STATE(Enum):
     BACKWARD = -1
     STOP = 0
@@ -85,6 +120,7 @@ DIRECTION_FWD = ("FORWARD", "#028400")
 DIRECTION_BWD = ("BACKWARD", "#CB4D00")
 
 WIFI_INTERFACE = "wl"
+
 
 DRONES_NAMES = [
     ("Aucun", ( "#000000", "#ffffff" )), 
