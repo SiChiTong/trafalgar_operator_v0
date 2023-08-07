@@ -589,18 +589,19 @@ class OperatorNode( Node ):
 
                 for topic in sensor_datas:
 
-                    if( topic == SENSORS_TOPICS.DIRECTION ):
+                    if( topic == SENSORS_TOPICS.DIRECTION.value ):
 
                         updateDroneDirection = sensor_datas[topic] 
 
-                        if self != self.droneDirection:
+                        if updateDroneDirection != self.droneDirection:
 
                             self.droneDirection = updateDroneDirection
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
 
-                    elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE  ):
+
+                    elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE.value  ):
 
                         sensor_obstacle = sensor_datas[topic]
 
@@ -610,7 +611,7 @@ class OperatorNode( Node ):
                             self._obstacleInFront = False
             
 
-            self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
+            #self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
             if self.droneDirection != self._direction : 
 
