@@ -211,9 +211,9 @@ class HeartbeatsNode( Node ):
             self._is_master_connected =  True
             self._last_master_pulse_time = self.get_clock().now()
 
+            json_msg = json.loads( pulse_msg.data  )
+            
             if json_msg is not None:
-
-                json_msg = json.loads( pulse_msg.data  )
                 self._master_address = json_msg["address"]
 
 
