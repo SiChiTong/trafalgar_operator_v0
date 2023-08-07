@@ -65,11 +65,13 @@ class externalBoard( object ):
 
                 self.COM_PORT = self.PORTS[0].device
 
-                self.SERIAL = serial.Serial(self.COM_PORT)
-                self.SERIAL.baudrate = self.BaudRate 
-                self.SERIAL.bytesize = self.Bytesize     
-                self.SERIAL.parity = self.Parity    
-                self.SERIAL.stopbits = self.StopBits
+                self.SERIAL = serial.Serial(
+                    self.COM_PORT,
+                    baudrate=self.BaudRate,
+                    bytesize=self.Bytesize,
+                    parity=self.Parity,
+                    stopbits=self.StopBits
+                )
 
                 self._reset( )
                 
@@ -122,11 +124,15 @@ class externalBoard( object ):
                     with self._lock:
 
                         try:
-                        
-                            line = self.SERIAL.readline() 
-                            datas = json.loads( line )
+                            
+                            if self.SERIAL.in_waiting > 0:
 
-                            self._callback( datas )
+                                line = self.SERIAL.readline() 
+                                #print(line)
+                                datas = json.loads( line )
+
+                                if datas is not None:
+                                    self._callback( datas )
 
                         except Exception as e: #(ValueError, serial.SerialException)
                             pass  

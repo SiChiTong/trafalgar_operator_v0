@@ -35,8 +35,9 @@ class HeartbeatsNode( Node ):
             self._sub_master_pulse = None
 
             self._peer_timer = None
-            self._peer_timeout = 2.0
-            self._peer_pulse_time = 1.0
+            self._peer_timeout = 3.0
+            self._on_lost_connection_timeout = 2.0
+            
             self._is_peer_connected = False
 
             self._is_master_connected = False
@@ -213,6 +214,20 @@ class HeartbeatsNode( Node ):
 
 
         def _check_peers_status(self):
+
+            for peer_key, peer_values in self._peers_connections.items():
+                
+                if not peer_values["isConnected"]:
+                    # Si la connexion n'est pas établie, attendre un moment et réessayer
+                    self.get_logger().info(f"La connexion avec {peer_key} semble perdue, réessayer...")
+                    rclpy.sleep( self._on_lost_connection_timeout )  # Attendre une seconde avant de réessayer
+
+                    if not peer_values["isConnected"]:
+                        self.get_logger().warn(f"La connexion avec {peer_key} est définitivement perdue!")
+
+                    else:
+                        self.get_logger().info(f"La connexion avec {peer_key} a été rétablie.")
+
 
             self._peers_connections[f"{PEER.MASTER.value}" ] = {
                 "isConnected" : self._is_master_connected,

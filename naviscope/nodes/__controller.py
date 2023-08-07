@@ -35,7 +35,7 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self.EnableAudio = True
-            self.EnableAngleKillSwitch = True
+            self.EnableAngleKillSwitch = False
             self.EnableFilter = False
             
             self.forceStopFromGsc = False
@@ -68,6 +68,8 @@ class OperatorNode( Node ):
 
             self._direction = 0
             self._orientation = 0
+
+            self._steeringIncrement = 0
 
             self.droneDirection = 0
             
@@ -343,9 +345,11 @@ class OperatorNode( Node ):
             self._sub_drone_sensor   
             
 
-        def _update_direction( self, updateDirection = DIRECTION_STATE.STOP ):
+        def _update_direction( self, updateDirection = DIRECTION_STATE.STOP.value ):
             
-            updateDirection = np.clip( updateDirection, DIRECTION_STATE.BACKWARD, DIRECTION_STATE.FORWARD )
+            #self.get_logger().info( f"update direction : {updateDirection}")
+
+            updateDirection = int(np.clip( updateDirection, DIRECTION_STATE.BACKWARD.value, DIRECTION_STATE.FORWARD.value ))
 
             if self.forceStopFromGsc is False and self.isDroneOutOfGameArea is False:
                 
@@ -356,17 +360,17 @@ class OperatorNode( Node ):
 
                 self._direction = updateDirection
             
-                if( self._direction == DIRECTION_STATE.STOP):
+                if( self._direction == DIRECTION_STATE.STOP.value):
                     self.reset()
                 
                 self._send_controller_cmd()
             
             else :
 
-                if self._direction != DIRECTION_STATE.STOP: 
+                if self._direction != DIRECTION_STATE.STOP.value: 
 
                     if self._audioManager is not None:
-                        self._audioManager.gameplayMusic( self.isGamePlayEnable, DIRECTION_STATE.STOP )
+                        self._audioManager.gameplayMusic( self.isGamePlayEnable, DIRECTION_STATE.STOP.value )
         
 
 
@@ -421,37 +425,39 @@ class OperatorNode( Node ):
                     delta_y=datas[ SENSORS_TOPICS.DELTA_YAW.value ]
                 )
 
-            self._send_sensors_datas(json_datas)
+            self._send_sensors_datas(datas)
 
 
         def OnNewOrientation( self, increment ):
 
             if increment != 0:
                 
-                if self._msg_velocity is not None:
-                    
-                    self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
-                    self._send_controller_cmd()
+                #self.get_logger().info( f"update orientation : {increment}")
+
+                self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
+                self._send_controller_cmd()
                 
                 self._updateWheelAudio( increment )
 
 
         def OnNewPropulsion( self, updateLevelIncrement ): 
             
-            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP:
+            #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
+
+            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
             
                 update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
                 if self._direction >= 0:
 
-                    update_propulsion = math.floor( np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) 
+                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
 
                 else :
 
-                    update_propulsion = math.floor( np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) 
+                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
 
 
-                update_propulsion = np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) 
+                update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
             
                 if update_propulsion != self._propulsion:
 
@@ -463,8 +469,8 @@ class OperatorNode( Node ):
             
             if longPress is True:
 
-                if self._direction != DIRECTION_STATE.BACKWARD:
-                    self._update_direction(DIRECTION_STATE.BACKWARD)
+                if self._direction != DIRECTION_STATE.BACKWARD.value:
+                    self._update_direction(DIRECTION_STATE.BACKWARD.value)
                     
                     if( self.isGamePlayEnable is True ):
                         if self._audioManager is not None:
@@ -472,10 +478,10 @@ class OperatorNode( Node ):
 
             if shortPress is True:
 
-                if self._direction == DIRECTION_STATE.STOP:
-                    self._update_direction(DIRECTION_STATE.FORWARD)
+                if self._direction == DIRECTION_STATE.STOP.value:
+                    self._update_direction(DIRECTION_STATE.FORWARD.value)
                 else:
-                    self._update_direction(DIRECTION_STATE.STOP)
+                    self._update_direction(DIRECTION_STATE.STOP.value)
                 
                 if( self.isGamePlayEnable is True ):  
                     if self._audioManager is not None:
@@ -500,8 +506,8 @@ class OperatorNode( Node ):
             #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
             
             
-            angleX = np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) 
-            angleZ = np.clip( self._angleZ * self.MPU_PanMultiplier + delta_p, 0,180 )
+            angleX = int(np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) )
+            angleZ = int(np.clip( self._angleZ * self.MPU_PanMultiplier + delta_p, 0,180 ))
 
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
            
@@ -516,13 +522,13 @@ class OperatorNode( Node ):
 
         def _checkAngleKillSwitch( self, angle ):
 
-            if self.droneDirection != DIRECTION_STATE.STOP: 
+            if self.droneDirection != DIRECTION_STATE.STOP.value: 
 
                 if self.EnableAngleKillSwitch is True and self._angleX < self.killSwitchAngleThreshold:
 
-                    if self._direction != DIRECTION_STATE.STOP:
+                    if self._direction != DIRECTION_STATE.STOP.value:
 
-                        self._direction = DIRECTION_STATE.STOP
+                        self._direction = DIRECTION_STATE.STOP.value
                         self._update_direction( self._direction )
                     
 
@@ -538,8 +544,8 @@ class OperatorNode( Node ):
 
             if self._msg_velocity is not None:
                     
-                self._msg_velocity.linear.x = self._direction * self._propulsion
-                self._msg_velocity.angular.z = self._last_steering
+                self._msg_velocity.linear.x = float(int(self._direction) * int(self._propulsion))
+                self._msg_velocity.angular.z = float( int(self._steeringIncrement) )
 
                 self._pub_vel.publish( self._msg_velocity )
 
@@ -550,20 +556,20 @@ class OperatorNode( Node ):
             
             if self._sensors_id is None:
                 self._sensors_id = self.get_parameter("peer_index").value
+            
 
             sensor_json[SENSORS_TOPICS.IP.value] = f"{self._address}"
-            sensor_json[SENSORS_TOPICS.WIFI.value] = self.get_rssi()
-
+            sensor_json[SENSORS_TOPICS.WIFI.value] = self.get_rssi_from_odroid_dongle()
+     
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
                 SENSORS_TOPICS.INDEX.value : self._sensors_id,
                 SENSORS_TOPICS.DATAS.value : sensor_json
             }
-
             sensor_msg.data = json.dumps( sensors_datas )
 
             self._pub_sensor.publish( sensor_msg )
-
+        
 
         def OnDroneDatas( self, msg ):
             
@@ -573,8 +579,8 @@ class OperatorNode( Node ):
 
                 self.isDroneOutOfGameArea = drone_sensors[SENSORS_TOPICS.OFF_AREA.value]
 
-                if self.isDroneOutOfGameArea is True and self._direction != DIRECTION_STATE.STOP:
-                    self._update_direction(DIRECTION_STATE.STOP)
+                if self.isDroneOutOfGameArea is True and self._direction != DIRECTION_STATE.STOP.value:
+                    self._update_direction(DIRECTION_STATE.STOP.value)
 
 
             if( SENSORS_TOPICS.INDEX.value in drone_sensors and SENSORS_TOPICS.DATAS.value in drone_sensors ):
@@ -594,7 +600,7 @@ class OperatorNode( Node ):
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
 
-                    elif(topic == SENSORS_TOPICS.OBSTACLE  ):
+                    elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE  ):
 
                         sensor_obstacle = sensor_datas[topic]
 
@@ -629,8 +635,8 @@ class OperatorNode( Node ):
 
                         self.forceStopFromGsc = statusUpdate["stop"]
 
-                        if self.forceStopFromGsc is True and self._direction != DIRECTION_STATE.STOP:
-                            self._update_direction(DIRECTION_STATE.STOP)
+                        if self.forceStopFromGsc is True and self._direction != DIRECTION_STATE.STOP.value:
+                            self._update_direction(DIRECTION_STATE.STOP.value)
                     
                     if "playtime" in statusUpdate:
                         self._playtime =  statusUpdate["playtime"]
@@ -641,7 +647,7 @@ class OperatorNode( Node ):
 
                         if enableUpdate is True and self.isGamePlayEnable is False:
 
-                            self._update_direction(DIRECTION_STATE.STOP)
+                            self._update_direction(DIRECTION_STATE.STOP.value)
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( enableUpdate, 0 )
@@ -654,7 +660,7 @@ class OperatorNode( Node ):
                         self.isGamePlayEnable = False
 
                         if self._direction != DIRECTION_STATE.STOP.value:   
-                            self._update_direction(DIRECTION_STATE.STOP)
+                            self._update_direction( int(DIRECTION_STATE.STOP.value))
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
@@ -662,8 +668,8 @@ class OperatorNode( Node ):
             else:
                     self.isGamePlayEnable = False 
 
-                    if self._direction != DIRECTION_STATE.STOP:   
-                        self._update_direction(DIRECTION_STATE.STOP)
+                    if self._direction != DIRECTION_STATE.STOP.value:   
+                        self._update_direction(DIRECTION_STATE.STOP.value)
                         
                         if self._audioManager is not None:
                             self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
