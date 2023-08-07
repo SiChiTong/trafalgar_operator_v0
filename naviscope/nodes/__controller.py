@@ -5,7 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-import sys
+import traceback
 import json
 import math
 import numpy as np
@@ -198,26 +198,32 @@ class OperatorNode( Node ):
             self._wifiInterfaces = wifi_interfaces
 
 
-        def get_rssi(self ):
+        def get_rssi_from_odroid_dongle(self ):
 
             if len( self._wifiInterfaces ) > 0:
 
                 interface = self._wifiInterfaces[ 0 ]
 
                 try:
-                    output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
-                    signal_strength_match = re.search(r"Signal level=(-\d+) dBm", output)
                     
-                    if signal_strength_match:
-                        return int(signal_strength_match.group(1))
+                    output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
+                    
+                    signal_strength_match = re.search(r"Signal level=(\d+)/\d+", output)
+                    frequency_match = re.search(r"Frequency:(\d+\.\d+) GHz", output)
+
+                    if signal_strength_match and frequency_match:
+                        signal_strength = int(signal_strength_match.group(1))
+                        frequency = float(frequency_match.group(1))
+                        return (signal_strength, frequency)
                     
                 except subprocess.CalledProcessError as e:
                     self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {e}")
                 except Exception as ex:
                     self.get_logger().info(f"Erreur inattendue : {ex}")
 
-            return None
+            return (0,0)
         
+
         
         def _control_cpu_temperature( self ):
             
@@ -686,14 +692,7 @@ def main(args=None):
         rclpy.spin( controller_node )
 
     except Exception as e:
-        print( "an exception has been raised while spinning controller node : ", e )
-        exception_type, exception_object, exception_traceback = sys.exc_info()
-        filename = exception_traceback.tb_frame.f_code.co_filename
-        line_number = exception_traceback.tb_lineno
-
-        print("Exception type: ", exception_type)
-        print("File name: ", filename)
-        print("Line number: ", line_number)
+        traceback.print_exc()
 
     except KeyboardInterrupt:
         print("user force interruption")

@@ -5,7 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-import sys
+import traceback
 import subprocess
 import json
 import socket  
@@ -13,7 +13,7 @@ import socket
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 
 from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER, EXIT_STATE
@@ -253,14 +253,7 @@ def main(args=None):
         rclpy.spin(heartbeats_node_pub )
 
     except Exception as e:
-        print( "an exception has been raised while spinning heartbeats node : ", e )
-        exception_type, exception_object, exception_traceback = sys.exc_info()
-        filename = exception_traceback.tb_frame.f_code.co_filename
-        line_number = exception_traceback.tb_lineno
-
-        print("Exception type: ", exception_type)
-        print("File name: ", filename)
-        print("Line number: ", line_number)
+        traceback.print_exc()
 
     except KeyboardInterrupt:
         print("user force interruption")

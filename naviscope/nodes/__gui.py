@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import traceback
 import rclpy
 import cv2 # OpenCV library
 
@@ -267,8 +268,8 @@ def main(args=None):
 
         app._start()
 
-    except Exception as exception:
-        print( "an exception has been raised while spinning the movement node : ", exception)
+    except Exception as e:
+        traceback.print_exc()
 
     finally:
 

@@ -6,7 +6,7 @@
 # modification: 17/01/2023
 ########################################################################
 import os
-import sys
+import traceback
 import json
 import numpy as np
 
@@ -228,14 +228,7 @@ def main(args=None):
         rclpy.spin( videostream_node  )
 
     except Exception as e:
-        print( "an exception has been raised while spinning videostream node : ", e )
-        exception_type, exception_object, exception_traceback = sys.exc_info()
-        filename = exception_traceback.tb_frame.f_code.co_filename
-        line_number = exception_traceback.tb_lineno
-
-        print("Exception type: ", exception_type)
-        print("File name: ", filename)
-        print("Line number: ", line_number)
+        traceback.print_exc()
 
     except KeyboardInterrupt:
         print("user force interruption")
