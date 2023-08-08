@@ -110,7 +110,7 @@ class OperatorNode( Node ):
             self._wifi_rssi = 0
             self._wifi_frequency = 2.4
 
-            self.timeout_wifi_control = 20
+            self.timeout_wifi_control = 60
 
             self._cpu_temperature = 30
             self.timeout_cpu_temperature = 30
