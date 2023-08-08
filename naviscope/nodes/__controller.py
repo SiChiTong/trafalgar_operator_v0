@@ -106,6 +106,12 @@ class OperatorNode( Node ):
             )
 
             self.pwm_fan_value = 0
+
+            self._wifi_rssi = 0
+            self._wifi_frequency = 2.4
+
+            self.timeout_wifi_control = 20
+
             self._cpu_temperature = 30
             self.timeout_cpu_temperature = 30
 
@@ -227,7 +233,11 @@ class OperatorNode( Node ):
             return (0,0)
         
 
-        
+        def _control_wifi_signal( self ):
+
+            self._wifi_rssi, self._wifi_frequency = self.get_rssi_from_odroid_dongle()
+
+
         def _control_cpu_temperature( self ):
             
             if self.isGamePlayEnable is True:
@@ -294,8 +304,13 @@ class OperatorNode( Node ):
                 self._audioManager = AudioManager()
                 self._audioManager._enable()
 
+            self._init_timers()
+
+        def _init_timers( self ):
+
             self.create_timer(self.timeout_cpu_temperature, self._control_cpu_temperature )
-            
+            self.create_timer(self.timeout_wifi_control, self._control_wifi_signal ) 
+
 
         def _init_publishers( self ):
 
@@ -553,7 +568,7 @@ class OperatorNode( Node ):
             
 
             sensor_json[SENSORS_TOPICS.IP.value] = f"{self._address}"
-            sensor_json[SENSORS_TOPICS.WIFI.value] = self.get_rssi_from_odroid_dongle()
+            sensor_json[SENSORS_TOPICS.WIFI.value] = ( self._wifi_rssi, self._wifi_frequency )
      
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
