@@ -252,39 +252,40 @@ class OperatorNode( Node ):
 
             else:
 
-                sensors_output = subprocess.check_output("sensors", shell=True).decode()
-                temp_lines = [line for line in sensors_output.split("\n") if "temp1" in line]
+                with open('/dev/null', 'w') as devnull:
+                    sensors_output = subprocess.check_output("sensors", shell=True, stdout=devnull, stderr=subprocess.STDOUT).decode()
+                    #sensors_output = subprocess.check_output("sensors", shell=True).decode()
+                    temp_lines = [line for line in sensors_output.split("\n") if "temp1" in line]
 
-                if temp_lines:
+                    if temp_lines:
    
-                    temp = temp_lines[0].split("+")[1].replace("°C", "")
-                    temp = temp.split()[0]
+                        temp = temp_lines[0].split("+")[1].replace("°C", "")
+                        temp = temp.split()[0]
                     
-                    temp = float( temp )
+                        temp = float( temp )
 
-                    if temp is not None:
+                        if temp is not None:
 
-                        self._cpu_temperature = float(temp)
+                            self._cpu_temperature = float(temp)
 
-                        try:
+                            try:
 
-                            if temp > 70.0:
-                                self.set_pwm( self.fanspeed_full )  # Max fan speed
-                            elif temp > 45.0:
-                                self.set_pwm( self.fanspeed_medium )  # Max fan speed
-                            elif temp >= 30.0:
-                                self.set_pwm( self.fanspeed_low ) 
-                            else:
-                                self.set_pwm( self.fanspeed_stop ) 
+                                if temp > 70.0:
+                                    self.set_pwm( self.fanspeed_full )  # Max fan speed
+                                elif temp > 45.0:
+                                    self.set_pwm( self.fanspeed_medium )  # Max fan speed
+                                elif temp >= 30.0:
+                                    self.set_pwm( self.fanspeed_low ) 
+                                else:
+                                    self.set_pwm( self.fanspeed_stop ) 
 
-                        except ValueError as e:
-
-                            self.set_pwm(self.fanspeed_low)
-                            pass
+                            except ValueError as e:
+                                self.get_logger().info(f"Erreur lors de la récupération de la température du CPU : {e}")
+                                self.set_pwm(self.fanspeed_low)
                 
-                else:
+                    else:
                 
-                    self.set_pwm(self.fanspeed_low)
+                        self.set_pwm(self.fanspeed_low)
     
 
         def set_pwm(self, value):
@@ -293,7 +294,10 @@ class OperatorNode( Node ):
 
                 self.pwm_fan_value = value
                 cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value}"
-                subprocess.run(cmd, shell=True, check=True)
+
+                with open('/dev/null', 'w') as devnull:
+                    #subprocess.run(cmd, shell=True, check=True)
+                    subprocess.run(cmd, shell=True, check=True, stdout=devnull, stderr=subprocess.STDOUT, universal_newlines=True)
 
 
         def _init_component(self):
