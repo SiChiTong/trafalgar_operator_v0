@@ -35,7 +35,8 @@ class OperatorNode( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_0")
 
             self.EnableAudio = True
-            self.EnableAngleKillSwitch = False
+            self.VerticalAngleSwitchEnabled = False
+            self.VerticalAngleSwitchTriggered = False
             self.EnableFilter = False
             
             self.forceStopFromGsc = False
@@ -124,7 +125,7 @@ class OperatorNode( Node ):
         
 
         @property
-        def killSwitchAngleThreshold(self):
+        def VerticalAngleSwitchThreshold(self):
             return 40
     
         @property
@@ -352,11 +353,6 @@ class OperatorNode( Node ):
             updateDirection = int(np.clip( updateDirection, DIRECTION_STATE.BACKWARD.value, DIRECTION_STATE.FORWARD.value ))
 
             if self.forceStopFromGsc is False and self.isDroneOutOfGameArea is False:
-                
-                #if updateDirection != self._direction:
-
-                    #if self._audioManager is not None:
-                    #    self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDirection )
 
                 self._direction = updateDirection
             
@@ -514,23 +510,21 @@ class OperatorNode( Node ):
                 self._angleX = angleX
                 self._angleZ = angleZ
 
-                if self.EnableAngleKillSwitch is True: 
-                    self._checkAngleKillSwitch( )
+                self._CheckVerticalAngleSwitchStatus( angleX )
                 
                 self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
 
-        def _checkAngleKillSwitch( self, angle ):
+        def _CheckVerticalAngleSwitchStatus( self, angle ):
 
-            if self.droneDirection != DIRECTION_STATE.STOP.value: 
+            if angle < self.VerticalAngleSwitchThreshold:
+                self.VerticalAngleSwitchTriggered = True
+            else:
+                self.VerticalAngleSwitchTriggered = False
+            
+            if self.VerticalAngleSwitchEnabled is True:
+                self.get_logger().info( "vertical angle switch is triggered !")
 
-                if self.EnableAngleKillSwitch is True and self._angleX < self.killSwitchAngleThreshold:
-
-                    if self._direction != DIRECTION_STATE.STOP.value:
-
-                        self._direction = DIRECTION_STATE.STOP.value
-                        self._update_direction( self._direction )
-                    
 
         def _send_controller_cmd( self ):
 
@@ -597,7 +591,7 @@ class OperatorNode( Node ):
 
                             self.droneDirection = updateDroneDirection
 
-                            if self._audioManager is not None:
+                            if self._audioManager is not None :
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
 
 
