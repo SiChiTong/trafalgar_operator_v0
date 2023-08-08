@@ -293,11 +293,9 @@ class OperatorNode( Node ):
             if value != self.pwm_fan_value:
 
                 self.pwm_fan_value = value
-                cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value}"
-
-                with open('/dev/null', 'w') as devnull:
-                    #subprocess.run(cmd, shell=True, check=True)
-                    subprocess.run(cmd, shell=True, check=True, stdout=devnull, stderr=subprocess.STDOUT, universal_newlines=True)
+                
+                cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value} > /dev/null 2>&1"
+                subprocess.run(cmd, shell=True, check=True)
 
 
         def _init_component(self):
