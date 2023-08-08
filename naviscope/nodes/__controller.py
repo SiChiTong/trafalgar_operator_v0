@@ -189,6 +189,8 @@ class OperatorNode( Node ):
             except socket.error:
                 # Si la connexion échoue, nous renvoyons l'adresse IP de la machine locale
                 self._address = socket.gethostbyname(socket.gethostname())
+                pass
+
             finally:
                 s.close()
 
@@ -214,22 +216,26 @@ class OperatorNode( Node ):
                 interface = self._wifiInterfaces[ 0 ]
 
                 try:
-                    
-                    output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
-                    
-                    signal_strength_match = re.search(r"Signal level=(\d+)/\d+", output)
-                    frequency_match = re.search(r"Frequency:(\d+\.\d+) GHz", output)
 
-                    if signal_strength_match and frequency_match:
-                        signal_strength = int(signal_strength_match.group(1))
-                        frequency = float(frequency_match.group(1))
-                        return (signal_strength, frequency)
+                    try:
                     
-                except subprocess.CalledProcessError as e:
-                    self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {e}")
-                except Exception as ex:
-                    self.get_logger().info(f"Erreur inattendue : {ex}")
+                        output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
+                    
+                        signal_strength_match = re.search(r"Signal level=(\d+)/\d+", output)
+                        frequency_match = re.search(r"Frequency:(\d+\.\d+) GHz", output)
 
+                        if signal_strength_match and frequency_match:
+                            signal_strength = int(signal_strength_match.group(1))
+                            frequency = float(frequency_match.group(1))
+                            
+                            return (signal_strength, frequency)
+
+                    except Exception as inner_exception:
+                        self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {inner_exception}")
+                
+                except Exception as outer_exception:
+                    self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {outer_exception}")
+                    
             return (0,0)
         
 
