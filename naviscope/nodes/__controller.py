@@ -241,8 +241,9 @@ class OperatorNode( Node ):
 
         def _control_wifi_signal( self ):
 
-            self._wifi_rssi, self._wifi_frequency = self.get_rssi_from_odroid_dongle()
-
+            datas = self.get_rssi_from_odroid_dongle()
+            self._wifi_rssi = datas[0] 
+            self._wifi_frequency = datas[1]
 
         def _control_cpu_temperature( self ):
             
