@@ -253,7 +253,7 @@ class OperatorNode( Node ):
 
             else:
 
-                sensors_output = subprocess.check_output("sensors > /dev/null 2>&1", shell=True).decode()
+                sensors_output = subprocess.check_output("sensors", shell=True).decode()
 
                 temp_lines = [line for line in sensors_output.split("\n") if "temp1" in line]
 
@@ -294,7 +294,7 @@ class OperatorNode( Node ):
 
                 self.pwm_fan_value = value
 
-                cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value} > /dev/null 2>&1"
+                cmd = f"sudo /usr/local/bin/trafalgar_set_pwm {value}"
                 subprocess.run(cmd, shell=True, check=True)
 
 
