@@ -673,6 +673,7 @@ class OperatorNode( Node ):
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( enableUpdate, 0 )
+                                self.get_logger().info( f"enable music {enableUpdate}")
                         
                         self.isGamePlayEnable = enableUpdate 
                         
@@ -686,8 +687,7 @@ class OperatorNode( Node ):
             else:
 
                 self.isGamePlayEnable = False 
-
-                self.standard_reset()
+                self._audioManager.gameplayMusic( enableUpdate, 0 )
 
 
 
