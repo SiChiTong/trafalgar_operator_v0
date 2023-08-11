@@ -529,7 +529,7 @@ class OperatorNode( Node ):
             
             
             angleX = int(np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) )
-            angleZ = int(np.clip( self._angleZ * self.MPU_PanMultiplier + delta_p, 0,180 ))
+            angleZ = int(np.clip( self._angleZ * self.MPU_PanMultiplier - delta_p, 0,180 ))
 
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
            
