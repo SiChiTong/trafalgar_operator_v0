@@ -384,13 +384,16 @@ class OperatorNode( Node ):
                 
                 self._send_controller_cmd()
             
-            else :
+            """
+                else :
 
                 if self._direction != DIRECTION_STATE.STOP.value: 
 
                     if self._audioManager is not None:
                         self._audioManager.gameplayMusic( self.isGamePlayEnable, DIRECTION_STATE.STOP.value )
-        
+            
+            """
+
 
 
         def _updateWheelAudio( self, increment ): 
@@ -616,6 +619,8 @@ class OperatorNode( Node ):
 
                             if self._audioManager is not None :
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
+                                
+                                self.get_logger().info( f"music has changed on drone value user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE.value  ):
@@ -628,7 +633,6 @@ class OperatorNode( Node ):
                             self._obstacleInFront = False
             
 
-            #self.get_logger().info( f" user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
             if self.droneDirection != self._direction : 
 
@@ -674,29 +678,31 @@ class OperatorNode( Node ):
                         
                         
                     else:
-                    
-                        self.isGamePlayEnable = False
 
-                        if self._direction != DIRECTION_STATE.STOP.value:   
-                            self._update_direction( int(DIRECTION_STATE.STOP.value))
-
-                            if self._audioManager is not None:
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
+                        self.isGamePlayEnable = False 
+                        
+                        self.standard_reset()
 
             else:
-                    self.isGamePlayEnable = False 
 
-                    if self._direction != DIRECTION_STATE.STOP.value:   
-                        self._update_direction(DIRECTION_STATE.STOP.value)
+                self.isGamePlayEnable = False 
+
+                self.standard_reset()
+
+
+
+
+        def standard_reset( self ):
+
+            if self._direction != DIRECTION_STATE.STOP.value:   
+                self._update_direction(DIRECTION_STATE.STOP.value)
                         
-                        if self._audioManager is not None:
-                            self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
-                    
+                if self._audioManager is not None:
+                    self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
 
             if self.isGamePlayEnable is False:
-                self._audioManager.stop_music( )
+                self._audioManager.stop_music( )  
 
-                
         def exit(self):
 
             self.get_logger().info("shutdown controller")   
