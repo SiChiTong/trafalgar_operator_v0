@@ -687,7 +687,7 @@ class OperatorNode( Node ):
             else:
 
                 self.isGamePlayEnable = False 
-                self._audioManager.gameplayMusic( enableUpdate, 0 )
+                self.standard_reset()
 
 
 
@@ -702,6 +702,7 @@ class OperatorNode( Node ):
 
             if self.isGamePlayEnable is False:
                 self._audioManager.stop_music( )  
+                self.get_logger().info( f"stop music {self.isGamePlayEnable}")
 
         def exit(self):
 
