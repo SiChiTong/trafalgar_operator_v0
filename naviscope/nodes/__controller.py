@@ -175,25 +175,19 @@ class OperatorNode( Node ):
             self.declare_parameter("peer_index", 0)
 
 
-        def get_local_ip( self ):
-
+        def get_local_ip(self):
+            
             self.get_wifi_interfaces()
 
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-            try:
-
-                s.connect(('8.8.8.8', 80))
-                self._address = s.getsockname()[0]
-
-            except socket.error:
-                # Si la connexion échoue, nous renvoyons l'adresse IP de la machine locale
-                self._address = socket.gethostbyname(socket.gethostname())
-                pass
-
-            finally:
-                s.close()
-
+            for interface in self._wifiInterfaces:
+                addrs = netifaces.ifaddresses(interface)
+                if netifaces.AF_INET in addrs:
+                    self._address = addrs[netifaces.AF_INET][0]['addr']
+                    self._board_status[SENSORS_TOPICS.IP.value] = f"{self._address}"
+                    return
+            # Handle the case when no valid IP is found
+            self._address = None
+            self._board_status[SENSORS_TOPICS.IP.value] = "No IP found"
 
 
         def get_wifi_interfaces( self ):
