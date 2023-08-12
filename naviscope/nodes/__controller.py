@@ -183,11 +183,10 @@ class OperatorNode( Node ):
                 addrs = netifaces.ifaddresses(interface)
                 if netifaces.AF_INET in addrs:
                     self._address = addrs[netifaces.AF_INET][0]['addr']
-                    self._board_status[SENSORS_TOPICS.IP.value] = f"{self._address}"
+ 
                     return
             # Handle the case when no valid IP is found
             self._address = None
-            self._board_status[SENSORS_TOPICS.IP.value] = "No IP found"
 
 
         def get_wifi_interfaces( self ):
