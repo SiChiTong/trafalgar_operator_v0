@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import traceback
+import datetime
 import rclpy
 import cv2 # OpenCV library
 import math
@@ -55,7 +56,7 @@ class Display(customtkinter.CTk):
         self._textToDisplay = "GAME OVER"
         self.iddleLoop = False
 
-        self._timeLeft = 0
+        self._playtimeLeft = 0
         self._loop_delay = 1
 
         self._thread = None
@@ -126,7 +127,7 @@ class Display(customtkinter.CTk):
             points[i] = pivot_x + (x * math.cos(angle_rad) - y * math.sin(angle_rad))
             points[i+1] = pivot_y + (x * math.sin(angle_rad) + y * math.cos(angle_rad))
 
-        self.canvas.create_polygon(points, outline=self.arrow_color, fill=self.arrow_color, tags="arrow")
+        self.canvas.create_polygon(points, outline=self.arrowColor, fill=self.arrowColor, tags="arrow")
 
 
 
@@ -215,6 +216,7 @@ class Display(customtkinter.CTk):
             self.canvas.update_idletasks()
 
             self.canvas.delete("video")
+            self.canvas.delete("arrow")
 
             self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
             
@@ -235,6 +237,28 @@ class Display(customtkinter.CTk):
                 self.canvas.create_image(0, 0, anchor="nw", image=self.last_image, tags="video")
 
                 self._blackScreen = False
+
+    def renderElapsedTime( self ):
+
+        self._playtimeLeft = self._node._playtimeLeft
+
+        if self._playtimeLeft > 0:
+
+            time_delta = datetime.timedelta(seconds=self._playtimeLeft)
+            formatted_time = str(time_delta).split(".")[0]
+
+            self.canvas.delete("timer")
+
+            self.canvas.create_text(
+                240, 
+                30, 
+                text=f"Temps restant: { formatted_time }", 
+                fill="white", 
+                font=("Arial", 20, "bold"), 
+                anchor="w", 
+                tags="timer"
+            )
+
 
 
     def update(self):

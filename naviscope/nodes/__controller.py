@@ -330,6 +330,7 @@ class OperatorNode( Node ):
                     if self._playtimeLeft > 0:
                         self._playtimeLeft -= 1
 
+
         def _init_publishers( self ):
 
             self._pub_vel  = self.create_publisher(
