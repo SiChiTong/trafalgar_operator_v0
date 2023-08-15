@@ -2,7 +2,7 @@
 import traceback
 import rclpy
 import cv2 # OpenCV library
-
+import math
 from threading import Thread,Lock
 import customtkinter
 from PIL import ImageTk, Image
@@ -27,8 +27,10 @@ class Display(customtkinter.CTk):
         self.EnableText = False
         self.ZoomLevel = 10
 
-        self._navigation_marker = None
+        self.arrowAngle = 90
+        self.arrowColor = "white"
 
+        
         self._drone_index = None
         self._node = None
 
@@ -62,12 +64,20 @@ class Display(customtkinter.CTk):
         self._is_running = True
 
         self._initialize()
+
+    @property
+    def videoWidth(self):
+        return 480
+
+    @property
+    def videoHeight(self):
+        return 320
         
     def _initialize( self ):    
 
         self._start_rosNode()
         self._create_window()
-        self._render_frame()
+        self.update()
 
     
     def _start( self ):
@@ -79,8 +89,56 @@ class Display(customtkinter.CTk):
         self.canvas = customtkinter.CTkCanvas(self, width=self.canvaResolution[0], height=self.canvaResolution[1])
         self.canvas.pack( side="top", fill="both", expand=True )
         
+        self.draw_header_footer()
+        self.draw_directional_arrow()
         self.drawBlackScreen()
 
+
+    def draw_header_footer(self):
+        # Header
+        self.canvas.create_rectangle(0, 0, 480, 60, fill="black", tags="header")
+
+        # Footer
+        self.canvas.create_rectangle(0, 380, 480, 480, fill="black", tags="footer")
+        self.canvas.create_text(50, 430, text=self.droneName, fill="white", anchor="w", tags="drone_name")
+
+
+    def draw_directional_arrow(self):
+        cx, cy = 240, 430  # Position adjusted
+
+        points = [
+            cx, cy - 15, 
+            cx + 12, cy,      
+            cx + 3, cy,       
+            cx + 3, cy + 8,   
+            cx - 3, cy + 8,   
+            cx - 3, cy,       
+            cx - 12, cy       
+        ]
+
+        pivot_x = sum(points[::2]) / len(points[::2])
+        pivot_y = sum(points[1::2]) / len(points[1::2])
+
+        angle_rad = math.radians(self.current_angle - 90)
+
+        for i in range(0, len(points), 2):
+            x, y = points[i] - pivot_x, points[i+1] - pivot_y
+            points[i] = pivot_x + (x * math.cos(angle_rad) - y * math.sin(angle_rad))
+            points[i+1] = pivot_y + (x * math.sin(angle_rad) + y * math.cos(angle_rad))
+
+        self.canvas.create_polygon(points, outline=self.arrow_color, fill=self.arrow_color, tags="arrow")
+
+
+
+    def get_direction(self):
+        if self.current_angle >= 80 and self.current_angle <= 100:
+            return f"CENTRE: 0°"
+        elif self.current_angle < 80:
+            return f"GAUCHE: {self.current_angle - 90}°"
+        else:
+            return f"DROIT: {self.current_angle - 90}°"
+        
+        
     def crop_from_center(self, frame, frame_width, frame_height, ZoomLevel ):
         
         ZoomLevel = 100 - ZoomLevel
@@ -110,7 +168,7 @@ class Display(customtkinter.CTk):
         if( frame is not None and self._isGamePlayEnable is True ):
 
             cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, self.ZoomLevel )
-            resized_frame = cv2.resize(  cropFrame , ( self.canvas.winfo_width(), self.canvas.winfo_height() ))
+            resized_frame = cv2.resize(  cropFrame , ( self.videoWidth, self.videoHeight ))
             color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
 
             img = Image.fromarray(color_conv)
@@ -156,7 +214,7 @@ class Display(customtkinter.CTk):
 
             self.canvas.update_idletasks()
 
-            self.canvas.delete("all")
+            self.canvas.delete("video")
 
             self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(), fill="black")
             
@@ -166,30 +224,34 @@ class Display(customtkinter.CTk):
             self._blackScreen = True    
       
 
-    def drawVideoFrame( self ):
+    def renderVideoFrame( self ):
 
         if self._is_frame_updated is True:
 
             if self.last_frame != self._frame:
 
                 self.last_image = self._frame
-                self.canvas.delete("all")
-                self.canvas.create_image(0, 0, anchor="nw", image=self.last_image)
+                self.canvas.delete("video")
+                self.canvas.create_image(0, 0, anchor="nw", image=self.last_image, tags="video")
 
                 self._blackScreen = False
 
 
-    def _render_frame(self):
+    def update(self):
     
         if self._isGamePlayEnable is True:
-            self.drawVideoFrame()
 
-        else: 
+            self.renderVideoFrame()
+            self.renderElapsedTime()
+            self.draw_directional_arrow()
+
+        else:
+
             self.drawBlackScreen()
 
         self._is_frame_updated = False
 
-        self.after(self._loop_delay, self._render_frame)
+        self.after(self._loop_delay, self.update)
 
 
 

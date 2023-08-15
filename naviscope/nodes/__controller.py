@@ -37,6 +37,8 @@ class OperatorNode( Node ):
             self.EnableAudio = True
             self.VerticalAngleSwitchEnabled = False
             self.VerticalAngleSwitchTriggered = False
+
+            self.HorizontalMovementEnabled = False
             self.EnableFilter = False
             
             self.forceStopFromGsc = False
@@ -52,6 +54,9 @@ class OperatorNode( Node ):
 
             self._msg_velocity = Twist()
 
+            self._is_peer_connected = False
+            self._is_master_connected = False
+            
             self.controllerOrientationMultiplier = 1 #use it to invert direction
             self.controllerPropulsionMultiplier = 1 
 
@@ -73,6 +78,7 @@ class OperatorNode( Node ):
             self._steeringIncrement = 0
 
             self.droneDirection = 0
+            self.droneSteering = 0
             
             self._filter = None
 
@@ -89,6 +95,7 @@ class OperatorNode( Node ):
 
             self._obstacleInFront = False
             self._playtime = 0
+            self._playtimeLeft = 0
 
             self.isGamePlayEnable = False
 
@@ -161,6 +168,7 @@ class OperatorNode( Node ):
             self._init_publishers()
             self._init_subscribers()
             self._init_component()
+            self._init_timers()
 
 
         def reset( self ):
@@ -305,13 +313,22 @@ class OperatorNode( Node ):
                 self._audioManager = AudioManager()
                 self._audioManager._enable()
 
-            self._init_timers()
 
         def _init_timers( self ):
 
             self.create_timer(self.timeout_cpu_temperature, self._control_cpu_temperature )
             self.create_timer(self.timeout_wifi_control, self._control_wifi_signal ) 
+            self.create_timer( 1, self._playtime_loop )
 
+
+        def _playtime_loop( self ):
+
+            if self.isGamePlayEnable is True:
+
+                if self._playtime != None: 
+
+                    if self._playtimeLeft > 0:
+                        self._playtimeLeft -= 1
 
         def _init_publishers( self ):
 
@@ -351,6 +368,15 @@ class OperatorNode( Node ):
             )
             
             self._sub_master  # prevent unused variable warning
+
+            self._sub_watchdog = self.create_subscription(
+                String,
+                AVAILABLE_TOPICS.WATCHDOG.value,
+                self.OnPeersConnections,
+                qos_profile=qos_profile_sensor_data
+            )
+
+            self._sub_watchdog
 
             self._sub_drone_sensor = self.create_subscription(
                 String,
@@ -459,26 +485,38 @@ class OperatorNode( Node ):
             
             #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
 
-            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
+            if self.HorizontalMovementEnabled is True:
+                
+                if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
             
-                update_propulsion = self._propulsion + (updateLevelIncrement/5) 
+                    update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
-                if self._direction >= 0:
+                    if self._direction >= 0:
 
-                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
+                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
 
-                else :
+                    else :
 
-                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
+                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
 
 
-                update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
+                    update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
             
-                if update_propulsion != self._propulsion:
+                    if update_propulsion != self._propulsion:
 
-                    self._propulsion = update_propulsion
-                    self._send_controller_cmd()
-    
+                        self._propulsion = update_propulsion
+                        self._send_controller_cmd()
+
+            else:
+                
+                update_angle = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 ))
+
+                if update_angle != self._angleZ:
+                    
+                    self._angleZ = update_angle
+                    self._update_panoramic(pan=update_angle, tilt = self._angleX  )
+
+
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
@@ -527,11 +565,12 @@ class OperatorNode( Node ):
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
            
                 self._angleX = angleX
-                self._angleZ = angleZ
-
                 self._CheckVerticalAngleSwitchStatus( angleX )
                 
-                self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
+                if self.HorizontalMovementEnabled is True:
+
+                    self._angleZ = angleZ  
+                    self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
 
 
         def _CheckVerticalAngleSwitchStatus( self, angle ):
@@ -624,6 +663,10 @@ class OperatorNode( Node ):
                             self._obstacleInFront = True
                         else:
                             self._obstacleInFront = False
+
+                    elif( topic == SENSORS_TOPICS.STEERING.value ):
+                        self.droneSteering = sensor_datas[topic]
+
             
 
 
@@ -687,6 +730,23 @@ class OperatorNode( Node ):
                 self.standard_reset()
 
 
+        def OnPeersConnections( self, msg ):
+
+            peers = json.loads(msg.data)
+
+            if PEER.MASTER.value in peers:
+                self._is_master_connected = peers[PEER.MASTER.value]["isConnected"]
+
+            if PEER.USER.value in peers:
+                self._is_peer_connected = peers[PEER.USER.value]["isConnected"]
+
+            if self._is_peer_connected is False: 
+                
+                if self.isGamePlayEnable is True:
+                    self.standard_reset()
+
+            if self._is_master_connected is False:
+                self.standard_reset()
 
 
         def standard_reset( self ):
