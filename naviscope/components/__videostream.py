@@ -5,86 +5,39 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-import os
-import traceback
-import json
+
 import numpy as np
 
 import gi
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst
+from gi.repository import Gst, GObject
 
-import rclpy
-from rclpy.node import Node
 
-from std_msgs.msg import String
-from rclpy.qos import qos_profile_sensor_data
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER
-
-INDEX = int(os.environ.get('PEER_ID'))
-
-class VideoStream( Node ):
+class VideoStream( object ):
 
         def __init__( self, Master=None):
 
-            super().__init__("videostream", namespace=f"{PEER.USER.value}_{INDEX}")
+            super().__init__()
 
             self._master = Master
-
-            self._sub_video = None
-            self._sub_master = None
-
-            self.TimeLeft = 0
-
             self._pipeline = None
-
-            self._peer_type = PEER.USER.value
-
-            self._playtime = 10 * 60
-
             self._isHighQualityCodec = False
-            
             self.isPlaying = False
-            self.start()
-
 
         @property
         def udpPort( self ): 
             return 3000
         
- 
         @property
         def udpPort( self ): 
             return 3000
         
         def start(self):
-            
-            self._declare_parameters()
-            self._init_subscribers()
             self._render_pipeline()
-
-        def _declare_parameters( self ):
-            self.declare_parameter( "peer_index", INDEX )
-            self.declare_parameter( "resolution", (720,480) )
-
-
-        def _init_subscribers( self ):
-            
-
-            self._sub_master = self.create_subscription(
-                String,
-                f"/{PEER.MASTER.value}/{AVAILABLE_TOPICS.HEARTBEAT.value}",
-                self.OnMasterPulse,
-                qos_profile=qos_profile_sensor_data
-            )
-            
-            self._sub_master  
-
 
         def OnNewSample(self, sink):
             
-
             sample = sink.emit("pull-sample")
             buf = sample.get_buffer()
 
@@ -98,7 +51,7 @@ class VideoStream( Node ):
             frame = np.frombuffer(buffer.data, dtype=np.uint8)
             frame = frame.reshape((frame_height, frame_width,3))
             
-            self._master._rosVideoUpdate( frame,frame_width,frame_height, self._playtime )
+            self._master._rosVideoUpdate( frame,frame_width,frame_height )
 
             buf.unmap(buffer)
 
@@ -149,7 +102,9 @@ class VideoStream( Node ):
 
 
         def _render_pipeline( self ):
-            
+
+            self.loop = GObject.MainLoop()
+
             Gst.init(None)
 
             pipeline_string = self.h265_decoder() if self._isHighQualityCodec is True else self.h264_decoder()
@@ -162,32 +117,7 @@ class VideoStream( Node ):
             self._pipeline.set_state(Gst.State.PLAYING)
             self.isPlaying = True
 
-        def OnMasterPulse( self, msg ):
-            
-            master_pulse = json.loads( msg.data )
-            #self.get_logger().info("masterPulse")
-            if "peers" in master_pulse: 
-
-                peers = master_pulse["peers"]
-                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
-                
-                if peerUpdate in peers: 
-
-                    statusUpdate = peers[peerUpdate]
-
-                    if "enable" in statusUpdate and "playtime" in statusUpdate:
-
-                        self._master._isGamePlayEnable = statusUpdate["enable"]
-                        self._playtime = statusUpdate["playtime"]
-
-                    else:
-                    
-                        self._master._isGamePlayEnable = False    
-            else:
-                    self._master._isGamePlayEnable = False
-                    
-            self.updatePipelineStatus()
-
+            self.loop.run()
 
         def updatePipelineStatus(self):
 
@@ -203,44 +133,15 @@ class VideoStream( Node ):
                     self.isPlaying = False
                     self._pipeline.set_state(Gst.State.PAUSED) 
 
-            
-
-                    
         def exit( self ):
 
             if self._pipeline is not None: 
 
                 self._pipeline.set_state(Gst.State.NULL)
                 self._pipeline = None
+
+            if self.loop:
+                self.loop.quit()
+
  
-
-
-def main(args=None):
-
-    rclpy.init(args=args)
-
-    videostream_node = None 
-
-    try:
-
-        videostream_node  = VideoStream()
-
-        rclpy.spin( videostream_node  )
-
-    except Exception as e:
-        traceback.print_exc()
-
-    except KeyboardInterrupt:
-        print("user force interruption")
-        
-    finally:
-
-        if videostream_node is not None:
-            videostream_node.exit()
-
-        rclpy.try_shutdown()
-
-
-if __name__ == '__main__':
-    main()
 

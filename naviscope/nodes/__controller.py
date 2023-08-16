@@ -9,7 +9,7 @@ import traceback
 import json
 import math
 import numpy as np
-import socket
+import os
 
 #from filterpy.kalman import KalmanFilter
 import subprocess
@@ -25,14 +25,22 @@ from geometry_msgs.msg import Vector3, Twist
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
-from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE
+from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE, DRONES_NAMES
 from ..components.__audioManager import AudioManager
 
-class OperatorNode( Node ):
+INDEX = int(os.environ.get('PEER_ID'))
+
+class Controller( Node ):
 
         def __init__( self, **kwargs):
 
-            super().__init__("controller", namespace=f"{PEER.USER.value}_0")
+            super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
+
+            self.lockDirection = True
+            self.lockOrientation = True
+            self.lockCam = True
+
+            self.TutorialAudio_index = -1
 
             self.EnableAudio = True
             self.VerticalAngleSwitchEnabled = False
@@ -77,6 +85,7 @@ class OperatorNode( Node ):
 
             self._steeringIncrement = 0
 
+            self.droneName = DRONES_NAMES[INDEX+1][0]
             self.droneDirection = 0
             self.droneSteering = 0
             
@@ -180,8 +189,7 @@ class OperatorNode( Node ):
             self._angleZ = 90
 
         def _declare_parameters( self ):
-            self.declare_parameter("peer_index", 0)
-
+            self.declare_parameter("peer_index", INDEX)
 
         def get_local_ip(self):
             
@@ -357,7 +365,6 @@ class OperatorNode( Node ):
             )
 
             self._pub_sensor   
-
 
         def _init_subscribers( self ):
             

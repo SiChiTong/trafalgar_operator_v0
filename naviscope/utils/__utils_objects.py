@@ -92,6 +92,8 @@ BOARD_SENSORS_DATAS = {
 
 }
 
+
+
 class PEER(str, Enum):
     MASTER = "master"
     USER = "user"

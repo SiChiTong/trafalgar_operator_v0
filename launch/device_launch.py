@@ -20,6 +20,7 @@ def generate_launch_description():
 
     )
 
+    """
     controller_node = Node(
         package="naviscope",
         namespace=f"user_{INDEX}",
@@ -30,6 +31,7 @@ def generate_launch_description():
         }]
 
     )
+    """
 
 
     gui_node = Node(
@@ -47,7 +49,7 @@ def generate_launch_description():
      
         heartbeat_node,
         gui_node,
-        controller_node
+        #controller_node
     ]
 
     return LaunchDescription(ld)

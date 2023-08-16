@@ -6,7 +6,6 @@
 # modification: 14/08/2021
 ########################################################################
 
-import logging
 from threading import Thread, Lock
 import json
 import serial
@@ -50,9 +49,6 @@ class externalBoard( object ):
             self._thread_ = Thread( target = self._listen_for_outputs )
             self._thread_.daemon = True
             self._thread_.start()
-
-            logging.info( f"serial thread capture has started" )
-
 
         def stop(self):
             self._thread_stopped = True
@@ -155,7 +151,5 @@ class externalBoard( object ):
                 self._thread_.join()
                 self._thread_ = None
 
-
-            logging.info( f"serial thread has been deactivated" )
 
 
