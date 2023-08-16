@@ -233,7 +233,7 @@ class HeartbeatsNode( Node ):
                 "address" : self._master_address
             }
 
-            self._peers_connections[f"{PEER.USER.value}" ] = {
+            self._peers_connections[f"{PEER.DRONE.value}" ] = {
                 "isConnected" : self._is_peer_connected,
                 "address" : self._peer_address
             }

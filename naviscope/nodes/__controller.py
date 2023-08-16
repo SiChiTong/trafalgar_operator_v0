@@ -717,8 +717,7 @@ class Controller( Node ):
 
                             if self._audioManager is not None:
                                 self._audioManager.gameplayMusic( enableUpdate, 0 )
-                                self.get_logger().info( f"enable music {enableUpdate}")
-                        
+
                         self.isGamePlayEnable = enableUpdate 
                     
                         
@@ -728,13 +727,10 @@ class Controller( Node ):
                         
                     else:
 
-                        self.isGamePlayEnable = False 
-                        
                         self.standard_reset()
 
             else:
 
-                self.isGamePlayEnable = False 
                 self.standard_reset()
 
 
@@ -745,27 +741,28 @@ class Controller( Node ):
             if PEER.MASTER.value in peers:
                 self._is_master_connected = peers[PEER.MASTER.value]["isConnected"]
 
-            if PEER.USER.value in peers:
-                self._is_peer_connected = peers[PEER.USER.value]["isConnected"]
+            if PEER.DRONE.value in peers:
+                self._is_peer_connected = peers[PEER.DRONE.value]["isConnected"]
 
             if self._is_peer_connected is False: 
                 
                 if self.isGamePlayEnable is True:
-                    self.standard_reset()
+
+                    if self._direction != DIRECTION_STATE.STOP.value:   
+                        self._update_direction(DIRECTION_STATE.STOP.value)
 
             if self._is_master_connected is False:
                 self.standard_reset()
 
 
         def standard_reset( self ):
+            
+            self.isGamePlayEnable = False
 
             if self._direction != DIRECTION_STATE.STOP.value:   
                 self._update_direction(DIRECTION_STATE.STOP.value)
-                        
-                if self._audioManager is not None:
-                    self._audioManager.gameplayMusic( self.isGamePlayEnable, self._direction )
 
-            if self.isGamePlayEnable is False:
+            if self._audioManager is not None:
                 self._audioManager.stop_music( )  
 
 
