@@ -34,10 +34,6 @@ class Display(customtkinter.CTk):
         
         super().__init__()
         
-        self._ProcessIsInstanced = False
-
-        self.tutorialComplete = False
-
         self.ZoomLevel = 10
         self.last_image = None 
 
@@ -209,8 +205,7 @@ class Display(customtkinter.CTk):
         'share',         
         'naviscope',    
         'media',                  
-        'img',                 
-        'voices'                  
+        'img'                 
         )
 
         img_files = [
@@ -219,14 +214,17 @@ class Display(customtkinter.CTk):
             if filename.endswith(".jpg")
         ]
 
-        self.imgList = { os.path.splitext(os.path.basename(file))[0] : self.load_and_resize(file) for file in img_files}
+        self.imgList = { os.path.splitext(os.path.basename(file))[0] : self.load_and_resize(file, flipVertically=True) for file in img_files}
 
 
-    def load_and_resize(path, width=480, height=480):
+    def load_and_resize(self, path, width=480, height=480, flipVertically=False):
    
         image = Image.open(path)
         image = image.resize((width, height), Image.ANTIALIAS)
     
+        if flipVertically is True:
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
         return ImageTk.PhotoImage(image)
 
 
@@ -346,6 +344,12 @@ class Display(customtkinter.CTk):
     def set_box( self, box, fillColor, outlineColor ):
         self.canvas.itemconfig(box, fill=fillColor, outline=outlineColor)
 
+    def format_time(self, delta):
+        total_seconds = int(delta.total_seconds())
+        minutes, seconds = divmod(total_seconds, 60)
+        return f"{minutes:02}:{seconds:02}"
+
+
     def render_elapsed( self ):
 
         self._playtimeLeft = self._node._playtimeLeft
@@ -355,11 +359,13 @@ class Display(customtkinter.CTk):
             if self._playtimeLeft > 0:
 
                 time_delta = datetime.timedelta(seconds=self._playtimeLeft)
-                formatted_time = str(time_delta).split(".")[0]
+                formatted_time = self.format_time(time_delta)
                 
-                self.set_text( self._text_elapsed_time, f"Temps restant: { formatted_time }" )
-   
+                if self._node is not None:
+                    self._node.get_logger().info(f"{ formatted_time }")
 
+                self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
+   
 
     def render_directional_arrow(self, currentAngle = 90, arrowColorFill = "black", arrowColorOutline = "white" ):
 
@@ -420,7 +426,7 @@ class Display(customtkinter.CTk):
                 update_orientation = f"DROIT: {current_angle - 90}°"
         
             self._drone_orientation = update_orientation
-                #self.set_text( self._text_steering, update_orientation )
+            #self.set_text( self._text_steering, update_orientation )
                 
             self.render_directional_arrow( current_angle, arrow_color )
 
@@ -462,7 +468,7 @@ class Display(customtkinter.CTk):
             current_frame = frame
 
             resized_frame = cv2.resize( current_frame, ( self.winfo_screenwidth(), self.winfo_screenheight() ))
-            color_conv = cv2.cvtColor(current_frame , cv2.COLOR_BGR2RGB)
+            color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
             
             img = Image.fromarray( color_conv )
 
@@ -471,31 +477,34 @@ class Display(customtkinter.CTk):
             
 
     def renderVideoFrame( self ):
-
-        if self._frame is not None and self._canvas_frame is not None:
-            
-            if self._frame_has_been_updated is True:
+    
+        if self._node._audioManager is not None:
                 
-                if self.last_frame != self._frame:
+            if self._node._audioManager.tutorial_index <= 2:
 
-                    self.last_frame = self._frame
+                self.set_center_img( "bountyAtSea" )
+                self.set_text( self._text_img, "Bounty" )
 
+            elif self._node._audioManager.tutorial_index > 2 and self._node._audioManager.tutorial_index <= 6:
+
+                self.set_center_img( "naviscopeSketch" )
+                self.clear_img_text()
+
+            else:
+
+                if self._frame is not None:
             
-            if self._node._audioManager is not None:
+                    if self._frame_has_been_updated is True:
                 
-                if self._node._audioManager.tutorial_index < 2:
+                        if self.last_frame != self._frame:
+                            self.last_frame = self._frame   
 
-                    self.set_center_img( "bountyAtSea" )
-                    self.set_text( self._text_img, "Bounty" )
-
-                else:
-                    
                     self.clear_img_text()
-                    self.canvas.itemconfig( self._canvas_frame, image= self._frame )                 
-                    self._blackScreen = False
+                    self.set_center_img( self._frame )    
+            
+            self._blackScreen = False
 
             self._frame_has_been_updated = False
-
 
 
     def clear_hud_texts( self ):
@@ -549,18 +558,14 @@ class Display(customtkinter.CTk):
 
     def updateStream(self):
             
-        gameplayEnable = True
+        if self._process is not None: 
 
-        if gameplayEnable is True: 
-                
-            if self._process is not None: 
-
-                if not self._frame_queue.empty() and gameplayEnable:
+            if not self._frame_queue.empty():
                         
-                    frame_data = self._frame_queue.get()
-                    self.OnGstSample( frame_data["frame"], frame_data["size"])
+                frame_data = self._frame_queue.get()
+                self.OnGstSample( frame_data["frame"], frame_data["size"])
 
-                    self.renderVideoFrame()
+        self.renderVideoFrame()
         
 
 
@@ -575,9 +580,6 @@ class Display(customtkinter.CTk):
 
                 if gameplayEnable is True:
 
-                    if self.tutorialComplete is False:
-                        self.tutorialUpdate()
-
                     self.updateStream()
                     self.renderHUD()
 
@@ -588,9 +590,6 @@ class Display(customtkinter.CTk):
 
         self.after(self._loop_hud, self.updateHud)
 
-
-    def tutorialUpdate( self ): 
-        return None
 
     def _stop(self):
         

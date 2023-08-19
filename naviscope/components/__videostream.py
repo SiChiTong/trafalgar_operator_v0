@@ -25,8 +25,6 @@ class VideoStream( object ):
         self._pipeline = None
         self._isHighQualityCodec = False
 
-        self.start()
-
     @property
     def udpPort( self ): 
         return 3000

@@ -362,6 +362,9 @@ class Controller( Node ):
 
         def _play_loop( self ):
 
+            if self._audioManager is not None:
+                self._audioManager.loop()
+
             if self.isGamePlayEnable is True:
 
                 if self._playtime != None: 
@@ -369,12 +372,7 @@ class Controller( Node ):
                     if self._playtimeLeft > 0:
                         self._playtimeLeft -= 1
 
-                if self.tutorialIsComplete is False:
-                    self.checkTutorialCompletion()
-
-
-            if self._audioManager is not None:
-                self._audioManager.loop()
+                self.checkTutorialCompletion()
 
 
         def set_tutorial_language( self, language = AVAILABLE_LANG.FR.value ):

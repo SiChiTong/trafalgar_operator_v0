@@ -26,15 +26,13 @@ class AudioManager(object):
 
         self._music_playlist = []
         self._sfx_playlist = []
-        self._voices_playlist = []
-
-        self._voice_is_playing = False
-
-        self._lang = AVAILABLE_LANG.FR.value
 
         self._voices_playlist = {
-            AVAILABLE_LANG.FR.value : []
+            AVAILABLE_LANG.FR.value : {}
         }
+
+        self._lang = AVAILABLE_LANG.FR.value
+        self._voice_is_playing = False
 
         self._volume_levels = {
             "music" : 0.3,
@@ -123,9 +121,10 @@ class AudioManager(object):
         for lang_dir in self._voices_playlist.keys():
             
             dir_path = os.path.join(self.VOICES_DIR, lang_dir ) 
+
             voices_files = [
                 os.path.join(dir_path, filename)
-                for filename in os.listdir(self.VOICES_DIR)
+                for filename in os.listdir(dir_path)
                 if filename.endswith(".wav")
             ]
 
@@ -163,21 +162,23 @@ class AudioManager(object):
 
     def play_voice( self, voice = None, tutorialEvent = True ): 
 
-        if self._mixer and voice in self._voice_playlist:
+        if self._voice_is_playing is False:
             
-            voice_path = self._sfx_playlist[voice]
-            voiceClip = mixer.Sound( voice_path )
+            if self._mixer and voice in self._voices_playlist[self._lang]:
 
-            voiceClip.set_volume( self._volume_levels[ "voice" ] )
+                voice_path = self._voices_playlist[self._lang][voice]
+                voiceClip = mixer.Sound( voice_path )
 
-            if self._mixer and self._mixer.get_busy():
-                self._mixer.set_volume(0.1)
+                voiceClip.set_volume( self._volume_levels[ "voice" ] )
 
-            self._voice_is_playing = True
+                if self._mixer and self._mixer.get_busy():
+                    self._mixer.set_volume(0.1)
 
-            voiceClip.play()
+                self._voice_is_playing = True
 
-            pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + 500 ) )
+                voiceClip.play()
+
+                pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + 500 ) )
      
 
     def reset_tutorial( self ):
@@ -211,6 +212,7 @@ class AudioManager(object):
 
             if step["condition"]():
                 self.play_voice(step["voice"])
+                self.tutorial_index += 1
 
 
     def gameplayMusic( self, Enable, direction ): 
@@ -261,7 +263,6 @@ class AudioManager(object):
 
             if event.type == TUTORIAL_VOICE_ENDED:
                 self.reset_music_volume()
-                self.tutorial_index += 1
 
             elif STANDARD_VOICE_ENDED:
                 self.reset_music_volume()
