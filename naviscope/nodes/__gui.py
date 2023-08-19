@@ -543,7 +543,9 @@ class Display(customtkinter.CTk):
 
 
     def renderHUD( self ):
-
+        
+        self.updateStream()
+        
         if self._hud_is_paused is False: 
 
             self.render_elapsed()
@@ -573,8 +575,6 @@ class Display(customtkinter.CTk):
                 gameplayEnable = self._node.isGamePlayEnable
 
                 if gameplayEnable is True:
-
-                    self.updateStream()
                     self.renderHUD()
 
                 else:
