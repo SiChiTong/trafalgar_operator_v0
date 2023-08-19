@@ -19,35 +19,45 @@ import netifaces
 import rclpy
 from rclpy.node import Node
 
+from cv_bridge import CvBridge
+
 from std_msgs.msg import String
 from geometry_msgs.msg import Vector3, Twist
+from sensor_msgs.msg import CompressedImage
 
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
-from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE, DRONES_NAMES
+from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE, DRONES_LIST, AVAILABLE_LANG
 from ..components.__audioManager import AudioManager
 
 INDEX = int(os.environ.get('PEER_ID'))
 
 class Controller( Node ):
 
-        def __init__( self, **kwargs):
+        def __init__( self,Master=None, **kwargs ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
 
+            self._master = Master
+
             self.lockDirection = True
             self.lockOrientation = True
+            self.lockPropulsion = True
+
+            self.lockCamAzimuth = False
+            self.lockCamTilt = True
             self.lockCam = True
 
-            self.TutorialAudio_index = -1
-
+            self.EnableTCPStream = False
             self.EnableAudio = True
+            self.EnableFilter = False
+
+            self.EnablePropulsionIncrement = False
+            self.EnableCamIncrement = True
+
             self.VerticalAngleSwitchEnabled = False
             self.VerticalAngleSwitchTriggered = False
-
-            self.HorizontalMovementEnabled = False
-            self.EnableFilter = False
             
             self.forceStopFromGsc = False
             self.isDroneOutOfGameArea = False
@@ -56,9 +66,12 @@ class Controller( Node ):
             self._sensors_id = None
 
             self._pub_vel = None
-
             self._pub_cam = None
             self._pub_sensor = None
+
+            self._sub_master = None
+            self._sub_video = None
+            self._sub_drone_sensor = None
 
             self._msg_velocity = Twist()
 
@@ -85,7 +98,8 @@ class Controller( Node ):
 
             self._steeringIncrement = 0
 
-            self.droneName = DRONES_NAMES[INDEX+1][0]
+            self.droneName = ""
+
             self.droneDirection = 0
             self.droneSteering = 0
             
@@ -131,6 +145,8 @@ class Controller( Node ):
             self._cpu_temperature = 30
             self.timeout_cpu_temperature = 30
 
+            self._video_bridge = None
+            
             self.start()
 
         @property
@@ -168,10 +184,11 @@ class Controller( Node ):
 
         @property
         def fanspeed_gameplay( self ):
-            return 240
+            return 255
 
         def start(self):
-
+            
+            self.get_drone_name()
             self.get_local_ip()
             self._declare_parameters()
             self._init_publishers()
@@ -188,9 +205,23 @@ class Controller( Node ):
             self._angleX = 90
             self._angleZ = 90
 
+
+
         def _declare_parameters( self ):
             self.declare_parameter("peer_index", INDEX)
 
+
+        def get_drone_name( self ):
+
+            drone_name =""
+
+            for name in DRONES_LIST.keys():
+                if DRONES_LIST[name]["index"] == INDEX:
+                    drone_name = name
+
+            self.droneName = drone_name
+                
+                
         def get_local_ip(self):
             
             self.get_wifi_interfaces()
@@ -326,10 +357,10 @@ class Controller( Node ):
 
             self.create_timer(self.timeout_cpu_temperature, self._control_cpu_temperature )
             self.create_timer(self.timeout_wifi_control, self._control_wifi_signal ) 
-            self.create_timer( 1, self._playtime_loop )
+            self.create_timer( 1, self._play_loop )
 
 
-        def _playtime_loop( self ):
+        def _play_loop( self ):
 
             if self.isGamePlayEnable is True:
 
@@ -338,7 +369,44 @@ class Controller( Node ):
                     if self._playtimeLeft > 0:
                         self._playtimeLeft -= 1
 
+                if self.tutorialIsComplete is False:
+                    self.checkTutorialCompletion()
 
+
+            if self._audioManager is not None:
+                self._audioManager.loop()
+
+
+        def set_tutorial_language( self, language = AVAILABLE_LANG.FR.value ):
+            
+            if self._audioManager is not None:
+                self._audioManager._lang = language
+
+
+        def checkTutorialCompletion( self ):
+
+            if self._audioManager is not None:
+                
+                if self._audioManager.tutorialIsComplete is True:
+                    return
+                
+                else:
+                    
+                    if self._audioManager.tutorial_index > 2:
+                        self.lockDirection = False
+
+                    elif self._audioManager.tutorial_index > 3:
+                        self.lockOrientation = False
+                
+                    else:
+
+                        self.lockDirection = True
+                        self.lockOrientation = True
+
+
+                    self._audioManager.follow_tutorial( INDEX )
+
+        
         def _init_publishers( self ):
 
             self._pub_vel  = self.create_publisher(
@@ -395,11 +463,30 @@ class Controller( Node ):
 
             self._sub_drone_sensor   
             
+            if self.EnableTCPStream is True:
+                self._video_bridge = CvBridge()
 
+                self._sub_video = self.create_subscription(
+
+                    CompressedImage, 
+                    f"/{PEER.DRONE.value}_{INDEX}/{AVAILABLE_TOPICS.STREAM.value}", 
+                    self._on_videostream, 
+                    qos_profile=qos_profile_sensor_data
+                )
+
+                self._sub_video
+
+
+        def _on_videostream( self, frame ):
+            
+            current_frame = self._video_bridge.compressed_imgmsg_to_cv2(frame, desired_encoding="passthrough")
+
+            if self._master is not None: 
+                self._master.OnCVBridgeFrame( current_frame )
+     
+            
         def _update_direction( self, updateDirection = DIRECTION_STATE.STOP.value ):
             
-            #self.get_logger().info( f"update direction : {updateDirection}")
-
             updateDirection = int(np.clip( updateDirection, DIRECTION_STATE.BACKWARD.value, DIRECTION_STATE.FORWARD.value ))
 
             if self.forceStopFromGsc is False and self.isDroneOutOfGameArea is False:
@@ -433,9 +520,11 @@ class Controller( Node ):
                 if( self.isGamePlayEnable is True ):
                     if self._audioManager is not None:
                         self._audioManager.play_sfx("wheel")
+                    
+                        
 
 
-        def _update_panoramic( self, pan = 90, tilt=90):
+        def _update_pantilt( self, pan = 90, tilt=90):
 
             update_tilt = tilt
             update_pan = pan
@@ -453,10 +542,14 @@ class Controller( Node ):
             datas = json_datas
 
             if SENSORS_TOPICS.ORIENTATION.value in datas:
-                self.OnNewOrientation(datas[SENSORS_TOPICS.ORIENTATION.value])
+
+                if self.lockOrientation is False:
+                    self.OnWheelRotation(datas[SENSORS_TOPICS.ORIENTATION.value])
             
             if SENSORS_TOPICS.PROPULSION.value in datas:
-                self.OnNewPropulsion(datas[SENSORS_TOPICS.PROPULSION.value])
+
+                if self.lockPropulsion is False:
+                    self.OnButtonRotation(datas[SENSORS_TOPICS.PROPULSION.value])
 
             if SENSORS_TOPICS.SHORT_PRESS.value in datas and SENSORS_TOPICS.LONG_PRESS.value in datas:
                 self.OnButtonPress( 
@@ -477,36 +570,50 @@ class Controller( Node ):
             self._send_sensors_datas(datas)
 
 
-        def OnNewOrientation( self, increment ):
+        def OnWheelRotation( self, increment ):
 
             if increment != 0:
                 
-                #self.get_logger().info( f"update orientation : {increment}")
+                if self.lockOrientation is False:
 
-                self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
-                self._send_controller_cmd()
+                    #self.get_logger().info( f"update orientation : {increment}")
+
+                    self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
+                    self._send_controller_cmd()
                 
-                self._updateWheelAudio( increment )
+                    self._updateWheelAudio( increment )
 
 
-        def OnNewPropulsion( self, updateLevelIncrement ): 
+        def OnButtonRotation( self, updateLevelIncrement ): 
             
             #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
+  
+            if self.EnablePropulsionIncrement is True:
+                self.PropulsionIncrement( updateLevelIncrement )
 
-            if self.HorizontalMovementEnabled is True:
-                
-                if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
+            if self.EnableCamIncrement is True:
+                    
+                    if self.lockCamAzimuth is False:
+                        self._angleZ = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 )) 
+
+                        self._update_pantilt( self._angleZ, self._angleX )
+                        
+
+        def PropulsionIncrement( self, updateLevelIncrement ): 
             
-                    update_propulsion = self._propulsion + (updateLevelIncrement/5) 
+            #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
+  
+            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
+            
+                update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
-                    if self._direction >= 0:
+                if self._direction >= 0:
 
-                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
+                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
 
-                    else :
+                else :
 
-                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
-
+                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
 
                     update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
             
@@ -515,38 +622,33 @@ class Controller( Node ):
                         self._propulsion = update_propulsion
                         self._send_controller_cmd()
 
-            else:
-                
-                update_angle = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 ))
-
-                if update_angle != self._angleZ:
-                    
-                    self._angleZ = update_angle
-                    self._update_panoramic(pan=update_angle, tilt = self._angleX  )
-
-
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
-            if longPress is True:
+            if self.lockDirection is False:
+                
+                if longPress is True:
+                
+                    if self._direction != DIRECTION_STATE.BACKWARD.value:
+                        self._update_direction(DIRECTION_STATE.BACKWARD.value)
 
-                if self._direction != DIRECTION_STATE.BACKWARD.value:
-                    self._update_direction(DIRECTION_STATE.BACKWARD.value)
+                        """
+                        if( self.isGamePlayEnable is True ):
+                            if self._audioManager is not None:
+                                self._audioManager.play_sfx("bell")
+   
+                        """
+
+                if shortPress is True:
                     
-                    if( self.isGamePlayEnable is True ):
+                    if self._direction == DIRECTION_STATE.STOP.value:
+                        self._update_direction(DIRECTION_STATE.FORWARD.value)
+                    else:
+                        self._update_direction(DIRECTION_STATE.STOP.value)
+                
+                    if( self.isGamePlayEnable is True ):  
                         if self._audioManager is not None:
                             self._audioManager.play_sfx("bell")
-
-            if shortPress is True:
-
-                if self._direction == DIRECTION_STATE.STOP.value:
-                    self._update_direction(DIRECTION_STATE.FORWARD.value)
-                else:
-                    self._update_direction(DIRECTION_STATE.STOP.value)
-                
-                if( self.isGamePlayEnable is True ):  
-                    if self._audioManager is not None:
-                        self._audioManager.play_sfx("bell")
 
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
@@ -566,19 +668,23 @@ class Controller( Node ):
             #angle_aroundY = np.clip( 90 - delta_y, 0,180 )
             #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
             
-            
             angleX = int(np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) )
             angleZ = int(np.clip( self._angleZ * self.MPU_PanMultiplier - delta_p, 0,180 ))
 
             if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
-           
-                self._angleX = angleX
-                self._CheckVerticalAngleSwitchStatus( angleX )
                 
-                if self.HorizontalMovementEnabled is True:
+                if self.lockCamTilt is False:
 
-                    self._angleZ = angleZ  
-                    self._update_panoramic(pan=self._angleZ, tilt = self._angleX  )
+                    self._angleX = angleX
+                    self._CheckVerticalAngleSwitchStatus( angleX )
+
+                if self.EnableCamIncrement is False:
+                    
+                    if self.lockCamAzimuth is False:
+                        self._angleZ = angleZ  
+
+                    if self.lockCam is False:
+                        self._update_pantilt(pan=self._angleZ, tilt = self._angleX  )
 
 
         def _CheckVerticalAngleSwitchStatus( self, angle ):
@@ -660,7 +766,11 @@ class Controller( Node ):
                             if self._audioManager is not None :
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
                                 
-                                self.get_logger().info( f"music has changed on drone value user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
+                                                        
+                            if self._audioManager.unlock_direction is False:
+                                self._audioManager.unlock_direction = True
+
+                        #self.get_logger().info( f"music has changed on drone value user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
 
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE.value  ):
@@ -673,7 +783,17 @@ class Controller( Node ):
                             self._obstacleInFront = False
 
                     elif( topic == SENSORS_TOPICS.STEERING.value ):
-                        self.droneSteering = sensor_datas[topic]
+                        
+                        updateSteering = sensor_datas[topic]
+
+                        if updateSteering != self.droneSteering: 
+
+                            self.droneSteering = updateSteering
+
+                            if self._audioManager.unlock_orientation is False:
+                                self._audioManager.unlock_orientation = True
+
+
 
             
 
@@ -711,12 +831,22 @@ class Controller( Node ):
                         
                         enableUpdate = statusUpdate["enable"]
 
-                        if enableUpdate is True and self.isGamePlayEnable is False:
+                        if enableUpdate is True: 
+                            
+                            if self.isGamePlayEnable is False:
 
-                            self._update_direction(DIRECTION_STATE.STOP.value)
+                                self._update_direction(DIRECTION_STATE.STOP.value)
 
-                            if self._audioManager is not None:
-                                self._audioManager.gameplayMusic( enableUpdate, 0 )
+                                if self._audioManager is not None:
+                                    self._audioManager.gameplayMusic( enableUpdate, 0 )
+
+                        else:
+                            
+                            if self.isGamePlayEnable is True:
+
+                                if self._audioManager is not None: 
+                                    self._audioManager.reset_tutorial()
+
 
                         self.isGamePlayEnable = enableUpdate 
                     
@@ -780,7 +910,7 @@ def main(args=None):
 
     try:
 
-        controller_node = OperatorNode()
+        controller_node = Controller()
 
         rclpy.spin( controller_node )
 

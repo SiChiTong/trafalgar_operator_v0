@@ -1,0 +1,26 @@
+Bienvenue aux commandes de l’Aliénor.
+Bienvenue aux commandes de l’Arjeroc.
+Bienvenue aux commandes du Daisy Djack.
+Bienvenue aux commandes du Reye Pellucci.
+Bienvenue aux commandes du Laidie Idosia.
+
+Ce modèle réduit, fictif, est basé sur l’architecture du HMS Bounty, un ancien navire charbonnier construit en 1784. À la suite de son rachat par la couronne britannique, et placé sous le commandement du capitaine William Bligh, le navire fut chargé de collecter, à Tahiti, des plants de fruits à pain. Les fruits de ces arbres représentaient en effet, des rations nutritives et bon marché, pour les esclaves des Antilles britanniques. Ce navire a notamment marqué l’histoire de la marine, en raison de la mutinerie qui a eu lieu en son bord, en avril 1789, et des évènements tragiques qui en ont découlés.
+Pour piloter le modèle réduit, vous disposez d’un naviscope. L’appareil est constitué d’une petite barre à roue, d’une longue vue, et d’un bouton noir circulaire. 
+Votre navire est actuellement à l’arrêt. Pour lui donner l’ordre d’avancer, pressez le bouton noir et une cloche de bord retentira.
+Votre navire avance, c’est parfait ! 
+A présent, tentez d’orienter votre navire vers la gauche ou vers la droite. Pour cela, manipulez la petite barre à roue, en saisissant les poignées noires. Attention à ne pas faire de mouvement trop rapide, et risquer ainsi de casser votre naviscope ! Privilégier donc des mouvements lents, et essayez d’anticiper la trajectoire de votre navire. 
+Une fois votre navire orienté, manipulez la barre à roue dans le sens inverse, pour que le modèle réduit aille à nouveau tout droit !
+Super ! 
+Parfait ! 
+Génial ! 
+Vous avez réussi à modifier l’orientation du modèle réduit, tentez à présent de le redresser pour que celui-ci aille à nouveau tout droit. Pour cela effectuer une rotation inverse de la barre à roue.
+
+Enfin, si vous placez votre œil au niveau de la longue vue, vous pourrez apercevoir la vue à bord de votre navire, la direction actuelle prise par celui-ci, mais également le temps de jeu restant.
+Vous pouvez également modifier l’orientation orienter la caméra du navire vers la gauche ou vers la droite en tournant le bouton circulaire noir sur son axe. 
+
+Vous savez à présent utiliser votre naviscope. Afin d’éviter que votre partie ne soit écourtée, Prenez surtout garde à ne pas entrer en collision avec les autres navires, et autres éléments présents dans la zone de jeu.
+
+Bon vent Capitaine !
+
+Votre partie est maintenant terminée, merci d’avoir joué !
+ 

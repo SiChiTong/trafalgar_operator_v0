@@ -1,5 +1,8 @@
 from enum import Enum
 
+class AVAILABLE_LANG( str, Enum ):
+    FR = "fr"
+
 class AVAILABLE_TOPICS( str, Enum ):
     VELOCITY = "cmd_vel"
     PANTILT = "cmd_cam"
@@ -124,11 +127,34 @@ DIRECTION_BWD = ("BACKWARD", "#CB4D00")
 WIFI_INTERFACE = "wl"
 
 
-DRONES_NAMES = [
-    ("Aucun", ( "#000000", "#ffffff" )), 
-    ("Bounty", ( "#E3735E", "#A6A6A6")),
-    ("Arjeroc", ( "#1967FF", "#4B4B4B" )),    
-    ("Daisy Jack", ( "#197600", "#DADADA" )),
-    ("Lady Idosia", ( "#DFB40C", "#0C83DF" )),
-    ( "Rei Pelluci", ( "#E21E1E", "#FFAA19" ))
-]
+
+
+DRONES_LIST = {
+    
+    "Aucun" : {
+        "index" : -1,
+        "color" : ( "#000000", "#ffffff" )
+    },
+    "Bounty" : {
+        "index" : 0,
+        "color" : ( "#E3735E", "#A6A6A6" )
+    },
+    "Arjeroc" : {
+        "index" : 1,
+        "color" : ( "#1967FF", "#4B4B4B" )
+    },
+    "Daisy Jack" : {
+        "index" : 2,
+        "color" : ( "#197600", "#DADADA" )
+    },
+    "Lady Idosia" : {
+        "index" : 3,
+        "color" : ( "#DFB40C", "#0C83DF" )
+    },
+    "Rei Pelluci" : {
+        "index" : 4,
+        "color" : ( "#E21E1E", "#FFAA19" )
+    }
+
+}
+

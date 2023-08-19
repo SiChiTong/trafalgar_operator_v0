@@ -6,7 +6,13 @@
 # modification: 17/01/2023
 ########################################################################
 import os
+import pygame
 from pygame import mixer
+
+from ..utils.__utils_objects import AVAILABLE_LANG
+
+STANDARD_VOICE_ENDED = pygame.USEREVENT + 1
+TUTORIAL_VOICE_ENDED = pygame.USEREVENT + 1
 
 class AudioManager(object):
 
@@ -18,48 +24,76 @@ class AudioManager(object):
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
 
-        self.music_files = []
         self._music_playlist = []
-
-        self.sfx_files = []
         self._sfx_playlist = []
+        self._voices_playlist = []
 
-        self.last_direction_save = 0
+        self._voice_is_playing = False
 
+        self._lang = AVAILABLE_LANG.FR.value
+
+        self._voices_playlist = {
+            AVAILABLE_LANG.FR.value : []
+        }
+
+        self._volume_levels = {
+            "music" : 0.3,
+            "sfx" : 0.8,
+            "voice" : 0.5
+        }
+
+        self.tutorial_index = 0
+        self.tutorialIsComplete = False
+
+        self.unlock_direction = False
+        self.unlock_orientation = False
+     
     
     def _enable( self ):
         
-        mixer.init()
+        pygame.init()
+
         self._mixer = mixer.music
 
-        #print('basename:    ', os.path.basename(__file__))
-        #print('dirname:     ', os.path.dirname(__file__))
-
         self.MUSIC_DIR = os.path.join(
-        os.getcwd(),  # Répertoire actuel du fichier
-        'install',                 # Répertoire 'install' généré par colcon build
-        'naviscope',    # Nom de votre package
-        'share',                   # Répertoire 'share' dans le package installé
-        'naviscope',    # Répertoire de votre package dans 'share'
-        'media',                   # Répertoire 'media' dans votre package
-        'audio',                   # Répertoire 'audio' dans le répertoire 'media'
-        'music'                    # Répertoire 'music' dans le répertoire 'audio'
+        os.getcwd(), 
+        'install',  
+        'naviscope', 
+        'share',   
+        'naviscope',  
+        'media',    
+        'audio',    
+        'music'     
         )
 
         self.SFX_DIR = os.path.join(
-        os.getcwd(),  # Répertoire actuel du fichier
-        'install',                 # Répertoire 'install' généré par colcon build
-        'naviscope',    # Nom de votre package
-        'share',                   # Répertoire 'share' dans le package installé
-        'naviscope',    # Répertoire de votre package dans 'share'
-        'media',                   # Répertoire 'media' dans votre package
-        'audio',                   # Répertoire 'audio' dans le répertoire 'media'
-        'sfx'                    # Répertoire 'music' dans le répertoire 'audio'
+        os.getcwd(), 
+        'install',  
+        'naviscope', 
+        'share',      
+        'naviscope',  
+        'media',     
+        'audio',   
+        'sfx'                
         )
+
+        self.VOICES_DIR = os.path.join(
+        os.getcwd(), 
+        'install',          
+        'naviscope', 
+        'share',           
+        'naviscope',  
+        'media',           
+        'audio',              
+        'voices'                 
+        )
+
 
         self._load_music()
         self._load_sfx()
-     
+        self._load_voices()
+
+
 
     def _load_music( self ):
         
@@ -83,6 +117,23 @@ class AudioManager(object):
         self._sfx_playlist = {os.path.splitext(os.path.basename(file))[0]: file for file in sfx_files}
 
 
+
+    def _load_voices( self ):
+
+        for lang_dir in self._voices_playlist.keys():
+            
+            dir_path = os.path.join(self.VOICES_DIR, lang_dir ) 
+            voices_files = [
+                os.path.join(dir_path, filename)
+                for filename in os.listdir(self.VOICES_DIR)
+                if filename.endswith(".wav")
+            ]
+
+            self._voices_playlist[lang_dir] = {os.path.splitext(os.path.basename(file))[0]: file for file in voices_files}
+
+        self.reset_tutorial()
+            
+
     def play_sfx( self, sfx = None ): 
         
         if self._mixer and sfx in self._sfx_playlist:
@@ -90,8 +141,10 @@ class AudioManager(object):
             sfx_path = self._sfx_playlist[sfx]
             sfxClip = mixer.Sound( sfx_path )
 
-            sfxClip.set_volume(1)
+            sfxClip.set_volume( self._volume_levels[ "sfx" ] )
             sfxClip.play()
+
+            
 
 
     def play_music( self, music = None ): 
@@ -103,9 +156,61 @@ class AudioManager(object):
             musicToPlay = self._music_playlist[music]
             self._mixer.load(musicToPlay)
             
-            self._mixer.set_volume(0.4)
+            self._mixer.set_volume(self._volume_levels[ "music" ])
 
             self._mixer.play(loops=-1)
+
+
+    def play_voice( self, voice = None, tutorialEvent = True ): 
+
+        if self._mixer and voice in self._voice_playlist:
+            
+            voice_path = self._sfx_playlist[voice]
+            voiceClip = mixer.Sound( voice_path )
+
+            voiceClip.set_volume( self._volume_levels[ "voice" ] )
+
+            if self._mixer and self._mixer.get_busy():
+                self._mixer.set_volume(0.1)
+
+            self._voice_is_playing = True
+
+            voiceClip.play()
+
+            pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + 500 ) )
+     
+
+    def reset_tutorial( self ):
+
+        self.tutorial_index = 0
+        self.tutorialIsComplete = False
+        self.unlock_direction = False
+        self.unlock_orientation = False
+
+
+    def follow_tutorial(self, droneIndex=0):
+
+        tutorial_steps = [
+        {"voice": f"drone_{droneIndex}", "condition": lambda: True},
+        {"voice": "hist_introduction", "condition": lambda: True},
+        {"voice": "cmd_introduction", "condition": lambda: True},
+        {"voice": "cmd_direction", "condition": lambda: True},
+        {"voice": "cmd_orientation", "condition": lambda: self.unlock_direction},
+        {"voice": "cmd_invert", "condition": lambda: self.unlock_orientation},
+        {"voice": "cmd_spyglass", "condition": lambda: True},
+        {"voice": "cmd_end", "condition": lambda: True}
+        ]
+
+        if self._voice_is_playing is False:
+
+            if self.tutorial_index > len(tutorial_steps):
+                self.tutorialIsComplete = True
+                return
+            
+            step = tutorial_steps[self.tutorial_index]
+
+            if step["condition"]():
+                self.play_voice(step["voice"])
 
 
     def gameplayMusic( self, Enable, direction ): 
@@ -143,6 +248,24 @@ class AudioManager(object):
             self.IsIdlePlaying = False
 
             self._mixer.stop()
+
+    def reset_music_volume( self ):
+
+        self._voice_is_playing = False       
+        self._mixer.set_volume(self._volume_levels[ "music" ] )
+
+
+    def loop( self ):
+
+        for event in pygame.event.get():
+
+            if event.type == TUTORIAL_VOICE_ENDED:
+                self.reset_music_volume()
+                self.tutorial_index += 1
+
+            elif STANDARD_VOICE_ENDED:
+                self.reset_music_volume()
+
 
     def _disable( self ):
         
