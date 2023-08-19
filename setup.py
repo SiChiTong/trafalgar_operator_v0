@@ -20,6 +20,9 @@ setup(
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
         (os.path.join('share', package_name, 'media', 'audio', 'music'), glob('media/audio/music/*.wav')),
         (os.path.join('share', package_name, 'media', 'audio', 'sfx'), glob('media/audio/sfx/*.wav')),
+        (os.path.join('share', package_name, 'media', 'audio', 'voices', 'fr' ), glob('media/audio/voices/fr/*.wav')),
+        (os.path.join('share', package_name, 'media', 'audio', 'voices', 'en' ), glob('media/audio/voices/en/*.wav')),
+        (os.path.join('share', package_name, 'media', 'img' ), glob('media/img/*.jpg'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
