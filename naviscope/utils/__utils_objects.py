@@ -9,7 +9,7 @@ class AVAILABLE_TOPICS( str, Enum ):
     NAVTARGET = "cmd_navtarget"
     SHUTDOWN = "cmd_shutdown"
     STREAM = "videostream"
-    IMU = "imu_sensor",
+    IMU = "imu_sensor"
     HEARTBEAT = "heartbeat"
     WATCHDOG = "watchdog"
     SENSOR = "sensor"
