@@ -128,7 +128,6 @@ WIFI_INTERFACE = "wl"
 
 
 
-
 DRONES_LIST = {
     
     "Aucun" : {

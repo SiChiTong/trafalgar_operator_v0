@@ -37,9 +37,6 @@ class Display(customtkinter.CTk):
         self.ZoomLevel = 10
         self.last_image = None 
 
-        self.arrowAngle = 90
-        self.arrowColor = "white"
-        
         self._nameIsVisible = False
 
         self._node = None
@@ -260,7 +257,7 @@ class Display(customtkinter.CTk):
             100, 
             text="", 
             fill="black", 
-            font=("Arial", self.regularTextSize), 
+            font=("Arial", self.regularTextSize, "bold"), 
             justify=customtkinter.CENTER,
             anchor="w", 
             angle = self.text_flip_method,
@@ -392,8 +389,6 @@ class Display(customtkinter.CTk):
 
         pivot_x = sum(points[::2]) / len(points[::2])
         pivot_y = sum(points[1::2]) / len(points[1::2])
-
-        angle_rad = math.radians(currentAngle - 90)
 
         for i in range(0, len(points), 2):
             x, y = points[i] - pivot_x, points[i+1] - pivot_y
@@ -530,7 +525,7 @@ class Display(customtkinter.CTk):
       
             self.clear_hud_texts()
  
-            self.render_directional_arrow()
+            self.canvas.delete(self.tagArrow)
 
             self._blackScreen = True    
 
@@ -577,7 +572,6 @@ class Display(customtkinter.CTk):
 
                 gameplayEnable = self._node.isGamePlayEnable
 
-
                 if gameplayEnable is True:
 
                     self.updateStream()
@@ -586,7 +580,6 @@ class Display(customtkinter.CTk):
                 else:
 
                     self.renderBlackScreen()
-
 
         self.after(self._loop_hud, self.updateHud)
 

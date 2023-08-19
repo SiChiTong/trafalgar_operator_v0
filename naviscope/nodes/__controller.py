@@ -577,6 +577,7 @@ class Controller( Node ):
                     #self.get_logger().info( f"update orientation : {increment}")
 
                     self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
+                    
                     self._send_controller_cmd()
                 
                     self._updateWheelAudio( increment )
