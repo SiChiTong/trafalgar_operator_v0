@@ -569,7 +569,8 @@ class Controller( Node ):
 
                     self._steeringIncrement = int(increment * self.controllerOrientationMultiplier )
                     
-                    self._send_controller_cmd()
+                    if self.droneDirection != DIRECTION_STATE.STOP.value:
+                        self._send_controller_cmd()
                 
                     self._updateWheelAudio( increment )
 

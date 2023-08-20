@@ -190,7 +190,7 @@ class AudioManager(object):
         self.unlock_orientation = False
 
 
-    def follow_tutorial(self, droneIndex=0):
+    def follow_tutorial(self, droneIndex = 0 ):
 
         tutorial_steps = [
         {"voice": f"drone_{droneIndex}", "condition": lambda: True},
@@ -205,11 +205,11 @@ class AudioManager(object):
 
         if self._voice_is_playing is False:
 
-            if self.tutorial_index > len(tutorial_steps):
+            if self.tutorial_index > len( tutorial_steps ) - 1 :
                 self.tutorialIsComplete = True
                 return
 
-            step = tutorial_steps[self.tutorial_index]
+            step = tutorial_steps[ self.tutorial_index ]
 
             if step["condition"]():
                 self.play_voice(step["voice"])

@@ -153,11 +153,11 @@ class Display(customtkinter.CTk):
     
     @property
     def arrowColor_base( self ):
-        return "blue"
+        return "black"
     
     @property
     def arrowColor_forward(self):
-        return "green"
+        return "blue"
     
     @property
     def arrowColor_backward(self):
@@ -364,12 +364,20 @@ class Display(customtkinter.CTk):
 
     def render_directional_arrow(self, currentAngle = 90, arrowColorFill = "black", arrowColorOutline = "white" ):
 
+        adapted_angle = 90
+
+        if currentAngle > 90: 
+            adapted_angle = 90 - ( currentAngle - 90 )
+
+        if currentAngle < 90: 
+            adapted_angle = 90 + ( 90 - currentAngle )
+     
         self.canvas.delete(self.tagArrow)
 
-        pivot_x = self.screen_center_x + self.arrow_radius * math.cos(math.radians(currentAngle))
-        pivot_y = self.screen_center_y + self.arrow_radius * math.sin(math.radians(currentAngle))
+        pivot_x = self.screen_center_x + self.arrow_radius * math.cos(math.radians( adapted_angle ))
+        pivot_y = self.screen_center_y + self.arrow_radius * math.sin(math.radians( adapted_angle ))
 
-        offset_length = 15 
+        offset_length = 10 
 
         # Arrow points relative to pivot point
         points = [
@@ -383,7 +391,7 @@ class Display(customtkinter.CTk):
         ]
 
         # Rotate arrow to face outward from circle's center
-        angle_rad = math.radians(currentAngle - 90)
+        angle_rad = math.radians( adapted_angle - 90 )
 
         pivot_x = sum(points[::2]) / len(points[::2])
         pivot_y = sum(points[1::2]) / len(points[1::2])
