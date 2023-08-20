@@ -474,9 +474,9 @@ class Display(customtkinter.CTk):
             
         img = Image.fromarray( color_conv )
 
+        self._last_frame = ImageTk.PhotoImage(img)
         self._frame, self._last_frame = self._last_frame, self._frame
 
-        self._frame = ImageTk.PhotoImage( img )
         self._frame_has_been_updated = True
             
 
