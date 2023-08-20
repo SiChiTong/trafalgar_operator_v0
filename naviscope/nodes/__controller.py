@@ -47,7 +47,7 @@ class Controller( Node ):
 
             self.lockCamAzimuth = False
             self.lockCamTilt = True
-            self.lockCam = True
+            self.lockCam = False
 
             self.EnableUDPStream = enableUDPStream
             self.EnableAudio = True
