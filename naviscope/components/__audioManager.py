@@ -192,6 +192,9 @@ class AudioManager(object):
 
     def follow_tutorial(self, droneIndex = 0 ):
 
+        if self.tutorialIsComplete is True:
+            return
+        
         tutorial_steps = [
         {"voice": f"drone_{droneIndex}", "condition": lambda: True},
         {"voice": "hist_introduction", "condition": lambda: True},
@@ -216,6 +219,12 @@ class AudioManager(object):
                 self.tutorial_index += 1
 
 
+    def abort_tutorial( self ):
+
+        self.tutorial_index = 7
+        self.tutorialIsComplete = True
+
+            
     def gameplayMusic( self, Enable, direction ): 
 
         if Enable is True:

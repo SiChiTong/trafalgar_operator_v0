@@ -618,7 +618,7 @@ class Controller( Node ):
             if self.lockDirection is False:
                 
                 if longPress is True:
-                
+                    
                     if self._direction != DIRECTION_STATE.BACKWARD.value:
                         self._update_direction(DIRECTION_STATE.BACKWARD.value)
 
@@ -639,6 +639,16 @@ class Controller( Node ):
                     if( self.isGamePlayEnable is True ):  
                         if self._audioManager is not None:
                             self._audioManager.play_sfx("bell")
+    
+    
+            if longPress is True:
+
+                if( self.isGamePlayEnable is True ):  
+
+                    if self._audioManager is not None:
+
+                        if self._audioManager.tutorialIsComplete is False: 
+                            self._audioManager.abort_tutorial()
 
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
