@@ -114,7 +114,7 @@ class Display(customtkinter.CTk):
 
     @property
     def arrow_radius(self):
-        return 185
+        return 190
 
     @property
     def videoWidth(self):
