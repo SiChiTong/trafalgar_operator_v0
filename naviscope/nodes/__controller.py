@@ -35,7 +35,7 @@ INDEX = int(os.environ.get('PEER_ID'))
 
 class Controller( Node ):
 
-        def __init__( self,Master=None, **kwargs ):
+        def __init__( self,Master=None, enableUDPStream = True, **kwargs ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
 
@@ -49,7 +49,7 @@ class Controller( Node ):
             self.lockCamTilt = True
             self.lockCam = True
 
-            self.EnableTCPStream = False
+            self.EnableUDPStream = enableUDPStream
             self.EnableAudio = True
             self.EnableFilter = False
 
@@ -462,7 +462,8 @@ class Controller( Node ):
 
             self._sub_drone_sensor   
             
-            if self.EnableTCPStream is True:
+            if self.EnableUDPStream is False:
+
                 self._video_bridge = CvBridge()
 
                 self._sub_video = self.create_subscription(
@@ -478,7 +479,7 @@ class Controller( Node ):
 
         def _on_videostream( self, frame ):
             
-            current_frame = self._video_bridge.compressed_imgmsg_to_cv2(frame, desired_encoding="passthrough")
+            current_frame = self._video_bridge.compressed_imgmsg_to_cv2( frame, desired_encoding="passthrough" )
 
             if self._master is not None: 
                 self._master.OnCVBridgeFrame( current_frame )

@@ -52,6 +52,7 @@ class Display(customtkinter.CTk):
 
         self._frame_has_been_updated = False
 
+        self._enableUDPStream = False
         self._videostream = None
 
         self.title(Display.APP_NAME)
@@ -452,9 +453,11 @@ class Display(customtkinter.CTk):
         frameWidth, frameHeight = frameSize[0], frameSize[1]
 
         cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, self.ZoomLevel)
+        
         resized_frame = cv2.resize(cropFrame, (self.videoWidth, self.videoHeight))
         color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(color_conv)
+        
+        img = Image.fromarray( color_conv )
                     
         self._last_frame = ImageTk.PhotoImage(img)
         self._frame, self._last_frame = self._last_frame, self._frame
@@ -464,17 +467,17 @@ class Display(customtkinter.CTk):
 
     def OnCVBridgeFrame( self, frame ):
         
-        with self._lock:
+        current_frame = frame
 
-            current_frame = frame
-
-            resized_frame = cv2.resize( current_frame, ( self.winfo_screenwidth(), self.winfo_screenheight() ))
-            color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
+        resized_frame = cv2.resize( current_frame, ( self.winfo_screenwidth(), self.winfo_screenheight() ))
+        color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
             
-            img = Image.fromarray( color_conv )
+        img = Image.fromarray( color_conv )
 
-            self._frame = ImageTk.PhotoImage( img )
-            self._frame_has_been_updated = True
+        self._frame, self._last_frame = self._last_frame, self._frame
+
+        self._frame = ImageTk.PhotoImage( img )
+        self._frame_has_been_updated = True
             
 
     def renderVideoFrame( self ):
@@ -637,7 +640,7 @@ class Display(customtkinter.CTk):
     def _rosNode(self):
 
         if self._node is None:
-            self._node = Controller( Master=self ) 
+            self._node = Controller( Master=self, enableUDPStream = self._enableUDPStream ) 
 
         try:
 
@@ -657,10 +660,13 @@ class Display(customtkinter.CTk):
 
 
     def _start_videostream(self):
-        # Créez le processus en utilisant la méthode _stream_process comme cible.
-        self._process = Process(target=self._stream_process, args=(self._frame_queue, self._frame_stop_event ))
-        self._process.daemon = True
-        self._process.start()
+
+        if self._enableUDPStream is False:
+
+            # Créez le processus en utilisant la méthode _stream_process comme cible.
+            self._process = Process(target=self._stream_process, args=(self._frame_queue, self._frame_stop_event ))
+            self._process.daemon = True
+            self._process.start()
 
 
     def _stream_process(self, queue, event ):
@@ -681,10 +687,12 @@ class Display(customtkinter.CTk):
 
     def _kill_videostream( self ):
 
-        self._frame_stop_event.set()
+        if self._enableUDPStream is False:
+            
+            self._frame_stop_event.set()
 
-        self._process.terminate()
-        self._process.join()
+            self._process.terminate()
+            self._process.join()
 
         
 
