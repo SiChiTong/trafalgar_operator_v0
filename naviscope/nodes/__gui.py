@@ -459,8 +459,8 @@ class Display(customtkinter.CTk):
         
         img = Image.fromarray( color_conv )
                     
-        self._last_frame = ImageTk.PhotoImage(img)
-        self._frame, self._last_frame = self._last_frame, self._frame
+        self.last_frame = ImageTk.PhotoImage(img)
+        self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
                 
@@ -469,14 +469,16 @@ class Display(customtkinter.CTk):
         
         current_frame = frame
 
-        resized_frame = cv2.resize( current_frame, (self.videoWidth, self.videoHeight) )
+        cropFrame = self.crop_from_center(current_frame, 720, 480, self.ZoomLevel)
+
+        resized_frame = cv2.resize( cropFrame , (self.videoWidth, self.videoHeight) )
         color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
             
         img = Image.fromarray( color_conv )
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
 
         self._last_frame = ImageTk.PhotoImage(img)
-        self._frame, self._last_frame = self._last_frame, self._frame
+        #self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
             
@@ -501,8 +503,8 @@ class Display(customtkinter.CTk):
             
                     if self._frame_has_been_updated is True:
                 
-                        if self.last_frame != self._frame:
-                            self.last_frame = self._frame   
+                        if self.frame != self.last_frame:
+                            self._frame = self.last_frame   
 
                     self.clear_img_text()
                     self.canvas.itemconfig( self._canvas_frame, image= self._frame )
