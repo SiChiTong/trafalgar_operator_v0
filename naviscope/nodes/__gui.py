@@ -37,6 +37,7 @@ class Display(customtkinter.CTk):
         self.ZoomLevel = 10
         self.last_image = None 
 
+        self.gameplayEnable = False
         self._nameIsVisible = False
 
         self._node = None
@@ -497,11 +498,13 @@ class Display(customtkinter.CTk):
                     self.clear_img_text()
                     self.set_center_img( self._frame )    
             
-            self._blackScreen = False
 
-            self._frame_has_been_updated = False
+                self._frame_has_been_updated = False
 
-
+        
+        self._blackScreen = False
+    
+    
     def clear_hud_texts( self ):
 
         if self.hudTexts is not None:
@@ -571,15 +574,13 @@ class Display(customtkinter.CTk):
         if self._node is not None: 
 
             with self._lock:
+                self.gameplayEnable = self._node.isGamePlayEnable
 
-                gameplayEnable = self._node.isGamePlayEnable
+            if self.gameplayEnable is True:
+                self.renderHUD()
 
-                if gameplayEnable is True:
-                    self.renderHUD()
-
-                else:
-
-                    self.renderBlackScreen()
+            else:
+                self.renderBlackScreen()
 
         self.after(self._loop_hud, self.updateHud)
 
