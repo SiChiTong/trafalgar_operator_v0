@@ -478,7 +478,7 @@ class Display(customtkinter.CTk):
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
 
         self.last_frame = ImageTk.PhotoImage(img)
-        #self.frame, self.last_frame = self.last_frame, self._frame
+        self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
             
@@ -501,17 +501,13 @@ class Display(customtkinter.CTk):
 
                 if self._frame is not None:
             
-                    if self._frame_has_been_updated is True:
-                
-                        if self._frame != self.last_frame:
-                            self._frame = self.last_frame   
+                    if self._frame_has_been_updated is True: 
 
-                    self.clear_img_text()
-                    self.canvas.itemconfig( self._canvas_frame, image= self._frame )
-                    self._center_image_name = "frame"
+                        self.clear_img_text()
+                        self.canvas.itemconfig( self._canvas_frame, image= self._frame )
+                        self._center_image_name = "frame"
 
-                self._frame_has_been_updated = False
-
+                    self._frame_has_been_updated = False
         
         self._blackScreen = False
     
