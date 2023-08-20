@@ -578,7 +578,7 @@ class Controller( Node ):
 
         def OnButtonRotation( self, updateLevelIncrement ): 
             
-            #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
+            self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
   
             if self.EnablePropulsionIncrement is True:
                 self.PropulsionIncrement( updateLevelIncrement )
@@ -588,8 +588,9 @@ class Controller( Node ):
                     if self.lockCamAzimuth is False:
                         self._angleZ = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 )) 
 
-                        self._update_pantilt( self._angleZ, self._angleX )
-                        
+                        self._update_pantilt( pan=self._angleZ, tilt=self._angleX )
+                        self.get_logger().info( f"azimuth_angle : {self._angleZ}")
+  
 
         def PropulsionIncrement( self, updateLevelIncrement ): 
             
