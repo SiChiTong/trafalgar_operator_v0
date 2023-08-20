@@ -587,7 +587,6 @@ class Controller( Node ):
                         self._angleZ = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 )) 
 
                         self._update_pantilt( pan=self._angleZ, tilt=self._angleX )
-                        self.get_logger().info( f"azimuth_angle : {self._angleZ}")
   
 
         def PropulsionIncrement( self, updateLevelIncrement ): 
