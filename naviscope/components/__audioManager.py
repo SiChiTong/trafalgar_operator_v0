@@ -86,6 +86,7 @@ class AudioManager(object):
         'voices'                 
         )
 
+        self.reset_tutorial()
 
         self._load_music()
         self._load_sfx()
@@ -129,8 +130,6 @@ class AudioManager(object):
             ]
 
             self._voices_playlist[lang_dir] = {os.path.splitext(os.path.basename(file))[0]: file for file in voices_files}
-
-        self.reset_tutorial()
             
 
     def play_sfx( self, sfx = None ): 
