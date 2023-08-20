@@ -538,8 +538,7 @@ class Controller( Node ):
             
             if SENSORS_TOPICS.PROPULSION.value in datas:
 
-                if self.lockPropulsion is False:
-                    self.OnButtonRotation(datas[SENSORS_TOPICS.PROPULSION.value])
+                self.OnButtonRotation(datas[SENSORS_TOPICS.PROPULSION.value])
 
             if SENSORS_TOPICS.SHORT_PRESS.value in datas and SENSORS_TOPICS.LONG_PRESS.value in datas:
                 self.OnButtonPress( 
@@ -578,7 +577,6 @@ class Controller( Node ):
 
         def OnButtonRotation( self, updateLevelIncrement ): 
             
-            self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
   
             if self.EnablePropulsionIncrement is True:
                 self.PropulsionIncrement( updateLevelIncrement )
@@ -594,26 +592,26 @@ class Controller( Node ):
 
         def PropulsionIncrement( self, updateLevelIncrement ): 
             
-            #self.get_logger().info( f"update propulsion : {updateLevelIncrement}")
-  
-            if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
+            if self.lockPropulsion is False:
+                if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
             
-                update_propulsion = self._propulsion + (updateLevelIncrement/5) 
+                    update_propulsion = self._propulsion + (updateLevelIncrement/5) 
     
-                if self._direction >= 0:
+                    if self._direction >= 0:
 
-                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
+                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max ) ) )
 
-                else :
+                    else :
 
-                    update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
+                        update_propulsion = math.floor( int(np.clip( update_propulsion, self._propulsion_default, self._propulsion_max_backward ) ) )
 
-                    update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
+                        update_propulsion = int(np.clip(update_propulsion * self.controllerPropulsionMultiplier, self._propulsion_default, self._propulsion_max) )
             
-                    if update_propulsion != self._propulsion:
+                        if update_propulsion != self._propulsion:
 
-                        self._propulsion = update_propulsion
-                        self._send_controller_cmd()
+                            self._propulsion = update_propulsion
+
+                            self._send_controller_cmd()
 
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
