@@ -2,6 +2,7 @@ from enum import Enum
 
 class AVAILABLE_LANG( str, Enum ):
     FR = "fr"
+    EN = "en"
 
 class AVAILABLE_TOPICS( str, Enum ):
     VELOCITY = "cmd_vel"
@@ -67,6 +68,7 @@ class DISPATCH_TOPICS( str, Enum ):
     STAT_IMU = "stat_imu"
     STAT_CAM = "stat_cam"
     STAT_RANGE = "stat_range"
+    WATCHDOG = "watchdog"
 
 
 BOARD_SENSORS_DATAS = {
