@@ -254,8 +254,10 @@ class AudioManager(object):
 
     def reset_music_volume( self ):
 
-        self._voice_is_playing = False       
-        self._mixer.set_volume(self._volume_levels[ "music" ] )
+        self._voice_is_playing = False   
+
+        if self._mixer and self._mixer.get_busy():    
+            self._mixer.set_volume(self._volume_levels[ "music" ] )
 
 
     def loop( self ):

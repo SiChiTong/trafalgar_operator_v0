@@ -469,11 +469,12 @@ class Display(customtkinter.CTk):
         
         current_frame = frame
 
-        resized_frame = cv2.resize( current_frame, ( self.winfo_screenwidth(), self.winfo_screenheight() ))
+        resized_frame = cv2.resize( current_frame, (self.videoWidth, self.videoHeight) )
         color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
             
         img = Image.fromarray( color_conv )
-
+        img.transpose(Image.FLIP_TOP_BOTTOM)
+        
         self._last_frame = ImageTk.PhotoImage(img)
         self._frame, self._last_frame = self._last_frame, self._frame
 
