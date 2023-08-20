@@ -208,7 +208,7 @@ class AudioManager(object):
             if self.tutorial_index > len(tutorial_steps):
                 self.tutorialIsComplete = True
                 return
-            
+
             step = tutorial_steps[self.tutorial_index]
 
             if step["condition"]():

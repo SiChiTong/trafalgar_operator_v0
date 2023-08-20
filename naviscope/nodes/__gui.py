@@ -359,9 +359,6 @@ class Display(customtkinter.CTk):
                 time_delta = datetime.timedelta(seconds=self._playtimeLeft)
                 formatted_time = self.format_time(time_delta)
                 
-                if self._node is not None:
-                    self._node.get_logger().info(f"{ formatted_time }")
-
                 self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
    
 
@@ -496,8 +493,8 @@ class Display(customtkinter.CTk):
                             self.last_frame = self._frame   
 
                     self.clear_img_text()
-                    self.set_center_img( self._frame )    
-            
+                    self.canvas.itemconfig( self._canvas_frame, image= self._frame )
+                    self._center_image_name = "frame"
 
                 self._frame_has_been_updated = False
 
@@ -519,7 +516,7 @@ class Display(customtkinter.CTk):
 
 
     def renderBlackScreen( self ):
-
+        
         if self._blackScreen is False: 
 
             self.canvas.update_idletasks()
@@ -551,8 +548,12 @@ class Display(customtkinter.CTk):
         
         if self._hud_is_paused is False: 
 
-            self.render_elapsed()
-            self.render_orientation(self.arrowColor_base)
+            if self._node._audioManager.tutorial_index > 3:
+
+                self.render_orientation(self.arrowColor_base)
+
+                if self._node._audioManager.tutorial_index > 5:
+                    self.render_elapsed()
             #self.render_direction(DIRECTION_STATE.STOP.value)
 
 

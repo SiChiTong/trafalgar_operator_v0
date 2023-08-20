@@ -390,18 +390,19 @@ class Controller( Node ):
                 
                 else:
                     
-                    if self._audioManager.tutorial_index >= 2:
+                    if self._audioManager.tutorial_index > 2:
                         self.lockDirection = False
 
-                    elif self._audioManager.tutorial_index >= 3:
-                        self.lockOrientation = False
+                        if self._audioManager.tutorial_index > 3:
+                            self.lockOrientation = False
                 
                     else:
 
                         self.lockDirection = True
                         self.lockOrientation = True
 
-
+                    #self.get_logger().info(f"check tutorial index {self._audioManager.tutorial_index}")
+              
                     self._audioManager.follow_tutorial( INDEX )
 
         
@@ -454,7 +455,7 @@ class Controller( Node ):
 
             self._sub_drone_sensor = self.create_subscription(
                 String,
-                f"/{PEER.DRONE.value}_{self.get_parameter('peer_index').value}/{AVAILABLE_TOPICS.SENSOR.value}",
+                f"/{PEER.DRONE.value}_{INDEX}/{AVAILABLE_TOPICS.SENSOR.value}",
                 self.OnDroneDatas,
                 qos_profile=qos_profile_sensor_data
             )
@@ -683,8 +684,8 @@ class Controller( Node ):
             else:
                 self.VerticalAngleSwitchTriggered = False
             
-            if self.VerticalAngleSwitchEnabled is True:
-                self.get_logger().info( "vertical angle switch is triggered !")
+            #if self.VerticalAngleSwitchEnabled is True:
+            #    self.get_logger().info( "vertical angle switch is triggered !")
 
 
         def _send_controller_cmd( self ):
@@ -753,13 +754,12 @@ class Controller( Node ):
                             self.droneDirection = updateDroneDirection
 
                             if self._audioManager is not None :
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )
-                                
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
                                                         
-                            if self._audioManager.unlock_direction is False:
-                                self._audioManager.unlock_direction = True
+                                if self._audioManager.unlock_direction is False:
+                                    self._audioManager.unlock_direction = True
 
-                        #self.get_logger().info( f"music has changed on drone value user direction : {self._direction} / drone direction : {self.droneDirection} / obsacle in front : {self._obstacleInFront} ")
+                        #self.get_logger().info( f" unlock direction : {self._audioManager.unlock_direction} // drone value user direction : {self._direction} / drone direction : {self.droneDirection} ")
 
 
                     elif(topic == SENSORS_TOPICS.OBSTACLE_DISTANCE.value  ):
@@ -779,8 +779,9 @@ class Controller( Node ):
 
                             self.droneSteering = updateSteering
 
-                            if self._audioManager.unlock_orientation is False:
-                                self._audioManager.unlock_orientation = True
+                            if self._audioManager is not None :
+                                if self._audioManager.unlock_orientation is False:
+                                    self._audioManager.unlock_orientation = True
 
 
 
@@ -800,7 +801,7 @@ class Controller( Node ):
             if "peers" in master_pulse: 
 
                 peers = master_pulse["peers"]
-                peerUpdate = f"peer_{self.get_parameter('peer_index').value}"
+                peerUpdate = f"peer_{INDEX}"
 
                 if peerUpdate in peers: 
 
@@ -826,6 +827,8 @@ class Controller( Node ):
                         if enableUpdate is True: 
                             
                             if self.isGamePlayEnable is False:
+                                
+                                self._playtimeLeft = self._playtime
 
                                 self._update_direction(DIRECTION_STATE.STOP.value)
 

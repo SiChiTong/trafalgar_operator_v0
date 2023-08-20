@@ -12,7 +12,7 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
 
-MAX_QUEUE_SIZE = 2
+MAX_QUEUE_SIZE = 4
 
 class VideoStream( object ):
 
