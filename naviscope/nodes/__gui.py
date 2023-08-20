@@ -503,7 +503,7 @@ class Display(customtkinter.CTk):
             
                     if self._frame_has_been_updated is True:
                 
-                        if self.frame != self.last_frame:
+                        if self._frame != self.last_frame:
                             self._frame = self.last_frame   
 
                     self.clear_img_text()
