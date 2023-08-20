@@ -496,16 +496,6 @@ class Controller( Node ):
                 
                 self._send_controller_cmd()
             
-            """
-                else :
-
-                if self._direction != DIRECTION_STATE.STOP.value: 
-
-                    if self._audioManager is not None:
-                        self._audioManager.gameplayMusic( self.isGamePlayEnable, DIRECTION_STATE.STOP.value )
-            
-            """
-
 
 
         def _updateWheelAudio( self, increment ): 
@@ -825,6 +815,9 @@ class Controller( Node ):
                     
                     if "playtime" in statusUpdate:
                         self._playtime =  statusUpdate["playtime"]
+
+                    if "lang" in statusUpdate:
+                        self.set_tutorial_language( self._language )
 
                     if "enable" in statusUpdate:
                         
