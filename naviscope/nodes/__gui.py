@@ -118,7 +118,7 @@ class Display(customtkinter.CTk):
 
     @property
     def videoWidth(self):
-        return 480
+        return 720
 
     @property
     def videoHeight(self):
@@ -473,8 +473,8 @@ class Display(customtkinter.CTk):
         color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
             
         img = Image.fromarray( color_conv )
-        img.transpose(Image.FLIP_TOP_BOTTOM)
-        
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+
         self._last_frame = ImageTk.PhotoImage(img)
         self._frame, self._last_frame = self._last_frame, self._frame
 
