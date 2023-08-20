@@ -71,7 +71,7 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_hud = 30 if self._enableUDPStream is False else 1
+        self._loop_hud = 17 if self._enableUDPStream is False else 1
 
         self.iddleLoop = False
 
@@ -516,7 +516,9 @@ class Display(customtkinter.CTk):
         img = background
 
         self.last_frame = ImageTk.PhotoImage(img)
-        self._frame, self.last_frame = self.last_frame, self._frame
+        
+        if self._frame is None:
+            self._frame = self.last_frame
 
         self._frame_has_been_updated = True
 
@@ -540,6 +542,9 @@ class Display(customtkinter.CTk):
                 if self._frame is not None:
             
                     if self._frame_has_been_updated is True: 
+                        
+                        if self._frame != self.last_frame:
+                            self._frame = self.last_frame
 
                         self.clear_img_text()
                         self.canvas.itemconfig( self._canvas_frame, image= self._frame )

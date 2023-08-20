@@ -584,7 +584,7 @@ class Controller( Node ):
             if self.EnableCamIncrement is True:
                     
                     if self.lockCamAzimuth is False:
-                        self._angleZ = int(np.clip( self._angleZ + updateLevelIncrement, 0,180 )) 
+                        self._angleZ = int(np.clip( self._angleZ - updateLevelIncrement, 0,180 )) 
 
                         self._update_pantilt( pan=self._angleZ, tilt=self._angleX )
   
