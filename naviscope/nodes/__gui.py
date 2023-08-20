@@ -71,8 +71,7 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_stream = 1
-        self._loop_hud = 50
+        self._loop_hud = 30 if self._enableUDPStream is False else 1
 
         self.iddleLoop = False
 
@@ -118,7 +117,7 @@ class Display(customtkinter.CTk):
 
     @property
     def videoWidth(self):
-        return 720
+        return 480
 
     @property
     def videoHeight(self):
@@ -464,7 +463,7 @@ class Display(customtkinter.CTk):
 
         self._frame_has_been_updated = True
                 
-
+    """
     def OnCVBridgeFrame( self, frame ):
         
         current_frame = frame
@@ -481,7 +480,46 @@ class Display(customtkinter.CTk):
         self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
-            
+    """        
+
+    def OnCVBridgeFrame(self, frame):
+    
+        current_frame = frame
+
+        # Supposons que cropFrame est une fonction qui effectue le rognage selon votre besoin
+        #cropFrame = self.crop_from_center(current_frame, 720, 480, self.ZoomLevel)
+
+        # Calculez le rapport de redimensionnement pour s'adapter à un écran de 480x480
+        height, width = current_frame.shape[:2]
+        ratio = min(480/height, 480/width)
+
+        # Calculez les nouvelles dimensions
+        new_width = int(width * ratio)
+        new_height = int(height * ratio)
+
+        # Redimensionnez l'image
+        resized_frame = cv2.resize(current_frame, (new_width, new_height))
+
+        # Convertir les couleurs
+        color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+
+        # Convertir en image PIL et appliquer le flip vertical
+        img = Image.fromarray(color_conv)
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+        # Centrer sur un fond de 480x480 si nécessaire
+        background = Image.new("RGB", (480, 480), (0, 0, 0))
+        bg_w, bg_h = background.size
+        img_w, img_h = img.size
+        offset = ((bg_w - img_w) // 2, (bg_h - img_h) // 2)
+        background.paste(img, offset)
+        img = background
+
+        self.last_frame = ImageTk.PhotoImage(img)
+        self._frame, self.last_frame = self.last_frame, self._frame
+
+        self._frame_has_been_updated = True
+
 
     def renderVideoFrame( self ):
     
