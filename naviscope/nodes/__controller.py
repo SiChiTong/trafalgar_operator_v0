@@ -817,7 +817,7 @@ class Controller( Node ):
                         self._playtime =  statusUpdate["playtime"]
 
                     if "lang" in statusUpdate:
-                        self.set_tutorial_language( self._language )
+                        self.set_tutorial_language( statusUpdate["lang"] )
 
                     if "enable" in statusUpdate:
                         
