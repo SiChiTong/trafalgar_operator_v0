@@ -523,19 +523,51 @@ class Display(customtkinter.CTk):
         self._frame_has_been_updated = True
 
 
+    def between(self, x, start, end):
+        return start <= x < end
+
+    def manageTutorialPictures( self , index ):
+
+        if index <= 1:
+
+            self.set_center_img( "bountyAtTahiti" )
+
+        elif self.between( index, 1, 3):
+
+            self.set_center_img( "breadfruitPlant" )
+
+        elif self.between( index, 3, 4):
+
+            self.set_center_img( "sugarPlantation" )
+
+        elif self.between( index, 4, 5):
+
+            self.set_center_img( "mutiny" )
+
+        elif self.between( index, 5, 6):
+
+            self.set_center_img( "allComponents" )
+
+        elif self.between( index, 6, 7):
+
+            self.set_center_img( "clickButton" )
+
+        elif self.between( index, 7, 9):
+
+            self.set_center_img( "rotateBar" )
+
+        #elif self.between( index, 2, 3):
+
+            #self.set_center_img( "rotateButton" )
+    
+
     def renderVideoFrame( self ):
     
         if self._node._audioManager is not None:
                 
-            if self._node._audioManager.tutorial_index <= 2:
+            if self._node._audioManager.tutorial_index <= self._node._audioManager.display_frame_index:
 
-                self.set_center_img( "bountyAtSea" )
-                self.set_text( self._text_img, "Bounty" )
-
-            elif self._node._audioManager.tutorial_index > 2 and self._node._audioManager.tutorial_index <= 6:
-
-                self.set_center_img( "naviscopeSketch" )
-                self.clear_img_text()
+                self.manageTutorialPictures( self._node._audioManager.tutorial_index )
 
             else:
 

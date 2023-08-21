@@ -46,7 +46,16 @@ class AudioManager(object):
         self.unlock_direction = False
         self.unlock_orientation = False
      
+
+    @property
+    def voice_pause_offset(self):
+        return 1000
+
+    @property
+    def display_frame_index(self):
+        return 9
     
+
     def _enable( self ):
         
         pygame.init()
@@ -179,7 +188,7 @@ class AudioManager(object):
 
                     voiceClip.play()
 
-                    pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + 500 ) )
+                    pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + self.voice_pause_offset ) )
      
 
     def reset_tutorial( self ):
@@ -196,14 +205,18 @@ class AudioManager(object):
             return
         
         tutorial_steps = [
-        {"voice": f"drone_{droneIndex}", "condition": lambda: True},
-        {"voice": "hist_introduction", "condition": lambda: True},
-        {"voice": "cmd_introduction", "condition": lambda: True},
-        {"voice": "cmd_direction", "condition": lambda: True},
-        {"voice": "cmd_orientation", "condition": lambda: self.unlock_direction},
-        {"voice": "cmd_invert", "condition": lambda: self.unlock_orientation},
-        {"voice": "cmd_spyglass", "condition": lambda: True},
-        {"voice": "cmd_end", "condition": lambda: True}
+        {"voice": f"drone_{droneIndex}", "condition": lambda: True},#0
+        {"voice": "hist_bounty", "condition": lambda: True},#1
+        {"voice": "hist_breadfruit", "condition": lambda: True},#2
+        {"voice": "hist_sugarPlantation", "condition": lambda: True},#3
+        {"voice": "hist_mutiny", "condition": lambda: True},#4
+        {"voice": "cmd_introduction", "condition": lambda: True},#5
+        {"voice": "cmd_direction", "condition": lambda: True},#6
+        {"voice": "cmd_orientation", "condition": lambda: self.unlock_direction},#7
+        {"voice": "cmd_invert", "condition": lambda: self.unlock_orientation},#8
+        {"voice": "cmd_spyglass", "condition": lambda: True},#9 display_frame
+        {"voice": "cmd_cam", "condition": lambda: True},#10
+        {"voice": "cmd_end", "condition": lambda: True}#11
         ]
 
         if self._voice_is_playing is False:
