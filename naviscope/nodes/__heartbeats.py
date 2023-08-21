@@ -8,7 +8,7 @@
 import traceback
 import subprocess
 import json
-import socket  
+import netifaces 
 
 
 import rclpy
@@ -100,20 +100,19 @@ class HeartbeatsNode( Node ):
             self._init_subscribers()
 
 
-        def get_local_ip( self ):
-
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-            try:
-
-                s.connect(('8.8.8.8', 80))
-                self._address = s.getsockname()[0]
-            except socket.error:
-                # Si la connexion échoue, nous renvoyons l'adresse IP de la machine locale
-                self._address = socket.gethostbyname(socket.gethostname())
-            finally:
-                s.close()
+        def get_local_ip(self):
             
+            self.get_wifi_interfaces()
+
+            for interface in self._wifiInterfaces:
+                addrs = netifaces.ifaddresses(interface)
+                if netifaces.AF_INET in addrs:
+                    self._address = addrs[netifaces.AF_INET][0]['addr']
+ 
+                    return
+            # Handle the case when no valid IP is found
+            self._address = None
+
 
         def _declare_parameters( self ):
 

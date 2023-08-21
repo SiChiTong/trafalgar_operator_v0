@@ -792,7 +792,7 @@ class Controller( Node ):
                         if self.lockOrientation is False: 
                             if self._audioManager.unlock_orientation is False:
                                 self._audioManager.unlock_orientation = True
-                                self.get_logger().info("drone orientation is unlock")
+                                #self.get_logger().info("drone orientation is unlock")
                         
                         if updateSteering != self.droneSteering: 
                             self.droneSteering = updateSteering
