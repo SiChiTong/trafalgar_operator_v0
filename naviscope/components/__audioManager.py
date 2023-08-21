@@ -198,7 +198,7 @@ class AudioManager(object):
         self.unlock_direction = False
         self.unlock_orientation = False
 
-
+    
     def follow_tutorial(self, droneIndex = 0 ):
 
         if self.tutorialIsComplete is True:
@@ -229,7 +229,6 @@ class AudioManager(object):
 
             if step["condition"]():
                 self.play_voice(step["voice"])
-                self.tutorial_index += 1
 
 
     def abort_tutorial( self ):
@@ -288,9 +287,13 @@ class AudioManager(object):
 
             if event.type == TUTORIAL_VOICE_ENDED:
                 self.reset_music_volume()
+                self.tutorial_index += 1
+                pygame.time.set_timer(event.type, 0)
+                
 
             elif STANDARD_VOICE_ENDED:
                 self.reset_music_volume()
+                pygame.time.set_timer(event.type, 0)
 
 
     def _disable( self ):
