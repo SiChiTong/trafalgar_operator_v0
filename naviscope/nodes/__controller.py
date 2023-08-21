@@ -385,6 +385,7 @@ class Controller( Node ):
 
             if self._audioManager is not None:
                 
+                #self.get_logger().info(f" tutorial index : {self._audioManager.tutorial_index}")
                 if self._audioManager.tutorialIsComplete is True:
                     return
                 

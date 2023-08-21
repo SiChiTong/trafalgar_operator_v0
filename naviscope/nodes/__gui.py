@@ -371,7 +371,10 @@ class Display(customtkinter.CTk):
 
         if currentAngle < 90: 
             adapted_angle = 90 + ( 90 - currentAngle )
-     
+        
+        if self.between(adapted_angle, 80, 100): 
+            adapted_angle = 90
+
         self.canvas.delete(self.tagArrow)
 
         pivot_x = self.screen_center_x + self.arrow_radius * math.cos(math.radians( adapted_angle ))
@@ -529,37 +532,23 @@ class Display(customtkinter.CTk):
 
     def manageTutorialPictures( self , index ):
 
-        if index <= 2:
+        images = [
+            
+            "pirateHead",#0
+            "allComponents",#1
+            "bountyAtSea",#2
+            #"tahiti",#3
+            "breadfruitPlant",#3
+            "sugarPlantation",#4
+            "mutiny",#5
+            "clickButton",#6
+            "clickButton",#7
+            "rotateBar",  # Index 8
+            "rotateBar"   # Index 9
+        ]
 
-            self.set_center_img( "bountyAtSea" )
-
-        elif index <= 3:
-
-            self.set_center_img( "breadfruitPlant" )
-
-        elif self.between( index, 3, 4):
-
-            self.set_center_img( "sugarPlantation" )
-
-        elif self.between( index, 4, 5):
-
-            self.set_center_img( "mutiny" )
-
-        elif self.between( index, 5, 6):
-
-            self.set_center_img( "allComponents" )
-
-        elif self.between( index, 6, 7):
-
-            self.set_center_img( "clickButton" )
-
-        elif self.between( index, 7, 9):
-
-            self.set_center_img( "rotateBar" )
-
-        #elif self.between( index, 2, 3):
-
-            #self.set_center_img( "rotateButton" )
+        if 0 < index < len(images):
+            self.set_center_img(images[index])
     
 
     def renderVideoFrame( self ):

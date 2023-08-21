@@ -46,11 +46,6 @@ class AudioManager(object):
         self.unlock_direction = False
         self.unlock_orientation = False
      
-
-    @property
-    def voice_pause_offset(self):
-        return 1000
-
     @property
     def display_frame_index(self):
         return 9
@@ -168,7 +163,7 @@ class AudioManager(object):
             self._mixer.play(loops=-1)
 
 
-    def play_voice( self, voice = None, tutorialEvent = True ): 
+    def play_voice( self, voice = None, delay=500, tutorialEvent = True ): 
 
         if self._voice_is_playing is False:
             
@@ -188,7 +183,7 @@ class AudioManager(object):
 
                     voiceClip.play()
 
-                    pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + self.voice_pause_offset ) )
+                    pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + delay ) )
      
 
     def reset_tutorial( self ):
@@ -205,18 +200,20 @@ class AudioManager(object):
             return
         
         tutorial_steps = [
-        {"voice": f"drone_{droneIndex}", "condition": lambda: True},#0
-        {"voice": "hist_bounty", "condition": lambda: True},#1
-        {"voice": "hist_breadfruit", "condition": lambda: True},#2
-        {"voice": "hist_sugarPlantation", "condition": lambda: True},#3
-        {"voice": "hist_mutiny", "condition": lambda: True},#4
-        {"voice": "cmd_introduction", "condition": lambda: True},#5
-        {"voice": "cmd_direction", "condition": lambda: True},#6
-        {"voice": "cmd_orientation", "condition": lambda: self.unlock_direction},#7
-        {"voice": "cmd_invert", "condition": lambda: self.unlock_orientation},#8
-        {"voice": "cmd_spyglass", "condition": lambda: True},#9 display_frame
-        {"voice": "cmd_cam", "condition": lambda: True},#10
-        {"voice": "cmd_end", "condition": lambda: True}#11
+        {"voice": f"drone_{droneIndex}", "delay": 500, "condition": lambda: True},#0
+        {"voice": "cmd_introduction", "delay": 1000, "condition": lambda: True},#1
+
+        {"voice": "hist_bounty", "delay": 500, "condition": lambda: True},#2
+        {"voice": "hist_breadfruit", "delay": 1000, "condition": lambda: True},#3
+        {"voice": "hist_sugarPlantation","delay": 1500,  "condition": lambda: True},#4
+        {"voice": "hist_mutiny", "delay": 2000, "condition": lambda: True},#5
+
+        {"voice": "cmd_direction", "delay": 1000,  "condition": lambda: True},#6
+        {"voice": "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#7
+        {"voice": "cmd_invert",  "delay": 1000, "condition": lambda: self.unlock_orientation},#8
+        {"voice": "cmd_spyglass", "delay": 500,  "condition": lambda: True},#9 display_frame
+        {"voice": "cmd_cam", "delay": 500,  "condition": lambda: True},#10
+        {"voice": "cmd_end", "delay": 500,  "condition": lambda: True}#11
         ]
 
         if self._voice_is_playing is False:
@@ -228,7 +225,8 @@ class AudioManager(object):
             step = tutorial_steps[ self.tutorial_index ]
 
             if step["condition"]():
-                self.play_voice(step["voice"])
+                self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
+
 
 
     def abort_tutorial( self ):
@@ -287,9 +285,8 @@ class AudioManager(object):
 
             if event.type == TUTORIAL_VOICE_ENDED:
                 self.reset_music_volume()
-                self.tutorial_index += 1
                 pygame.time.set_timer(event.type, 0)
-                
+                self.tutorial_index += 1
 
             elif STANDARD_VOICE_ENDED:
                 self.reset_music_volume()
