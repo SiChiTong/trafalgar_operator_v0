@@ -17,7 +17,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from rclpy.qos import qos_profile_sensor_data
 
-from ..utils.__utils_objects import AVAILABLE_TOPICS, PEER, EXIT_STATE
+from ..utils.__utils_objects import AVAILABLE_TOPICS, WIFI_INTERFACE, PEER, EXIT_STATE
 
 class HeartbeatsNode( Node ):
 
@@ -113,6 +113,17 @@ class HeartbeatsNode( Node ):
             # Handle the case when no valid IP is found
             self._address = None
 
+        def get_wifi_interfaces( self ):
+            
+            wifi_interfaces = []
+            interfaces = netifaces.interfaces()
+            
+            for interface in interfaces:
+
+                if WIFI_INTERFACE in interface:
+                    wifi_interfaces.append(interface)
+            
+            self._wifiInterfaces = wifi_interfaces
 
         def _declare_parameters( self ):
 
