@@ -564,8 +564,10 @@ class Display(customtkinter.CTk):
     def renderVideoFrame( self ):
     
         if self._node._audioManager is not None:
-                
-            if self._node._audioManager.tutorial_index <= self._node._audioManager.display_frame_index:
+            
+            self.get_logger().info( f"tutorial_index: {self._node._audioManager.tutorial_index}" )
+            
+            if self._node._audioManager.tutorial_index < self._node._audioManager.display_frame_index:
 
                 self.manageTutorialPictures( self._node._audioManager.tutorial_index )
 
