@@ -528,11 +528,11 @@ class Display(customtkinter.CTk):
 
     def manageTutorialPictures( self , index ):
 
-        if index <= 1:
+        if index <= 2:
 
-            self.set_center_img( "bountyAtTahiti" )
+            self.set_center_img( "bountyAtSea" )
 
-        elif self.between( index, 1, 3):
+        elif index <= 3:
 
             self.set_center_img( "breadfruitPlant" )
 
@@ -633,11 +633,11 @@ class Display(customtkinter.CTk):
         
         if self._hud_is_paused is False: 
 
-            if self._node._audioManager.tutorial_index > 3:
+            if self._node._audioManager.tutorial_index >= 7:
 
                 self.render_orientation(self.arrowColor_base)
 
-                if self._node._audioManager.tutorial_index > 5:
+                if self._node._audioManager.tutorial_index >= 9:
                     self.render_elapsed()
             #self.render_direction(DIRECTION_STATE.STOP.value)
 

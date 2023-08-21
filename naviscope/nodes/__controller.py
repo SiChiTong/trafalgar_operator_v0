@@ -390,10 +390,10 @@ class Controller( Node ):
                 
                 else:
                     
-                    if self._audioManager.tutorial_index > 2:
+                    if self._audioManager.tutorial_index > 5:
                         self.lockDirection = False
 
-                        if self._audioManager.tutorial_index > 3:
+                        if self._audioManager.tutorial_index > 6:
                             self.lockOrientation = False
                 
                     else:
