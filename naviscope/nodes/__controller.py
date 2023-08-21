@@ -391,11 +391,12 @@ class Controller( Node ):
                 else:
                     
                     if self._audioManager.tutorial_index > 5:
+
                         self.lockDirection = False
 
                         if self._audioManager.tutorial_index > 6:
                             self.lockOrientation = False
-                
+
                     else:
 
                         self.lockDirection = True
@@ -765,9 +766,12 @@ class Controller( Node ):
 
                             if self._audioManager is not None :
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
-                                                        
-                                if self._audioManager.unlock_direction is False:
-                                    self._audioManager.unlock_direction = True
+
+                                             
+                                if self.lockDirection is False and self._audioManager.unlock_direction is False:
+                                    
+                                    if updateDroneDirection == DIRECTION_STATE.FORWARD.value:
+                                        self._audioManager.unlock_direction = True
 
                         #self.get_logger().info( f" unlock direction : {self._audioManager.unlock_direction} // drone value user direction : {self._direction} / drone direction : {self.droneDirection} ")
 
@@ -785,18 +789,14 @@ class Controller( Node ):
                         
                         updateSteering = sensor_datas[topic]
 
+                        if self.lockOrientation is False: 
+                            if self._audioManager.unlock_orientation is False:
+                                self._audioManager.unlock_orientation = True
+                                self.get_logger().info("drone orientation is unlock")
+                        
                         if updateSteering != self.droneSteering: 
-
                             self.droneSteering = updateSteering
-
-                            if self._audioManager is not None :
-                                if self._audioManager.unlock_orientation is False:
-                                    self._audioManager.unlock_orientation = True
-
-
-
             
-
 
             if self.droneDirection != self._direction : 
 

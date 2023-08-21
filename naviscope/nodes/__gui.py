@@ -457,9 +457,10 @@ class Display(customtkinter.CTk):
         color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
         
         img = Image.fromarray( color_conv )
-                    
-        self.last_frame = ImageTk.PhotoImage(img)
-        self._frame, self.last_frame = self.last_frame, self._frame
+
+        if img is not None:           
+            self.last_frame = ImageTk.PhotoImage(img)
+            self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
                 
@@ -486,7 +487,7 @@ class Display(customtkinter.CTk):
     
         current_frame = frame
 
-        # Supposons que cropFrame est une fonction qui effectue le rognage selon votre besoin
+        """
         #cropFrame = self.crop_from_center(current_frame, 720, 480, self.ZoomLevel)
 
         # Calculez le rapport de redimensionnement pour s'adapter à un écran de 480x480
@@ -498,10 +499,10 @@ class Display(customtkinter.CTk):
         new_height = int(height * ratio)
 
         # Redimensionnez l'image
-        resized_frame = cv2.resize(current_frame, (new_width, new_height))
-
+        #resized_frame = cv2.resize(current_frame, (new_width, new_height))
+        """
         # Convertir les couleurs
-        color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+        color_conv = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
 
         # Convertir en image PIL et appliquer le flip vertical
         img = Image.fromarray(color_conv)
@@ -565,7 +566,7 @@ class Display(customtkinter.CTk):
     
         if self._node._audioManager is not None:
             
-            self.get_logger().info( f"tutorial_index: {self._node._audioManager.tutorial_index}" )
+            #self._node.get_logger().info( f"tutorial_index: {self._node._audioManager.tutorial_index}" )
             
             if self._node._audioManager.tutorial_index < self._node._audioManager.display_frame_index:
 
@@ -581,6 +582,7 @@ class Display(customtkinter.CTk):
                             self._frame = self.last_frame
 
                         self.clear_img_text()
+
                         self.canvas.itemconfig( self._canvas_frame, image= self._frame )
                         self._center_image_name = "frame"
 
