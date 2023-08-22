@@ -466,11 +466,14 @@ class Display(customtkinter.CTk):
         
         img = Image.fromarray( color_conv )
 
-        if img is not None:           
-            self.last_frame = ImageTk.PhotoImage(img)
-            self._frame, self.last_frame = self.last_frame, self._frame
+        if img is not None: 
 
-        self._frame_has_been_updated = True
+            self.last_frame = ImageTk.PhotoImage(img)
+            
+            if self._frame is None:
+                self._frame = self.last_frame
+
+            self._frame_has_been_updated = True
 
 
     def OnCVBridgeFrame(self, frame):
@@ -523,6 +526,7 @@ class Display(customtkinter.CTk):
                         
                         if self._frame != self.last_frame:
                             self._frame = self.last_frame
+                            self._node.get_logger().info( f"frame updated" )
 
                         self.clear_img_text()
 
