@@ -228,10 +228,10 @@ class AudioManager(object):
                 return
 
             step = tutorial_steps[ self.tutorial_index ]
-            self.displayCameraFeed = step["displayCamera"]
-            self.imgToDisplay = step["img"]
 
             if step["condition"]():
+                self.displayCameraFeed = step["displayCamera"]
+                self.imgToDisplay = step["img"]
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
 
 
