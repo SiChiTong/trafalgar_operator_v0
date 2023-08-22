@@ -54,7 +54,7 @@ class Display(customtkinter.CTk):
 
         self._frame_has_been_updated = False
 
-        self._enableUDPStream = self.Display.ENABLE_UDP_STREAM
+        self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
 
         self.title(Display.APP_NAME)
