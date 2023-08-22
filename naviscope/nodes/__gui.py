@@ -526,7 +526,7 @@ class Display(customtkinter.CTk):
                         
                         if self._frame != self.last_frame:
                             self._frame = self.last_frame
-                            self._node.get_logger().info( f"frame updated" )
+                            #self._node.get_logger().info( f"frame updated" )
 
                         self.clear_img_text()
 
