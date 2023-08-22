@@ -387,24 +387,15 @@ class Controller( Node ):
                 
                 #self.get_logger().info(f" tutorial index : {self._audioManager.tutorial_index}")
                 if self._audioManager.tutorialIsComplete is True:
+                    self.lockDirection = False
+                    self.lockOrientation = False
                     return
                 
                 else:
                     
-                    if self._audioManager.tutorial_index > 5:
+                    self.lockDirection = self._audioManager.userlock_direction
+                    self.lockOrientation = self._audioManager.userlock_orientation
 
-                        self.lockDirection = False
-
-                        if self._audioManager.tutorial_index > 6:
-                            self.lockOrientation = False
-
-                    else:
-
-                        self.lockDirection = True
-                        self.lockOrientation = True
-
-                    #self.get_logger().info(f"check tutorial index {self._audioManager.tutorial_index}")
-              
                     self._audioManager.follow_tutorial( INDEX )
 
         

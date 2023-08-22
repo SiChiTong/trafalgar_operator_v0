@@ -27,6 +27,9 @@ class AudioManager(object):
         self.displayCameraFeed = False
         self.imgToDisplay = ""
 
+        self.userlock_direction = True
+        self.userlock_orientation = True
+        
         self._music_playlist = []
         self._sfx_playlist = []
 
@@ -203,20 +206,20 @@ class AudioManager(object):
             return
         
         tutorial_steps = [
-        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "img" : "pirateHead", "delay": 500, "condition": lambda: True},#0
-        {"voice": "cmd_introduction", "displayCamera" : False, "img" : "cmd_introduction", "delay": 2000, "condition": lambda: True},#1
+        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "lockDirection" : True, "lockOrientation" : True, "img" : "pirateHead", "delay": 500, "condition": lambda: True},#0
+        {"voice": "cmd_introduction", "displayCamera" : False, "lockDirection" : True,"lockOrientation" : True, "img" : "cmd_introduction", "delay": 2000, "condition": lambda: True},#1
 
-        {"voice": "cmd_direction", "displayCamera" : False, "img" : "cmd_buttonClick", "delay": 2000,  "condition": lambda: True},#2
-        {"voice": "cmd_orientation", "displayCamera" : False, "img" : "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#3
-        {"voice": "cmd_invert", "displayCamera" : False, "img" : "cmd_orientation", "delay": 1000, "condition": lambda: self.unlock_orientation},#4
-        {"voice": "cmd_spyglass", "displayCamera" : True, "img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#5 > display frame
-        {"voice": "cmd_cam", "displayCamera" : False, "img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
-        {"voice": "cmd_end", "displayCamera" : True, "img" : "cmd_cam", "delay": 120 * 1000,  "condition": lambda: True},#7
+        {"voice": "cmd_direction", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : True,"img" : "cmd_buttonClick", "delay": 2000,  "condition": lambda: True},#2
+        {"voice": "cmd_orientation", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#3
+        {"voice": "cmd_invert", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation", "delay": 1000, "condition": lambda: self.unlock_orientation},#4
+        {"voice": "cmd_spyglass", "displayCamera" : True,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#5 > display frame
+        {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
+        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : "cmd_cam", "delay": 120 * 1000,  "condition": lambda: True},#7
 
-        {"voice": "hist_bounty", "displayCamera" : False, "img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: True},#8
-        {"voice": "hist_breadfruit", "displayCamera" : False, "img" : "hist_breadfruit", "delay": 1000, "condition": lambda: True},#9
-        {"voice": "hist_sugarPlantation", "displayCamera" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: True},#10
-        {"voice": "hist_mutiny", "displayCamera" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: True}#11 > displayframe
+        {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: True},#8
+        {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit", "delay": 1000, "condition": lambda: True},#9
+        {"voice": "hist_sugarPlantation", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: True},#10
+        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: True}#11 > displayframe
 
         ]
 
@@ -232,6 +235,10 @@ class AudioManager(object):
             if step["condition"]():
                 self.displayCameraFeed = step["displayCamera"]
                 self.imgToDisplay = step["img"]
+
+                self.userlock_direction = step["lockDirection"]
+                self.userlock_orientation = step["lockOrientation"]
+
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
 
 
