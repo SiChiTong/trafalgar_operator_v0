@@ -27,6 +27,8 @@ class Display(customtkinter.CTk):
     APP_NAME = ""
     WIDTH = 480
     HEIGHT = 480
+    
+    ENABLE_UDP_STREAM = False
 
     def __init__(
             self
@@ -52,7 +54,7 @@ class Display(customtkinter.CTk):
 
         self._frame_has_been_updated = False
 
-        self._enableUDPStream = False
+        self._enableUDPStream = self.Display.ENABLE_UDP_STREAM
         self._videostream = None
 
         self.title(Display.APP_NAME)
@@ -466,44 +468,12 @@ class Display(customtkinter.CTk):
             self._frame, self.last_frame = self.last_frame, self._frame
 
         self._frame_has_been_updated = True
-                
-    """
-    def OnCVBridgeFrame( self, frame ):
-        
-        current_frame = frame
 
-        cropFrame = self.crop_from_center(current_frame, 720, 480, self.ZoomLevel)
-
-        resized_frame = cv2.resize( cropFrame , (self.videoWidth, self.videoHeight) )
-        color_conv = cv2.cvtColor( resized_frame  , cv2.COLOR_BGR2RGB)
-            
-        img = Image.fromarray( color_conv )
-        img = img.transpose(Image.FLIP_TOP_BOTTOM)
-
-        self.last_frame = ImageTk.PhotoImage(img)
-        self._frame, self.last_frame = self.last_frame, self._frame
-
-        self._frame_has_been_updated = True
-    """        
 
     def OnCVBridgeFrame(self, frame):
     
         current_frame = frame
 
-        """
-        #cropFrame = self.crop_from_center(current_frame, 720, 480, self.ZoomLevel)
-
-        # Calculez le rapport de redimensionnement pour s'adapter à un écran de 480x480
-        height, width = current_frame.shape[:2]
-        ratio = min(480/height, 480/width)
-
-        # Calculez les nouvelles dimensions
-        new_width = int(width * ratio)
-        new_height = int(height * ratio)
-
-        # Redimensionnez l'image
-        #resized_frame = cv2.resize(current_frame, (new_width, new_height))
-        """
         # Convertir les couleurs
         color_conv = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
 

@@ -201,14 +201,14 @@ class AudioManager(object):
         
         tutorial_steps = [
         {"voice": f"drone_{droneIndex}", "delay": 500, "condition": lambda: True},#0
-        {"voice": "cmd_introduction", "delay": 1000, "condition": lambda: True},#1
+        {"voice": "cmd_introduction", "delay": 2000, "condition": lambda: True},#1
 
-        {"voice": "hist_bounty", "delay": 500, "condition": lambda: True},#2
+        {"voice": "hist_bounty", "delay": 1000, "condition": lambda: True},#2
         {"voice": "hist_breadfruit", "delay": 1000, "condition": lambda: True},#3
         {"voice": "hist_sugarPlantation","delay": 1500,  "condition": lambda: True},#4
         {"voice": "hist_mutiny", "delay": 2000, "condition": lambda: True},#5
 
-        {"voice": "cmd_direction", "delay": 1000,  "condition": lambda: True},#6
+        {"voice": "cmd_direction", "delay": 2000,  "condition": lambda: True},#6
         {"voice": "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#7
         {"voice": "cmd_invert",  "delay": 1000, "condition": lambda: self.unlock_orientation},#8
         {"voice": "cmd_spyglass", "delay": 500,  "condition": lambda: True},#9 display_frame
