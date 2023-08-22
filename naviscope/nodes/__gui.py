@@ -332,6 +332,9 @@ class Display(customtkinter.CTk):
 
     def set_center_img( self, imgName = "" ):
 
+        if imgName == "":
+            return 
+        
         if self._center_image_name != imgName:
 
             image = self.imgList[imgName]
@@ -499,26 +502,6 @@ class Display(customtkinter.CTk):
 
     def between(self, x, start, end):
         return start <= x < end
-
-    def manageTutorialPictures( self , index ):
-
-        images = [
-            
-            "pirateHead",#0
-            "allComponents",#1
-            "bountyAtSea",#2
-            #"tahiti",#3
-            "breadfruitPlant",#3
-            "sugarPlantation",#4
-            "mutiny",#5
-            "clickButton",#6
-            "clickButton",#7
-            "rotateBar",  # Index 8
-            "rotateBar"   # Index 9
-        ]
-
-        if 0 < index < len(images):
-            self.set_center_img(images[index])
     
 
     def renderVideoFrame( self ):
@@ -527,9 +510,10 @@ class Display(customtkinter.CTk):
             
             #self._node.get_logger().info( f"tutorial_index: {self._node._audioManager.tutorial_index}" )
             
-            if self._node._audioManager.tutorial_index < self._node._audioManager.display_frame_index:
+            if self._node._audioManager.displayCameraFeed is False:
 
-                self.manageTutorialPictures( self._node._audioManager.tutorial_index )
+                if self._node._audioManager.imgToDisplay is not None and self._node._audioManager.imgToDisplay != self._center_image_name:
+                        self.set_center_img(self._node._audioManager.imgToDisplay)
 
             else:
 

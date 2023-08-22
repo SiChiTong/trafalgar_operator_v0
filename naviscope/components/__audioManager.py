@@ -24,6 +24,9 @@ class AudioManager(object):
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
 
+        self.displayCameraFeed = False
+        self.imgToDisplay = ""
+
         self._music_playlist = []
         self._sfx_playlist = []
 
@@ -192,7 +195,7 @@ class AudioManager(object):
         self.tutorialIsComplete = False
         self.unlock_direction = False
         self.unlock_orientation = False
-
+        self.displayCameraFeed = False
     
     def follow_tutorial(self, droneIndex = 0 ):
 
@@ -200,29 +203,33 @@ class AudioManager(object):
             return
         
         tutorial_steps = [
-        {"voice": f"drone_{droneIndex}", "delay": 500, "condition": lambda: True},#0
-        {"voice": "cmd_introduction", "delay": 2000, "condition": lambda: True},#1
+        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "img" : "pirateHead", "delay": 500, "condition": lambda: True},#0
+        {"voice": "cmd_introduction", "displayCamera" : False, "img" : "cmd_introduction", "delay": 2000, "condition": lambda: True},#1
 
-        {"voice": "hist_bounty", "delay": 1000, "condition": lambda: True},#2
-        {"voice": "hist_breadfruit", "delay": 1000, "condition": lambda: True},#3
-        {"voice": "hist_sugarPlantation","delay": 1500,  "condition": lambda: True},#4
-        {"voice": "hist_mutiny", "delay": 2000, "condition": lambda: True},#5
+        {"voice": "cmd_direction", "displayCamera" : False, "img" : "cmd_buttonClick", "delay": 2000,  "condition": lambda: True},#2
+        {"voice": "cmd_orientation", "displayCamera" : False, "img" : "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#3
+        {"voice": "cmd_invert", "displayCamera" : False, "img" : "cmd_orientation", "delay": 1000, "condition": lambda: self.unlock_orientation},#4
+        {"voice": "cmd_spyglass", "displayCamera" : True, "img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#5 > display frame
+        {"voice": "cmd_cam", "displayCamera" : False, "img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
+        {"voice": "cmd_end", "displayCamera" : True, "img" : "cmd_cam", "delay": 120 * 1000,  "condition": lambda: True},#7
 
-        {"voice": "cmd_direction", "delay": 2000,  "condition": lambda: True},#6
-        {"voice": "cmd_orientation", "delay": 500,  "condition": lambda: self.unlock_direction},#7
-        {"voice": "cmd_invert",  "delay": 1000, "condition": lambda: self.unlock_orientation},#8
-        {"voice": "cmd_spyglass", "delay": 500,  "condition": lambda: True},#9 display_frame
-        {"voice": "cmd_cam", "delay": 500,  "condition": lambda: True},#10
-        {"voice": "cmd_end", "delay": 500,  "condition": lambda: True}#11
+        {"voice": "hist_bounty", "displayCamera" : False, "img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: True},#8
+        {"voice": "hist_breadfruit", "displayCamera" : False, "img" : "hist_breadfruit", "delay": 1000, "condition": lambda: True},#9
+        {"voice": "hist_sugarPlantation", "displayCamera" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: True},#10
+        {"voice": "hist_mutiny", "displayCamera" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: True}#11 > displayframe
+
         ]
 
         if self._voice_is_playing is False:
 
             if self.tutorial_index > len( tutorial_steps ) - 1 :
                 self.tutorialIsComplete = True
+                self.displayCameraFeed = True
                 return
 
             step = tutorial_steps[ self.tutorial_index ]
+            self.displayCameraFeed = step["displayCamera"]
+            self.imgToDisplay = step["img"]
 
             if step["condition"]():
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
@@ -233,7 +240,7 @@ class AudioManager(object):
 
         self.tutorial_index = 11
         self.tutorialIsComplete = True
-
+        self.displayCameraFeed = True
             
     def gameplayMusic( self, Enable, direction ): 
 
