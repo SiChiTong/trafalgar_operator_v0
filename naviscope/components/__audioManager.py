@@ -191,14 +191,6 @@ class AudioManager(object):
 
                     pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + delay ) )
      
-
-    def reset_tutorial( self ):
-
-        self.tutorial_index = 0
-        self.tutorialIsComplete = False
-        self.unlock_direction = False
-        self.unlock_orientation = False
-        self.displayCameraFeed = False
     
     def follow_tutorial(self, droneIndex = 0 ):
 
@@ -242,12 +234,29 @@ class AudioManager(object):
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
 
 
+    def reset_tutorial( self ):
+
+        self.tutorial_index = 0
+        self.tutorialIsComplete = False
+        self.unlock_direction = False
+        self.unlock_orientation = False
+        self.displayCameraFeed = False
+
+        self.userlock_direction = True
+        self.userlock_orientation = True
 
     def abort_tutorial( self ):
 
         self.tutorial_index = 11
         self.tutorialIsComplete = True
         self.displayCameraFeed = True
+
+        self.unlock_direction = True
+        self.unlock_orientation = True
+
+        self.userlock_direction = False
+        self.userlock_orientation = False
+
             
     def gameplayMusic( self, Enable, direction ): 
 
