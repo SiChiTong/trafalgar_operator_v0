@@ -222,7 +222,7 @@ class AudioManager(object):
                 self.tutorialIsComplete = True
                 return
 
-            step = self.tutorial_steps[ self.tutorial_index ]
+            step = tutorial_steps[ self.tutorial_index ]
 
             if step["condition"]():
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
