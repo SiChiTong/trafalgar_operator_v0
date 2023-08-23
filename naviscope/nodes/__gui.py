@@ -47,10 +47,7 @@ class Display(customtkinter.CTk):
         self._drone_orientation = None
 
         self._frame = None
-
-        self._current_frame = None
-        self._next_frame = None
-        self.last_frame = None
+        self._last_frame = None
 
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
@@ -516,6 +513,8 @@ class Display(customtkinter.CTk):
 
                     self.canvas.itemconfig( self._canvas_frame, image= self._frame )
                     self._center_image_name = "frame"
+                    
+                    self._last_frame = self._frame
 
                     self._frame = None
         
@@ -594,8 +593,10 @@ class Display(customtkinter.CTk):
     
         if self._node is not None: 
 
-            with self._lock:
-                self.gameplayEnable = self._node.isGamePlayEnable
+            #with self._lock:
+            #    self.gameplayEnable = self._node.isGamePlayEnable
+
+            self.gameplayEnable = self._node.isGamePlayEnable
 
             if self.gameplayEnable is True:
                 self.renderHUD()
