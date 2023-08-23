@@ -52,8 +52,6 @@ class Display(customtkinter.CTk):
         self._next_frame = None
         self.last_frame = None
 
-        self._frame_has_been_updated = False
-
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
 
@@ -65,8 +63,6 @@ class Display(customtkinter.CTk):
         self.attributes("-fullscreen", True) 
 
         self.canvaResolution = (self.winfo_screenwidth(), self.winfo_screenheight()) 
-
-        self.bind("<Control-c>", self._closing_from_gui)
 
         self._blackScreen = False 
 
@@ -174,7 +170,8 @@ class Display(customtkinter.CTk):
         return 180
     
     def _initialize( self ):   
-         
+        
+        self.bind_events()
         self._init_components()
         self._create_window()
         self.updateHud()
@@ -183,6 +180,12 @@ class Display(customtkinter.CTk):
     def _start( self ):
         self.mainloop()
     
+
+    def bind_events( self ):
+
+        self.bind("<Control-c>", self._closing_from_gui)
+        #self.bind("<<closeGUI>>", self._stop)
+
 
     def _create_window( self ): 
 
@@ -465,15 +468,7 @@ class Display(customtkinter.CTk):
         color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
         
         img = Image.fromarray( color_conv )
-
-        if img is not None: 
-
-            self.last_frame = ImageTk.PhotoImage(img)
-            
-            if self._frame is None:
-                self._frame = self.last_frame
-
-            self._frame_has_been_updated = True
+        self._frame = ImageTk.PhotoImage( img )
 
 
     def OnCVBridgeFrame(self, frame):
@@ -495,12 +490,7 @@ class Display(customtkinter.CTk):
         background.paste(img, offset)
         img = background
 
-        self.last_frame = ImageTk.PhotoImage(img)
-        
-        if self._frame is None:
-            self._frame = self.last_frame
-
-        self._frame_has_been_updated = True
+        self._frame = ImageTk.PhotoImage(img)
 
 
     def between(self, x, start, end):
@@ -521,19 +511,13 @@ class Display(customtkinter.CTk):
             else:
 
                 if self._frame is not None:
-            
-                    if self._frame_has_been_updated is True: 
-                        
-                        if self._frame != self.last_frame:
-                            self._frame = self.last_frame
-                            #self._node.get_logger().info( f"frame updated" )
 
-                        self.clear_img_text()
+                    self.clear_img_text()
 
-                        self.canvas.itemconfig( self._canvas_frame, image= self._frame )
-                        self._center_image_name = "frame"
+                    self.canvas.itemconfig( self._canvas_frame, image= self._frame )
+                    self._center_image_name = "frame"
 
-                    self._frame_has_been_updated = False
+                    self._frame = None
         
         self._blackScreen = False
     
