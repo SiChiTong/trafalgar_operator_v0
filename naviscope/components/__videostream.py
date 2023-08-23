@@ -84,7 +84,7 @@ class VideoStream( object ):
             "videoflip method=2 ! "
             "videoscale ! "
             "identity drop-allocation=true ! "
-            "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
+            "appsink name=appsink emit-signals=true max-buffers=2 sync=false async=false" #drop=true
     
         )
 
