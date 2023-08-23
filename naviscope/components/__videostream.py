@@ -29,10 +29,6 @@ class VideoStream( object ):
     def udpPort( self ): 
         return 3000
         
-    @property
-    def udpPort( self ): 
-        return 3000
-        
 
     def OnNewSample(self, sink):
             
@@ -84,7 +80,7 @@ class VideoStream( object ):
             "videoflip method=2 ! "
             "videoscale ! "
             "identity drop-allocation=true ! "
-            "appsink name=appsink emit-signals=true max-buffers=2 sync=false async=false" #drop=true
+            "appsink name=appsink emit-signals=true max-buffers=2 drop=true sync=false async=false" #drop=true
     
         )
 
