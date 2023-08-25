@@ -261,8 +261,8 @@ class Controller( Node ):
                     
                         output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
                     
-                        signal_strength_match = re.search(r"Signal level=(\d+)/\d+", output)
-                        frequency_match = re.search(r"Frequency:(\d+\.\d+) GHz", output)
+                        signal_strength_match = re.search(r"Signal level=([\-\d]+ dBm)", output)
+                        frequency_match =  re.search(r"Frequency:([\d.]+ GHz)", output)
 
                         if signal_strength_match and frequency_match:
                             signal_strength = int(signal_strength_match.group(1))
