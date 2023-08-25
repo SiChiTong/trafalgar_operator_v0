@@ -260,15 +260,18 @@ class Controller( Node ):
                     try:
                     
                         output = subprocess.check_output(["iwconfig", interface], universal_newlines=True)
-                    
+
                         signal_strength_match = re.search(r"Signal level=([\-\d]+ dBm)", output)
                         frequency_match =  re.search(r"Frequency:([\d.]+ GHz)", output)
+                        self.get_logger().info(f"{signal_strength_match}")
 
                         if signal_strength_match and frequency_match:
-                            signal_strength = int(signal_strength_match.group(1))
-                            frequency = float(frequency_match.group(1))
-                            
+                            signal_strength = int(signal_strength_match.group(1).split()[0])  # Split to get only the number part
+                            frequency = float(frequency_match.group(1).split()[0])  # Split to get only the number part
+                            #self.get_logger().info(f"Signal Strength: {signal_strength} dBm, Frequency: {frequency} GHz")
                             return (signal_strength, frequency)
+                        else:
+                            return (0,0)
 
                     except Exception as inner_exception:
                         self.get_logger().info(f"Erreur lors de la récupération de la puissance du signal : {inner_exception}")
