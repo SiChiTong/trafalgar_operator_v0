@@ -47,6 +47,8 @@ class AudioManager(object):
         }
 
         self.tutorial_index = 0
+        self.displayFullHudIndex = 5
+        
         self.tutorialIsComplete = False
 
         self.unlock_direction = False

@@ -193,7 +193,9 @@ class Display(customtkinter.CTk):
         self.loadImages()
         self.draw_image_frame()
 
+        self.draw_boxes()
         self.draw_texts()
+        
         self.renderBlackScreen()
 
 
@@ -242,19 +244,30 @@ class Display(customtkinter.CTk):
         )
 
 
+    def draw_boxes( self ):
+
+        self._box_elapsed = self.canvas.create_rectangle(
+            0, 
+            0, 
+            0, 
+            0,
+            fill="black", 
+            tags=self.tagHud
+        )
+
+
     def draw_texts( self ):
 
         self._text_elapsed_time = self.canvas.create_text(
             280, 
             100, 
             text="15:53", 
-            fill="red", 
+            fill="white", 
             font=("Arial", 15, "bold"), 
             anchor="w", 
             angle = self.text_flip_method,
             tags=self.tagHud
         )
-
         
         self._text_img = self.canvas.create_text(
             280, 
@@ -366,7 +379,34 @@ class Display(customtkinter.CTk):
                 formatted_time = self.format_time(time_delta)
                 
                 self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
-   
+                self.render_elapsed_box()
+
+
+    def render_elapsed_box(self, timeLeft = 0 ):
+       
+        bbox = self.canvas.bbox( self._text_elapsed_time )
+    
+        padding = 2
+        rectangle_height = 20
+    
+        x1 = bbox[0] - padding
+        y1 = bbox[3] + padding
+        x2 = bbox[2] + padding
+        y2 = bbox[3] + padding + rectangle_height
+    
+
+        self.canvas.coords( self._box_elapsed, x1, y1, x2, y2 )
+        
+        if timeLeft > 0:
+            if timeLeft <= 60:
+                self.set_box(self._box_elapsed, "red", "black")
+            else: 
+                self.set_box(self._box_direction, "black", "white")
+        else:
+            self.set_box(self._box_direction, "black", "black")
+
+        self.canvas.tag_raise( self._text_elapsed_time )  
+
 
     def render_directional_arrow(self, currentAngle = 90, arrowColorFill = "black", arrowColorOutline = "white" ):
 
@@ -453,7 +493,6 @@ class Display(customtkinter.CTk):
 
             else :
                 self.set_box(self._box_direction, "black", "white")
-
 
 
     def OnGstSample( self, frame, frameSize ):
@@ -588,12 +627,10 @@ class Display(customtkinter.CTk):
         
         if self._hud_is_paused is False: 
 
-            if self._node._audioManager.tutorial_index >= 7:
+            if self._node._audioManager.tutorial_index >= self._node._audioManager.displayFullHudIndex:
 
                 self.render_orientation(self.arrowColor_base)
-
-                if self._node._audioManager.tutorial_index >= 9:
-                    self.render_elapsed()
+                self.render_elapsed()
             #self.render_direction(DIRECTION_STATE.STOP.value)
 
 
