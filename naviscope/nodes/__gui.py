@@ -527,7 +527,12 @@ class Display(customtkinter.CTk):
 
                     self.clear_img_text()
 
-                    self.canvas.itemconfig( self._canvas_frame, image= self._frame )
+                    frameToRender = self._frame
+                    frameToRender = frameToRender.transpose(Image.FLIP_LEFT_RIGHT)
+                    # Appliquer la rotation de 180 degrés
+                    frameToRender = frameToRender.rotate(180)
+                    
+                    self.canvas.itemconfig( self._canvas_frame, image= frameToRender )
                     self._center_image_name = "frame"
                     
                     self._last_frame = self._frame

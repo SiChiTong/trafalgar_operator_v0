@@ -65,26 +65,6 @@ class VideoStream( object ):
 
         return Gst.FlowReturn.OK
 
-    def h264_ov5647_decoder( self ):
-
-        pipeline_string = (
-
-            f"udpsrc port={self.udpPort} retrieve-sender-address=false ! "
-            "application/x-rtp, media=video, encoding-name=H264, payload=96 ! "
-            "rtph264depay ! "
-            "h264parse ! "
-            "avdec_h264 ! "
-            "videoconvert ! "
-            "video/x-raw, format=(string)BGR ! "
-            "videoflip method=4 ! "
-            "videoflip method=2 ! "
-            "videoscale ! "
-            "identity drop-allocation=true ! "
-            "appsink name=appsink emit-signals=true max-buffers=2 drop=true sync=false async=false" #drop=true
-    
-        )
-
-        return pipeline_string
         
     def h264_decoder( self ):
 
@@ -131,7 +111,7 @@ class VideoStream( object ):
 
         Gst.init(None)
 
-        pipeline_string = self.h265_decoder() if self._isHighQualityCodec is True else self.h264_ov5647_decoder()#self.h264_decoder()
+        pipeline_string = self.h265_decoder() if self._isHighQualityCodec is True else self.h264_decoder()#self.h264_decoder()
 
         self._pipeline = Gst.parse_launch(pipeline_string)
 
