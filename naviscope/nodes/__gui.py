@@ -48,6 +48,7 @@ class Display(customtkinter.CTk):
 
         self._frame = None
         self._last_frame = None
+        self._squareFrameEnabled = True
 
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
@@ -457,12 +458,27 @@ class Display(customtkinter.CTk):
 
     def OnGstSample( self, frame, frameSize ):
         
+        if self._squareFrameEnabled is True:
+            self.OnSquareSample(frame)
+        else:
+            self.OnStandardSample(frame, frameSize)
+
+
+    def OnStandardSample( self, frame, frameSize ):
+        
         frameWidth, frameHeight = frameSize[0], frameSize[1]
 
         cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, self.ZoomLevel)
         
         resized_frame = cv2.resize(cropFrame, (self.videoWidth, self.videoHeight))
         color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+        
+        img = Image.fromarray( color_conv )
+        self._frame = ImageTk.PhotoImage( img )
+
+    def OnSquareSample( self, frame ):
+        
+        color_conv = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         img = Image.fromarray( color_conv )
         self._frame = ImageTk.PhotoImage( img )
