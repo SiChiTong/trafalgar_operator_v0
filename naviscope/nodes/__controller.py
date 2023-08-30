@@ -41,24 +41,20 @@ class Controller( Node ):
 
             self._master = Master
 
-            self.lockDirection = True
-            self.lockOrientation = True
-            self.lockPropulsion = True
+            self.lockBtnDirection = True
+            self.lockWheelOrientation = True
+            self.lockBtnPropulsion = True
+            self.lockBtnCam = True
+            self.lockMPUCam = True
 
-            self.lockCamAzimuth = False
-            self.lockCamTilt = True
-            self.lockCam = False
+            self.lockTiltSwitch = True
+
+            self.tiltSwitchTriggered = False
 
             self.EnableUDPStream = enableUDPStream
             self.EnableAudio = True
             self.EnableFilter = False
 
-            self.EnablePropulsionIncrement = False
-            self.EnableCamIncrement = True
-
-            self.VerticalAngleSwitchEnabled = False
-            self.VerticalAngleSwitchTriggered = False
-            
             self.forceStopFromGsc = False
             self.isDroneOutOfGameArea = False
 
@@ -80,9 +76,6 @@ class Controller( Node ):
             
             self.controllerOrientationMultiplier = 1 #use it to invert direction
             self.controllerPropulsionMultiplier = 1 
-
-            self.MPU_TiltMultiplier = 1
-            self.MPU_PanMultiplier = 1
 
             self._board = None
             self._audioManager = None
@@ -113,8 +106,13 @@ class Controller( Node ):
             self._sensor_pitch =0
             self._sensor_roll =0
             
-            self._angleX = 0
-            self._angleZ = 0
+            self._mpu_TiltMultiplier = 1
+            self._mpu_PanMultiplier = 1
+            self._mpu_angleX = 0
+            self._mpu_angleZ = 0
+
+            self._cam_tilt_angle = 0
+            self._cam_pan_angle = 0
 
             self._obstacleInFront = False
             self._playtime = 0
@@ -163,7 +161,7 @@ class Controller( Node ):
         
 
         @property
-        def VerticalAngleSwitchThreshold(self):
+        def tiltSwitchThreshold(self):
             return 40
     
         @property
@@ -202,9 +200,10 @@ class Controller( Node ):
             self._propulsion = self._propulsion_default 
             self._direction = 0
             self._orientation = 0
-            self._angleX = 90
-            self._angleZ = 90
-
+            self._cam_tilt_angle = 90
+            self._cam_pan_angle = 90
+            self._mpu_yaw = 90
+            self._mpu_tilt = 90
 
 
         def _declare_parameters( self ):
@@ -390,14 +389,16 @@ class Controller( Node ):
                 
                 #self.get_logger().info(f" tutorial index : {self._audioManager.tutorial_index}")
                 if self._audioManager.tutorialIsComplete is True:
-                    self.lockDirection = False
-                    self.lockOrientation = False
+
+                    self.lockBtnDirection = False
+                    self.lockWheelOrientation = False
+                    
                     return
                 
                 else:
                     
-                    self.lockDirection = self._audioManager.userlock_direction
-                    self.lockOrientation = self._audioManager.userlock_orientation
+                    self.lockBtnDirection = self._audioManager.userlock_direction
+                    self.lockWheelOrientation = self._audioManager.userlock_orientation
 
                     self._audioManager.follow_tutorial( INDEX )
 
@@ -529,7 +530,7 @@ class Controller( Node ):
 
             if SENSORS_TOPICS.ORIENTATION.value in datas:
 
-                if self.lockOrientation is False:
+                if self.lockWheelOrientation is False:
                     self.OnWheelRotation(datas[SENSORS_TOPICS.ORIENTATION.value])
             
             if SENSORS_TOPICS.PROPULSION.value in datas:
@@ -559,7 +560,7 @@ class Controller( Node ):
 
             if increment != 0:
                 
-                if self.lockOrientation is False:
+                if self.lockWheelOrientation is False:
 
                     #self.get_logger().info( f"update orientation : {increment}")
 
@@ -573,21 +574,20 @@ class Controller( Node ):
 
         def OnButtonRotation( self, updateLevelIncrement ): 
             
-  
-            if self.EnablePropulsionIncrement is True:
+            if self.lockBtnPropulsion is False:
+
                 self.PropulsionIncrement( updateLevelIncrement )
 
-            if self.EnableCamIncrement is True:
+            if self.lockBtnCam is False:
                     
-                    if self.lockCamAzimuth is False:
-                        self._angleZ = int(np.clip( self._angleZ - updateLevelIncrement, 0,180 )) 
-
-                        self._update_pantilt( pan=self._angleZ, tilt=self._angleX )
+                self._cam_pan_angle = int(np.clip( self._cam_pan_angle - updateLevelIncrement, 0,180 )) 
+                self._update_pantilt( pan = self._cam_pan_angle, tilt = self._cam_tilt_angle )
   
 
         def PropulsionIncrement( self, updateLevelIncrement ): 
             
-            if self.lockPropulsion is False:
+            if self.lockBtnPropulsion is False:
+
                 if updateLevelIncrement != 0 and self._direction != DIRECTION_STATE.STOP.value:
             
                     update_propulsion = self._propulsion + (updateLevelIncrement/5) 
@@ -611,7 +611,7 @@ class Controller( Node ):
 
         def OnButtonPress( self, shortPress = False, longPress = False ):
             
-            if self.lockDirection is False:
+            if self.lockBtnDirection is False:
                 
                 if longPress is True:
                     
@@ -664,34 +664,65 @@ class Controller( Node ):
             #angle_aroundY = np.clip( 90 - delta_y, 0,180 )
             #angle_aroundZ = np.clip( 90 + delta_p, 0,180 )
             
-            angleX = int(np.clip(90 + roll * self.MPU_TiltMultiplier , 0, 180) )
-            angleZ = int(np.clip( self._angleZ * self.MPU_PanMultiplier - delta_p, 0,180 ))
+            angleX = int(np.clip(90 + roll * self._mpu_TiltMultiplier , 0, 180) )
+            angleZ = int(np.clip( self._mpu_yaw * self._mpu_PanMultiplier - delta_p, 0,180 ))
 
-            if abs(angleX - self._angleX ) >= self.panTiltThreshold or abs(angleZ - self._angleZ) >= self.panTiltThreshold:
+            if abs( angleX - self._mpu_tilt ) >= self.panTiltThreshold or abs( angleZ - self._mpu_yaw ) >= self.panTiltThreshold:
                 
-                if self.lockCamTilt is False:
-
-                    self._angleX = angleX
-                    self._CheckVerticalAngleSwitchStatus( angleX )
-
-                if self.EnableCamIncrement is False:
+                self._mpu_tilt = angleX
+                self._mpu_yaw = angleZ  
+                
+                self._controlTiltSwitchState( angleX )
                     
-                    if self.lockCamAzimuth is False:
-                        self._angleZ = angleZ  
-
-                    if self.lockCam is False:
-                        self._update_pantilt(pan=self._angleZ, tilt = self._angleX  )
+                if self.lockMPUCam is False:
+                    self._update_pantilt(pan= self._mpu_yaw, tilt = self._mpu_tilt )
 
 
-        def _CheckVerticalAngleSwitchStatus( self, angle ):
-
-            if angle < self.VerticalAngleSwitchThreshold:
-                self.VerticalAngleSwitchTriggered = True
-            else:
-                self.VerticalAngleSwitchTriggered = False
+        def _controlTiltSwitchState( self, angle ):
             
-            #if self.VerticalAngleSwitchEnabled is True:
-            #    self.get_logger().info( "vertical angle switch is triggered !")
+            if angle <= self.tiltSwitchThreshold:
+                self.tiltSwitchTriggered = True
+            else:
+                self.tiltSwitchTriggered = False
+
+            if self.lockTiltSwitch is False:
+                
+                if self._audioManager is not None:
+
+                    if self._audioManager.tutorialIsComplete is False: 
+
+                        if self._audioManager.HistIndexReached is True:
+                            
+                            if self.tiltSwitchTriggered is True:
+                                
+                                if self._direction_save is None:
+                                    self._direction_save = self._direction
+
+                                if self._direction != DIRECTION_STATE.STOP.value:
+                                    self._update_direction(DIRECTION_STATE.STOP.value)
+
+                                if self.droneDirection == DIRECTION_STATE.STOP.value:
+
+                                    self._audioManager.unlock_hist = True
+
+                                else:
+
+                                    self._audioManager.unlock_hist = False
+                            
+                            else: 
+                                
+                                if self._direction_save is not None:
+
+                                    if self.droneDirection != self._direction_save:
+
+                                        self._update_direction( self._direction_save )
+                                        self._direction_save = None
+                                        
+            else:
+                
+                if self._audioManager is not None:
+                    self._audioManager.unlock_hist = False
+            
 
 
         def _send_controller_cmd( self ):
@@ -763,7 +794,7 @@ class Controller( Node ):
                                 self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
 
                                              
-                                if self.lockDirection is False and self._audioManager.unlock_direction is False:
+                                if self.lockBtnDirection is False and self._audioManager.unlock_direction is False:
                                     
                                     if updateDroneDirection == DIRECTION_STATE.FORWARD.value:
                                         self._audioManager.unlock_direction = True
@@ -784,7 +815,7 @@ class Controller( Node ):
                         
                         updateSteering = sensor_datas[topic]
 
-                        if self.lockOrientation is False: 
+                        if self.lockWheelOrientation is False: 
                             if self._audioManager.unlock_orientation is False:
                                 self._audioManager.unlock_orientation = True
                                 #self.get_logger().info("drone orientation is unlock")

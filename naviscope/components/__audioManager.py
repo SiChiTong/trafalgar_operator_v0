@@ -47,13 +47,16 @@ class AudioManager(object):
         }
 
         self.tutorial_index = 0
-        self.displayFullHudIndex = 5
-        
+
+        self.FullHudIndexReached = False
+        self.HistIndexReached = False
+
         self.tutorialIsComplete = False
 
         self.unlock_direction = False
         self.unlock_orientation = False
-     
+        self.unlock_hist = False
+
     @property
     def display_frame_index(self):
         return 9
@@ -210,10 +213,12 @@ class AudioManager(object):
         {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
         {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : "cmd_cam", "delay": 120 * 1000,  "condition": lambda: True},#7
 
-        {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: True},#8
-        {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit", "delay": 1000, "condition": lambda: True},#9
-        {"voice": "hist_sugarPlantation", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: True},#10
-        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: True}#11 > displayframe
+        {"voice": "hist_intro", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : "none", "delay": 500,  "condition": lambda: True},#7
+
+        {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: self.unlock_hist },#8
+        {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit", "delay": 1000, "condition": lambda: self.unlock_hist },#9
+        {"voice": "hist_sugarPlantation", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: self.unlock_hist },#10
+        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: self.unlock_hist }#11 > displayframe
 
         ]
 
@@ -259,10 +264,13 @@ class AudioManager(object):
         self.userlock_direction = False
         self.userlock_orientation = False
 
+        self.FullHudIndexReached = True
+        self.HistIndexReached = True
             
     def gameplayMusic( self, Enable, direction ): 
 
         if Enable is True:
+
             if direction != 0:
 
                 if self.IsIdlePlaying is True:
@@ -312,6 +320,9 @@ class AudioManager(object):
                 self.reset_music_volume()
                 pygame.time.set_timer(event.type, 0)
                 self.tutorial_index += 1
+            
+                self.FullHudIndexReached = self.tutorial_index >= 5
+                self.HistIndexReached = self.tutorial_index >= 8
 
             elif STANDARD_VOICE_ENDED:
                 self.reset_music_volume()

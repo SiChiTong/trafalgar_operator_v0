@@ -743,7 +743,7 @@ class Display(customtkinter.CTk):
             videostream.start()
 
             while not self._frame_stop_event.is_set():
-                sleep(0.1)  # Sleep for a short while
+                sleep(2)  # Sleep for a short while
 
             videostream.stop()
 
