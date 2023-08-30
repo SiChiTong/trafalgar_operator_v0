@@ -82,7 +82,7 @@ class Controller( Node ):
 
             self._propulsion_default = 40 #default percentage of thrust
 
-            self._propulsion_max = 50
+            self._propulsion_max = 45
             self._propulsion_max_backward = 40
             self._propulsion = self._propulsion_default
 
