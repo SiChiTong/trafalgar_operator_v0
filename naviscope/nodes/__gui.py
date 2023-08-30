@@ -95,7 +95,6 @@ class Display(customtkinter.CTk):
         self._center_image = None
         self._canvas_frame = None
 
-        self._hud_is_paused = False
         self.arrow_color = self.arrowColor_hide
 
         self._initialize()
@@ -358,7 +357,7 @@ class Display(customtkinter.CTk):
                 self._center_image_name = imgName
 
 
-    def set_box( self, box, fillColor, outlineColor ):
+    def set_box( self, box, fillColor="transparent", outlineColor="transparent" ):
         self.canvas.itemconfig(box, fill=fillColor, outline=outlineColor)
 
     def format_time(self, delta):
@@ -369,17 +368,20 @@ class Display(customtkinter.CTk):
 
     def render_elapsed( self ):
 
-        self._playtimeLeft = self._node._playtimeLeft
+        if self.gameplayEnable is True:
+            
+            self._playtimeLeft = self._node._playtimeLeft
 
-        if self._playtime > 0:
+            if self._playtime > 0:
 
-            if self._playtimeLeft > 0:
+                if self._playtimeLeft > 0:
 
-                time_delta = datetime.timedelta(seconds=self._playtimeLeft)
-                formatted_time = self.format_time(time_delta)
+                    time_delta = datetime.timedelta(seconds=self._playtimeLeft)
+                    formatted_time = self.format_time(time_delta)
                 
-                self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
-                self.render_elapsed_box()
+                    self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
+
+        self.render_elapsed_box( self._playtimeLeft ) 
 
 
     def render_elapsed_box(self, timeLeft = 0 ):
@@ -401,11 +403,12 @@ class Display(customtkinter.CTk):
             if timeLeft <= 60:
                 self.set_box(self._box_elapsed, "red", "black")
             else: 
-                self.set_box(self._box_direction, "black", "white")
+                self.set_box(self._box_elapsed, "black", "white")
         else:
-            self.set_box(self._box_direction, "black", "black")
+            self.set_box( self._box_elapsed )
 
-        self.canvas.tag_raise( self._text_elapsed_time )  
+        if timeLeft > 0:
+            self.canvas.tag_raise( self._text_elapsed_time )  
 
 
     def render_directional_arrow(self, currentAngle = 90, arrowColorFill = "black", arrowColorOutline = "white" ):
@@ -621,19 +624,6 @@ class Display(customtkinter.CTk):
                 self._nameIsVisible = True
 
 
-    def renderHUD( self ):
-        
-        self.updateStream()
-        
-        if self._hud_is_paused is False: 
-
-            if self._node._audioManager.tutorial_index >= self._node._audioManager.displayFullHudIndex:
-
-                self.render_orientation(self.arrowColor_base)
-                self.render_elapsed()
-            #self.render_direction(DIRECTION_STATE.STOP.value)
-
-
     def updateStream(self):
             
         if self._process is not None: 
@@ -657,10 +647,18 @@ class Display(customtkinter.CTk):
             self.gameplayEnable = self._node.isGamePlayEnable
 
             if self.gameplayEnable is True:
-                self.renderHUD()
+                
+                self.updateStream()
+        
+                if self._node._audioManager.tutorial_index >= self._node._audioManager.displayFullHudIndex:
 
+                    self.render_orientation(self.arrowColor_base)
+                    #self.render_direction(DIRECTION_STATE.STOP.value)
             else:
                 self.renderBlackScreen()
+
+            self.render_elapsed()
+
 
         self.after(self._loop_hud, self.updateHud)
 
