@@ -41,7 +41,7 @@ class AudioManager(object):
         self._voice_is_playing = False
 
         self._volume_levels = {
-            "music" : 0.3,
+            "music" : 0.35,
             "sfx" : 0.8,
             "voice" : 0.5
         }
@@ -251,6 +251,9 @@ class AudioManager(object):
 
         self.userlock_direction = True
         self.userlock_orientation = True
+
+        self.FullHudIndexReached = False
+        self.HistIndexReached = False
 
     def abort_tutorial( self ):
 

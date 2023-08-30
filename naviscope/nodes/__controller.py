@@ -44,7 +44,7 @@ class Controller( Node ):
             self.lockBtnDirection = True
             self.lockWheelOrientation = True
             self.lockBtnPropulsion = True
-            self.lockBtnCam = True
+            self.lockBtnCam = False
             self.lockMPUCam = True
 
             self.lockTiltSwitch = True
@@ -262,7 +262,7 @@ class Controller( Node ):
 
                         signal_strength_match = re.search(r"Signal level=([\-\d]+ dBm)", output)
                         frequency_match =  re.search(r"Frequency:([\d.]+ GHz)", output)
-                        self.get_logger().info(f"{signal_strength_match}")
+                        #self.get_logger().info(f"{signal_strength_match}")
 
                         if signal_strength_match and frequency_match:
                             signal_strength = int(signal_strength_match.group(1).split()[0])  # Split to get only the number part

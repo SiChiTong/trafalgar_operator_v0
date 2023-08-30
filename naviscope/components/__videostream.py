@@ -79,7 +79,7 @@ class VideoStream( object ):
             "video/x-raw, format=(string)BGR ! "
             "videoscale ! "
             "identity drop-allocation=true ! "
-            "appsink name=appsink emit-signals=true max-buffers=2 drop=true sync=false async=false" #drop=true
+            "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false" #drop=true
     
         )
 

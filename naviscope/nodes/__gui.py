@@ -4,7 +4,7 @@ import traceback
 import datetime
 import cv2 # OpenCV library
 import math
-
+import numpy as np
 from time import sleep
 from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
@@ -28,7 +28,7 @@ class Display(customtkinter.CTk):
     WIDTH = 480
     HEIGHT = 480
     
-    ENABLE_UDP_STREAM = False
+    ENABLE_UDP_STREAM = True
 
     def __init__(
             self
@@ -46,8 +46,9 @@ class Display(customtkinter.CTk):
 
         self._drone_orientation = None
 
-        self._frame = None
-        self._last_frame = None
+        self.rawFrame = None
+
+        self._videoFrame = None
         self._squareFrameEnabled = True
 
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
@@ -56,7 +57,7 @@ class Display(customtkinter.CTk):
         self.title(Display.APP_NAME)
 
         self.geometry(str( self.winfo_screenwidth() ) + "x" + str( self.winfo_screenheight() ))
-        self.minsize(Display.WIDTH, Display.HEIGHT)
+        #self.minsize(Display.WIDTH, Display.HEIGHT)
 
         self.attributes("-fullscreen", True) 
 
@@ -67,7 +68,7 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_hud = 17 if self._enableUDPStream is False else 1
+        self._loop_hud = 100#40 if self._enableUDPStream is False else 1
 
         self.iddleLoop = False
 
@@ -260,7 +261,7 @@ class Display(customtkinter.CTk):
         self._text_elapsed_time = self.canvas.create_text(
             280, 
             100, 
-            text="15:53", 
+            text="", 
             fill="white", 
             font=("Arial", 15, "bold"), 
             anchor="w", 
@@ -283,7 +284,7 @@ class Display(customtkinter.CTk):
         self._text_center = self.canvas.create_text(
             360, 
             250,
-            text="CENTER", 
+            text="", 
             fill="blue", 
             font=("Arial", 40), 
             justify=customtkinter.CENTER,
@@ -299,7 +300,8 @@ class Display(customtkinter.CTk):
 
         
     def crop_from_center(self, frame, frame_width, frame_height, ZoomLevel ):
-        
+        #for later: > zoom method via circular btn
+        #  
         ZoomLevel = 100 - ZoomLevel
         
         if ZoomLevel == 0:
@@ -357,7 +359,7 @@ class Display(customtkinter.CTk):
                 self._center_image_name = imgName
 
 
-    def set_box( self, box, fillColor="transparent", outlineColor="transparent" ):
+    def set_box( self, box, fillColor="", outlineColor="" ):
         self.canvas.itemconfig(box, fill=fillColor, outline=outlineColor)
 
     def format_time(self, delta):
@@ -390,12 +392,13 @@ class Display(customtkinter.CTk):
     
         padding = 2
         rectangle_height = 20
-    
+        
+        yOffset = -25
+
         x1 = bbox[0] - padding
-        y1 = bbox[3] + padding
+        y1 = bbox[3] + yOffset + padding
         x2 = bbox[2] + padding
-        y2 = bbox[3] + padding + rectangle_height
-    
+        y2 = bbox[3] + + yOffset + padding + rectangle_height
 
         self.canvas.coords( self._box_elapsed, x1, y1, x2, y2 )
         
@@ -499,39 +502,46 @@ class Display(customtkinter.CTk):
 
 
     def OnGstSample( self, frame, frameSize ):
-        
-        if self._squareFrameEnabled is True:
-            self.OnSquareSample(frame)
-        else:
-            self.OnStandardSample(frame, frameSize)
+        self.rawFrame = (frame, frameSize )
 
-
-    def OnStandardSample( self, frame, frameSize ):
+    def OnStandardSample( self ):
         
+        frame, frameSize = self.rawFrame
         frameWidth, frameHeight = frameSize[0], frameSize[1]
 
-        cropFrame = self.crop_from_center(frame, frameWidth, frameHeight, self.ZoomLevel)
-        
-        resized_frame = cv2.resize(cropFrame, (self.videoWidth, self.videoHeight))
+        resized_frame = cv2.resize(frame, (self.videoWidth, self.videoHeight))
         color_conv = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
         
         img = Image.fromarray( color_conv )
-        self._frame = ImageTk.PhotoImage( img )
+        
+        return ImageTk.PhotoImage( img )
+    
 
-    def OnSquareSample( self, frame ):
+    def OnSquareSample( self ):
         
-        color_conv = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        img = Image.fromarray( color_conv )
-        self._frame = ImageTk.PhotoImage( img )
+        frame, frameSize = self.rawFrame
+
+        frameToRender = frame
+
+        frameToRender = np.fliplr( frame )
+        frameToRender = np.flipud( frameToRender )
+
+        frameToRender = cv2.cvtColor( frameToRender, cv2.COLOR_BGR2RGB)
+
+        img = Image.fromarray( frameToRender )
+  
+        return ImageTk.PhotoImage( img )
 
 
     def OnCVBridgeFrame(self, frame):
-    
-        current_frame = frame
+        self.rawFrame = (frame, None)
+
+    def readCVFrame( self ):
+
+        frame, frameSize = self.rawFrame
 
         # Convertir les couleurs
-        color_conv = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
+        color_conv = cv2.cvtColor( frame, cv2.COLOR_BGR2RGB )
 
         # Convertir en image PIL et appliquer le flip vertical
         img = Image.fromarray(color_conv)
@@ -545,8 +555,8 @@ class Display(customtkinter.CTk):
         background.paste(img, offset)
         img = background
 
-        self._frame = ImageTk.PhotoImage(img)
-
+        return ImageTk.PhotoImage( img )
+    
 
     def between(self, x, start, end):
         return start <= x < end
@@ -565,21 +575,25 @@ class Display(customtkinter.CTk):
 
             else:
 
-                if self._frame is not None:
+               if self.rawFrame is not None:
 
                     self.clear_img_text()
 
-                    frameToRender = self._frame
-                    frameToRender = frameToRender.transpose(Image.FLIP_LEFT_RIGHT)
-                    # Appliquer la rotation de 180 degrés
-                    frameToRender = frameToRender.rotate(180)
-                    
-                    self.canvas.itemconfig( self._canvas_frame, image= frameToRender )
-                    self._center_image_name = "frame"
-                    
-                    self._last_frame = self._frame
+                    frameToRender = None
+           
+                    if self._node.EnableUDPStream is True:
+              
+                        frameToRender = self.OnSquareSample( ) if self._squareFrameEnabled is True else self.OnStandardSample( )
+                    else:
+                        frameToRender = self.readCVFrame()
 
-                    self._frame = None
+                    if frameToRender is not None:
+
+                        self._videoFrame = frameToRender
+                        self.canvas.itemconfig( self._canvas_frame, image= self._videoFrame)
+                        self._center_image_name = "frame"
+                    
+                    self.rawFrame = None
         
         self._blackScreen = False
     
@@ -608,6 +622,7 @@ class Display(customtkinter.CTk):
             self.clear_hud_texts()
  
             self.canvas.delete(self.tagArrow)
+            self.set_box( self._box_elapsed )
 
             self._blackScreen = True    
 
@@ -632,7 +647,7 @@ class Display(customtkinter.CTk):
                         
                 frame_data = self._frame_queue.get()
                 self.OnGstSample( frame_data["frame"], frame_data["size"])
-
+                
         self.renderVideoFrame()
         
 
@@ -640,24 +655,23 @@ class Display(customtkinter.CTk):
     def updateHud(self):
     
         if self._node is not None: 
-
-            #with self._lock:
-            #    self.gameplayEnable = self._node.isGamePlayEnable
-
+            
+            self.updateStream()
+        
             self.gameplayEnable = self._node.isGamePlayEnable
 
             if self.gameplayEnable is True:
                 
                 self.updateStream()
         
-                if self._node._audioManager.tutorial_index >= self._node._audioManager.displayFullHudIndex:
+                if self._node._audioManager.FullHudIndexReached is True:
 
                     self.render_orientation(self.arrowColor_base)
+                    self.render_elapsed()
                     #self.render_direction(DIRECTION_STATE.STOP.value)
             else:
-                self.renderBlackScreen()
 
-            self.render_elapsed()
+                self.renderBlackScreen()
 
 
         self.after(self._loop_hud, self.updateHud)
@@ -727,7 +741,7 @@ class Display(customtkinter.CTk):
 
     def _start_videostream(self):
 
-        if self._enableUDPStream is False:
+        if self._enableUDPStream is True:
 
             # Créez le processus en utilisant la méthode _stream_process comme cible.
             self._process = Process(target=self._stream_process, args=(self._frame_queue, self._frame_stop_event ))
@@ -753,7 +767,7 @@ class Display(customtkinter.CTk):
 
     def _kill_videostream( self ):
 
-        if self._enableUDPStream is False:
+        if self._enableUDPStream is True:
             
             self._frame_stop_event.set()
 
