@@ -561,39 +561,43 @@ class Display(customtkinter.CTk):
     def between(self, x, start, end):
         return start <= x < end
     
+    
+    def renderDroneView( self ):
+        
+        if self.rawFrame is not None:
 
-    def renderVideoFrame( self ):
+            self.clear_img_text()
+
+            frameToRender = None
+    
+            if self._node.EnableUDPStream is True:
+        
+                frameToRender = self.OnSquareSample( ) if self._squareFrameEnabled is True else self.OnStandardSample( )
+            else:
+                frameToRender = self.readCVFrame()
+
+            if frameToRender is not None:
+
+                self._videoFrame = frameToRender
+                self.canvas.itemconfig( self._canvas_frame, image= self._videoFrame)
+                self._center_image_name = "frame"
+            
+            self.rawFrame = None
+
+
+    def renderMainFrame( self ):
     
         if self._node._audioManager is not None:
             
-            #self._node.get_logger().info( f"tutorial_index: {self._node._audioManager.tutorial_index}" )
-            
-            if self._node._audioManager.displayCameraFeed is False:
+            mediaToDisplay = self._node._audioManager.get_media_to_display()
 
-                if self._node._audioManager.imgToDisplay is not None and self._node._audioManager.imgToDisplay != self._center_image_name:
-                        self.set_center_img(self._node._audioManager.imgToDisplay)
+            if mediaToDisplay is not None:
+
+                self.set_center_img(mediaToDisplay)
 
             else:
-
-               if self.rawFrame is not None:
-
-                    self.clear_img_text()
-
-                    frameToRender = None
-           
-                    if self._node.EnableUDPStream is True:
-              
-                        frameToRender = self.OnSquareSample( ) if self._squareFrameEnabled is True else self.OnStandardSample( )
-                    else:
-                        frameToRender = self.readCVFrame()
-
-                    if frameToRender is not None:
-
-                        self._videoFrame = frameToRender
-                        self.canvas.itemconfig( self._canvas_frame, image= self._videoFrame)
-                        self._center_image_name = "frame"
-                    
-                    self.rawFrame = None
+                
+                self.renderDroneView()
         
         self._blackScreen = False
     
@@ -648,15 +652,13 @@ class Display(customtkinter.CTk):
                 frame_data = self._frame_queue.get()
                 self.OnGstSample( frame_data["frame"], frame_data["size"])
                 
-        self.renderVideoFrame()
+        self.renderFrame()
         
 
 
     def updateHud(self):
     
         if self._node is not None: 
-            
-            self.updateStream()
         
             self.gameplayEnable = self._node.isGamePlayEnable
 

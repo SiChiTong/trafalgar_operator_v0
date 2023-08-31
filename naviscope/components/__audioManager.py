@@ -41,7 +41,7 @@ class AudioManager(object):
         self._voice_is_playing = False
 
         self._volume_levels = {
-            "music" : 0.35,
+            "music" : 0.3,
             "sfx" : 0.8,
             "voice" : 0.5
         }
@@ -211,9 +211,9 @@ class AudioManager(object):
         {"voice": "cmd_invert", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation", "delay": 1000, "condition": lambda: self.unlock_orientation},#4
         {"voice": "cmd_spyglass", "displayCamera" : True,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#5 > display frame
         {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
-        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : "cmd_cam", "delay": 120 * 1000,  "condition": lambda: True},#7
+        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None, "delay": 60 * 1000,  "condition": lambda: True},#7
 
-        {"voice": "hist_intro", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : "none", "delay": 500,  "condition": lambda: True},#7
+        {"voice": "hist_intro", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None, "delay": 500,  "condition": lambda: True},#7
 
         {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: self.unlock_hist },#8
         {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit", "delay": 1000, "condition": lambda: self.unlock_hist },#9
@@ -241,12 +241,26 @@ class AudioManager(object):
                 self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
 
 
+    def get_media_to_display( self ):
+
+        if self.displayCameraFeed is True:
+            return None
+         
+        if self.HistIndexReached is True and self.unlock_hist is False:
+            return None
+        
+        return self.imgToDisplay
+    
+
     def reset_tutorial( self ):
 
         self.tutorial_index = 0
         self.tutorialIsComplete = False
+
         self.unlock_direction = False
         self.unlock_orientation = False
+        self.unlock_hist = False
+
         self.displayCameraFeed = False
 
         self.userlock_direction = True
@@ -263,12 +277,14 @@ class AudioManager(object):
 
         self.unlock_direction = True
         self.unlock_orientation = True
+        self.unlock_hist = True
 
         self.userlock_direction = False
         self.userlock_orientation = False
 
         self.FullHudIndexReached = True
         self.HistIndexReached = True
+            
             
     def gameplayMusic( self, Enable, direction ): 
 
@@ -311,7 +327,7 @@ class AudioManager(object):
 
         self._voice_is_playing = False   
 
-        if self._mixer and self._mixer.get_busy():    
+        if self._mixer:    
             self._mixer.set_volume(self._volume_levels[ "music" ] )
 
 

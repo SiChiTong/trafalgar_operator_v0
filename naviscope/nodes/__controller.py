@@ -47,7 +47,7 @@ class Controller( Node ):
             self.lockBtnCam = False
             self.lockMPUCam = True
 
-            self.lockTiltSwitch = True
+            self.lockTiltSwitch = False
 
             self.tiltSwitchTriggered = False
 
@@ -87,6 +87,7 @@ class Controller( Node ):
             self._propulsion = self._propulsion_default
 
             self._direction = 0
+            self._direction_save = None 
             self._orientation = 0
 
             self._steeringIncrement = 0
@@ -527,7 +528,7 @@ class Controller( Node ):
         def _board_datas( self, json_datas ): 
             
             datas = json_datas
-
+           
             if SENSORS_TOPICS.ORIENTATION.value in datas:
 
                 if self.lockWheelOrientation is False:
@@ -544,6 +545,7 @@ class Controller( Node ):
                 )
 
             if self.mpu_keys.issubset( datas.keys()):   
+                
                 self.OnMPUDatas(
                     pitch=datas[SENSORS_TOPICS.PITCH.value],
                     roll=datas[SENSORS_TOPICS.ROLL.value],
@@ -666,64 +668,54 @@ class Controller( Node ):
             
             angleX = int(np.clip(90 + roll * self._mpu_TiltMultiplier , 0, 180) )
             angleZ = int(np.clip( self._mpu_yaw * self._mpu_PanMultiplier - delta_p, 0,180 ))
-
+      
+            self._controlTiltSwitchState( angleX )
+          
             if abs( angleX - self._mpu_tilt ) >= self.panTiltThreshold or abs( angleZ - self._mpu_yaw ) >= self.panTiltThreshold:
                 
                 self._mpu_tilt = angleX
                 self._mpu_yaw = angleZ  
-                
-                self._controlTiltSwitchState( angleX )
                     
                 if self.lockMPUCam is False:
                     self._update_pantilt(pan= self._mpu_yaw, tilt = self._mpu_tilt )
 
 
-        def _controlTiltSwitchState( self, angle ):
-            
-            if angle <= self.tiltSwitchThreshold:
-                self.tiltSwitchTriggered = True
-            else:
-                self.tiltSwitchTriggered = False
+        def _controlTiltSwitchState( self, angle = 90 ):
 
-            if self.lockTiltSwitch is False:
+            self.tiltSwitchTriggered = angle <= self.tiltSwitchThreshold
+
+            if self.lockTiltSwitch is True or self._audioManager is None:
                 
-                if self._audioManager is not None:
-
-                    if self._audioManager.tutorialIsComplete is False: 
-
-                        if self._audioManager.HistIndexReached is True:
-                            
-                            if self.tiltSwitchTriggered is True:
-                                
-                                if self._direction_save is None:
-                                    self._direction_save = self._direction
-
-                                if self._direction != DIRECTION_STATE.STOP.value:
-                                    self._update_direction(DIRECTION_STATE.STOP.value)
-
-                                if self.droneDirection == DIRECTION_STATE.STOP.value:
-
-                                    self._audioManager.unlock_hist = True
-
-                                else:
-
-                                    self._audioManager.unlock_hist = False
-                            
-                            else: 
-                                
-                                if self._direction_save is not None:
-
-                                    if self.droneDirection != self._direction_save:
-
-                                        self._update_direction( self._direction_save )
-                                        self._direction_save = None
-                                        
-            else:
-                
-                if self._audioManager is not None:
+                if self._audioManager:
                     self._audioManager.unlock_hist = False
-            
+                
+                return
+    
+            if self._audioManager.tutorialIsComplete is False and self._audioManager.HistIndexReached is True:
+     
+                if self.tiltSwitchTriggered is True:
 
+                    if self._direction_save is None:
+                        self._direction_save = self.droneDirection
+
+                    if self._direction != DIRECTION_STATE.STOP.value:
+                        self._update_direction(DIRECTION_STATE.STOP.value)
+
+                    self._audioManager.unlock_hist = self.droneDirection == DIRECTION_STATE.STOP.value
+                    
+                    #log_msg = f"tiltSwitch is Triggered: {self._audioManager.unlock_hist} / direction: {self._direction} // save: {self._direction_save}"
+                    #self.get_logger().info(log_msg)
+    
+                else: 
+
+                    self._audioManager.unlock_hist = False
+
+                    if self._direction_save is not None and self.droneDirection != self._direction_save:
+
+                        self._update_direction( self._direction_save )
+                        self._direction_save = None
+
+                            
 
         def _send_controller_cmd( self ):
 
