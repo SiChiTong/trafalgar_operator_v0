@@ -299,9 +299,11 @@ class Display(customtkinter.CTk):
         ]
 
         
-    def crop_from_center(self, frame, frame_width, frame_height, ZoomLevel ):
+    def crop_from_center(self, frame, frameSize, ZoomLevel = 10):
         #for later: > zoom method via circular btn
         #  
+        frame_height, frame_width = frameSize
+
         ZoomLevel = 100 - ZoomLevel
         
         if ZoomLevel == 0:
@@ -525,9 +527,10 @@ class Display(customtkinter.CTk):
 
         frameToRender = np.fliplr( frame )
         frameToRender = np.flipud( frameToRender )
-
+        #frameToRender = self.crop_from_center( frameToRender, frameSize, 10 )
+        #frameToRender = cv2.resize(frameToRender, (self.videoWidth, self.videoHeight))
         frameToRender = cv2.cvtColor( frameToRender, cv2.COLOR_BGR2RGB)
-
+        
         img = Image.fromarray( frameToRender )
   
         return ImageTk.PhotoImage( img )
@@ -652,7 +655,7 @@ class Display(customtkinter.CTk):
                 frame_data = self._frame_queue.get()
                 self.OnGstSample( frame_data["frame"], frame_data["size"])
                 
-        self.renderFrame()
+        self.renderMainFrame()
         
 
 

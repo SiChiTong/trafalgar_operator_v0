@@ -5,7 +5,7 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-from multiprocessing import Queue
+#from multiprocessing import Queue
 import numpy as np
 
 import gi
@@ -16,7 +16,7 @@ MAX_QUEUE_SIZE = 4
 
 class VideoStream( object ):
 
-    def __init__( self, queue ):#Master=None
+    def __init__( self, queue ):
 
         super().__init__()
 

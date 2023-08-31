@@ -695,7 +695,7 @@ class Controller( Node ):
      
                 if self.tiltSwitchTriggered is True:
 
-                    if self._direction_save is None:
+                    if self._direction_save is None and self.droneDirection != DIRECTION_STATE.STOP.value :
                         self._direction_save = self.droneDirection
 
                     if self._direction != DIRECTION_STATE.STOP.value:
@@ -783,8 +783,8 @@ class Controller( Node ):
                             self.droneDirection = updateDroneDirection
 
                             if self._audioManager is not None :
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
 
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
                                              
                                 if self.lockBtnDirection is False and self._audioManager.unlock_direction is False:
                                     
@@ -856,6 +856,8 @@ class Controller( Node ):
                             
                             if self.isGamePlayEnable is False:
                                 
+                                self._audioManager.reset_tutorial()
+                                
                                 self._playtimeLeft = self._playtime
 
                                 self._update_direction(DIRECTION_STATE.STOP.value)
@@ -868,8 +870,7 @@ class Controller( Node ):
                             if self.isGamePlayEnable is True:
 
                                 if self._audioManager is not None: 
-                                    self._audioManager.reset_tutorial()
-
+                                    self._audioManager.onGameOver()
 
                         self.isGamePlayEnable = enableUpdate 
                     

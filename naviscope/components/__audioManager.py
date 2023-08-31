@@ -11,6 +11,7 @@ from pygame import mixer
 
 from ..utils.__utils_objects import AVAILABLE_LANG
 
+GAME_OVER_VOICE_ENDED = pygame.USEREVENT + 1
 STANDARD_VOICE_ENDED = pygame.USEREVENT + 1
 TUTORIAL_VOICE_ENDED = pygame.USEREVENT + 1
 
@@ -41,8 +42,8 @@ class AudioManager(object):
         self._voice_is_playing = False
 
         self._volume_levels = {
-            "music" : 0.3,
-            "sfx" : 0.8,
+            "music" : 0.2,
+            "sfx" : 0.7,
             "voice" : 0.5
         }
 
@@ -163,6 +164,7 @@ class AudioManager(object):
     def play_music( self, music = None ): 
 
         if self._mixer and music in self._music_playlist:
+
             if self._mixer.get_busy():
                 self._mixer.stop()
             
@@ -187,7 +189,7 @@ class AudioManager(object):
 
                     voiceClip.set_volume( self._volume_levels[ "voice" ] )
 
-                    if self._mixer and self._mixer.get_busy():
+                    if self._mixer:
                         self._mixer.set_volume(0.1)
 
                     self._voice_is_playing = True
@@ -211,14 +213,14 @@ class AudioManager(object):
         {"voice": "cmd_invert", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation", "delay": 1000, "condition": lambda: self.unlock_orientation},#4
         {"voice": "cmd_spyglass", "displayCamera" : True,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#5 > display frame
         {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam", "delay": 500,  "condition": lambda: True},#6
-        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None, "delay": 60 * 1000,  "condition": lambda: True},#7
+        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None, "delay": 30 * 1000,  "condition": lambda: True},#7
 
         {"voice": "hist_intro", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None, "delay": 500,  "condition": lambda: True},#7
 
         {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "delay": 1000, "condition": lambda: self.unlock_hist },#8
         {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit", "delay": 1000, "condition": lambda: self.unlock_hist },#9
-        {"voice": "hist_sugarPlantation", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_plantation", "delay": 1500,  "condition": lambda: self.unlock_hist },#10
-        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 2000, "condition": lambda: self.unlock_hist }#11 > displayframe
+        {"voice": "hist_sugarPlantation", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_plantation", "delay": 1000,  "condition": lambda: self.unlock_hist },#10
+        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 1000, "condition": lambda: self.unlock_hist }#11 > displayframe
 
         ]
 
@@ -251,6 +253,10 @@ class AudioManager(object):
         
         return self.imgToDisplay
     
+
+    def onGameOver( self ):
+        self.play_voice(voice="game_over", delay=1000, tutorialEvent=GAME_OVER_VOICE_ENDED )
+        
 
     def reset_tutorial( self ):
 
@@ -316,11 +322,10 @@ class AudioManager(object):
 
     def stop_music( self ): 
 
+        self.IsAdventurePlaying = False
+        self.IsIdlePlaying = False
+
         if self._mixer and self._mixer.get_busy():
-
-            self.IsAdventurePlaying = False
-            self.IsIdlePlaying = False
-
             self._mixer.stop()
 
     def reset_music_volume( self ):
@@ -346,6 +351,12 @@ class AudioManager(object):
             elif STANDARD_VOICE_ENDED:
                 self.reset_music_volume()
                 pygame.time.set_timer(event.type, 0)
+
+            elif GAME_OVER_VOICE_ENDED:
+                self.reset_tutorial()
+                pygame.time.set_timer(event.type, 0)
+
+            
 
 
     def _disable( self ):
