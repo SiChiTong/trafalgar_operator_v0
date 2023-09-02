@@ -80,10 +80,10 @@ class Controller( Node ):
             self._board = None
             self._audioManager = None
 
-            self._propulsion_default = 40 #default percentage of thrust
+            self._propulsion_default = 38 #default percentage of thrust
 
             self._propulsion_max = 45
-            self._propulsion_max_backward = 40
+            self._propulsion_max_backward = 36
             self._propulsion = self._propulsion_default
 
             self._direction = 0

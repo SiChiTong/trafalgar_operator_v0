@@ -72,10 +72,10 @@ class HeartbeatsNode( Node ):
                 instruction = instructionMsg[device]
 
                 if( instruction == EXIT_STATE.RESTART.value ):
-                    self._shutdown_instruction( "sudo reboot -h now" )
+                    self._shutdown_instruction( "sudo reboot" )
 
                 elif ( instruction == EXIT_STATE.SHUTDOWN.value ):
-                    self._shutdown_instruction( "sudo shutdown -h now" )
+                    self._shutdown_instruction( "sudo poweroff" )
                     
 
         def _shutdown_instruction( self, CMD ):

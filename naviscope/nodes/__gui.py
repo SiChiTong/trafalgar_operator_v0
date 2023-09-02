@@ -525,7 +525,7 @@ class Display(customtkinter.CTk):
 
         frameToRender = frame
 
-        frameToRender = np.fliplr( frame )
+        #frameToRender = np.fliplr( frameToRender )
         frameToRender = np.flipud( frameToRender )
         #frameToRender = self.crop_from_center( frameToRender, frameSize, 10 )
         #frameToRender = cv2.resize(frameToRender, (self.videoWidth, self.videoHeight))

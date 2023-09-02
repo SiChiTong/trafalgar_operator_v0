@@ -42,8 +42,8 @@ class AudioManager(object):
         self._voice_is_playing = False
 
         self._volume_levels = {
-            "music" : 0.2,
-            "sfx" : 0.7,
+            "music" : 0.3,
+            "sfx" : 0.6,
             "voice" : 0.5
         }
 
