@@ -4,6 +4,11 @@ class AVAILABLE_LANG( str, Enum ):
     FR = "fr"
     EN = "en"
 
+class ROS_BOARD(str, Enum):
+    ODROID = "odroid"
+    PI = "rpi"
+    JETSON = "jetson"
+    
 class AVAILABLE_TOPICS( str, Enum ):
     VELOCITY = "cmd_vel"
     PANTILT = "cmd_cam"
