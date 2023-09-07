@@ -93,9 +93,15 @@ class Display(customtkinter.CTk):
         self.imgList = {}
         self._center_image_name = ""
 
+        self._vidList = {}
+
         self._center_image = None
         self._canvas_frame = None
 
+        self.videoCapture = None
+        self._isVideoPaused = False
+        self.currentVideoFile = ""
+        
         self.arrow_color = self.arrowColor_hide
 
         self._initialize()
@@ -193,6 +199,8 @@ class Display(customtkinter.CTk):
         self.loadImages()
         self.draw_image_frame()
 
+        self.loadVideo()
+
         self.draw_boxes()
         self.draw_texts()
         
@@ -218,6 +226,29 @@ class Display(customtkinter.CTk):
         ]
 
         self.imgList = { os.path.splitext(os.path.basename(file))[0] : self.load_and_resize(file, flipVertically=True) for file in img_files}
+
+
+
+    def loadVideo( self ):
+
+        VID_DIR = os.path.join(
+        os.getcwd(), 
+        'install',            
+        'naviscope',   
+        'share',         
+        'naviscope',    
+        'media',                  
+        'vid'                 
+        )
+
+        vid_files = [
+            os.path.join(VID_DIR, filename)
+            for filename in os.listdir(VID_DIR)
+            if filename.endswith(".mp4")
+        ]
+
+        self._vidList = {os.path.splitext(os.path.basename(file))[0]: file for file in vid_files}
+
 
 
     def load_and_resize(self, path, width=480, height=480, flipVertically=False):
@@ -347,18 +378,68 @@ class Display(customtkinter.CTk):
 
         self.canvas.coords(text, text_x, text_y)
 
-    def set_center_img( self, imgName = "" ):
+
+    def set_center_img( self, imgName = "", isAVideo = False ):
 
         if imgName == "":
             return 
         
-        if self._center_image_name != imgName:
+        self._center_image_name = imgName
 
-            image = self.imgList[imgName]
+        if isAVideo is False:
+            
+            if self._center_image_name != imgName:
 
-            if image is not None:
-                self.canvas.itemconfig( self._canvas_frame, image=image )
-                self._center_image_name = imgName
+                image = self.imgList[imgName]
+                self.updateImageOnCanva( image )
+
+        else:
+
+            image = self.readVideoFile(imgName, True)
+            self.updateImageOnCanva( image )
+
+    
+    def updateImageOnCanva( self, image = None ):
+        
+        if image is not None:
+            self.canvas.itemconfig( self._canvas_frame, image=image )
+
+    
+    def readVideoFile( self, imgName ="", flipVertically = True ):
+
+        if imgName == "": 
+            return None
+            
+        videoFile = self._vidList[imgName]
+
+        if videoFile is None: 
+            return None
+            
+        if self.videoCapture is None:
+
+            self.videoCapture = cv2.VideoCapture( videoFile )
+
+        if videoFile != self.currentVideoFile:
+
+            self.videoCapture.release()
+            self.videoCapture.open(videoFile) 
+            self.currentVideoFile = videoFile
+
+        if self._isVideoPaused is False:
+
+            ret, frame = self.videoCapture.read()
+
+            if ret:
+
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image = Image.fromarray(image)
+
+                photoImg = ImageTk.PhotoImage(image=image)
+
+                if flipVertically is True:
+                    photoImg  = photoImg.transpose(Image.FLIP_TOP_BOTTOM)
+
+                return photoImg
 
 
     def set_box( self, box, fillColor="", outlineColor="" ):
@@ -592,11 +673,11 @@ class Display(customtkinter.CTk):
     
         if self._node._audioManager is not None:
             
-            mediaToDisplay = self._node._audioManager.get_media_to_display()
+            mediaToDisplay, isAVideo = self._node._audioManager.get_media_to_display()
 
             if mediaToDisplay is not None:
 
-                self.set_center_img(mediaToDisplay)
+                self.set_center_img(mediaToDisplay, isAVideo)
 
             else:
                 

@@ -22,7 +22,8 @@ setup(
         (os.path.join('share', package_name, 'media', 'audio', 'sfx'), glob('media/audio/sfx/*.wav')),
         (os.path.join('share', package_name, 'media', 'audio', 'voices', 'fr' ), glob('media/audio/voices/fr/*.wav')),
         (os.path.join('share', package_name, 'media', 'audio', 'voices', 'en' ), glob('media/audio/voices/en/*.wav')),
-        (os.path.join('share', package_name, 'media', 'img' ), glob('media/img/*.jpg'))
+        (os.path.join('share', package_name, 'media', 'img' ), glob('media/img/*.jpg')),
+        (os.path.join('share', package_name, 'media', 'vid' ), glob('media/vid/*.mp4'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
