@@ -88,6 +88,7 @@ class Controller( Node ):
 
             self._direction = 0
             self._direction_save = None 
+     
             self._orientation = 0
 
             self._steeringIncrement = 0
@@ -353,7 +354,7 @@ class Controller( Node ):
 
             if self.EnableAudio is True: 
                 self._audioManager = AudioManager()
-                self._audioManager._enable()
+                self._audioManager._enable( INDEX )
 
 
         def _init_timers( self ):
@@ -375,7 +376,7 @@ class Controller( Node ):
                     if self._playtimeLeft > 0:
                         self._playtimeLeft -= 1
 
-                self.checkTutorialCompletion()
+                self.checkVoicesCompletion()
 
 
         def set_tutorial_language( self, language = AVAILABLE_LANG.FR.value ):
@@ -384,15 +385,26 @@ class Controller( Node ):
                 self._audioManager._lang = language
 
 
-        def checkTutorialCompletion( self ):
+        def checkVoicesCompletion( self ):
 
             if self._audioManager is not None:
                 
-                #self.get_logger().info(f" tutorial index : {self._audioManager.tutorial_index}")
-                if self._audioManager.tutorialIsComplete is True:
+                if self._audioManager.readAllVoices is True:
+                    return 
+                
+                self._audioManager.shipIsIddling = self.droneDirection == DIRECTION_STATE.STOP.value
 
-                    self.lockBtnDirection = False
-                    self.lockWheelOrientation = False
+                if self._audioManager.FullHudIndexReached is True:
+                    
+                    if self._audioManager._voice_is_playing is False:
+
+                        if self.droneDirection == DIRECTION_STATE.STOP.value:
+                            self.lockBtnDirection = True
+
+                    else:
+
+                        self.lockBtnDirection = False
+                        self.lockWheelOrientation = False
                     
                     return
                 
@@ -400,8 +412,9 @@ class Controller( Node ):
                     
                     self.lockBtnDirection = self._audioManager.userlock_direction
                     self.lockWheelOrientation = self._audioManager.userlock_orientation
+                
 
-                    self._audioManager.follow_tutorial( INDEX )
+                self._audioManager.next_voice()
 
         
         def _init_publishers( self ):
@@ -639,14 +652,16 @@ class Controller( Node ):
                             self._audioManager.play_sfx("bell")
     
     
-            if longPress is True:
+            """
+                if longPress is True:
 
                 if( self.isGamePlayEnable is True ):  
 
                     if self._audioManager is not None:
 
-                        if self._audioManager.tutorialIsComplete is False: 
+                        if self._audioManager.FullHudIndexReached is False: 
                             self._audioManager.abort_tutorial()
+            """
 
 
         def OnMPUDatas( self, pitch=0, roll=0, yaw=0, delta_p = 0, delta_r=0, delta_y=0 ):
@@ -669,8 +684,9 @@ class Controller( Node ):
             angleX = int(np.clip(90 + roll * self._mpu_TiltMultiplier , 0, 180) )
             angleZ = int(np.clip( self._mpu_yaw * self._mpu_PanMultiplier - delta_p, 0,180 ))
       
-            self._controlTiltSwitchState( angleX )
-          
+            self.tiltSwitchTriggered = angleX <= self.tiltSwitchThreshold
+            self._master.set_bounty_figure()
+
             if abs( angleX - self._mpu_tilt ) >= self.panTiltThreshold or abs( angleZ - self._mpu_yaw ) >= self.panTiltThreshold:
                 
                 self._mpu_tilt = angleX
@@ -679,20 +695,10 @@ class Controller( Node ):
                 if self.lockMPUCam is False:
                     self._update_pantilt(pan= self._mpu_yaw, tilt = self._mpu_tilt )
 
-
-        def _controlTiltSwitchState( self, angle = 90 ):
-
-            self.tiltSwitchTriggered = angle <= self.tiltSwitchThreshold
-
-            if self.lockTiltSwitch is True or self._audioManager is None:
+            
+                            
+        def directionSwitch( self ):
                 
-                if self._audioManager:
-                    self._audioManager.unlock_hist = False
-                
-                return
-    
-            if self._audioManager.tutorialIsComplete is False and self._audioManager.HistIndexReached is True:
-     
                 if self.tiltSwitchTriggered is True:
 
                     if self._direction_save is None and self.droneDirection != DIRECTION_STATE.STOP.value :
@@ -700,22 +706,14 @@ class Controller( Node ):
 
                     if self._direction != DIRECTION_STATE.STOP.value:
                         self._update_direction(DIRECTION_STATE.STOP.value)
-
-                    self._audioManager.unlock_hist = self.droneDirection == DIRECTION_STATE.STOP.value
-                    
-                    #log_msg = f"tiltSwitch is Triggered: {self._audioManager.unlock_hist} / direction: {self._direction} // save: {self._direction_save}"
-                    #self.get_logger().info(log_msg)
     
                 else: 
-
-                    self._audioManager.unlock_hist = False
 
                     if self._direction_save is not None and self.droneDirection != self._direction_save:
 
                         self._update_direction( self._direction_save )
                         self._direction_save = None
 
-                            
 
         def _send_controller_cmd( self ):
 
@@ -843,7 +841,10 @@ class Controller( Node ):
                             self._update_direction(DIRECTION_STATE.STOP.value)
                     
                     if "playtime" in statusUpdate:
-                        self._playtime =  statusUpdate["playtime"]
+                        self._playtime = statusUpdate["playtime"]
+
+                        if self._audioManager is not None:
+                            self._audioManagerset_playtime(  statusUpdate["playtime"] )
 
                     if "lang" in statusUpdate:
                         self.set_tutorial_language( statusUpdate["lang"] )

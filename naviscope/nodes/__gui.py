@@ -68,7 +68,7 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_hud = 100#40 if self._enableUDPStream is False else 1
+        self._loop_delay = 33#100 if self._enableUDPStream is False else 1
 
         self.iddleLoop = False
 
@@ -377,6 +377,21 @@ class Display(customtkinter.CTk):
         text_y = (window_height - text_height) // 2 + text_height / 2
 
         self.canvas.coords(text, text_x, text_y)
+
+
+    def set_bounty_figure( self ):
+    
+        if self._audioManager.HistIndexReached is False:
+            return        
+     
+        if self.tiltSwitchTriggered is True:
+
+            index = 3 #random number between all bounty names
+            self._bounty_figure = ""
+
+        else: 
+                
+            self._bounty_figure = ""
 
 
     def set_center_img( self, imgName = "", isAVideo = False ):
@@ -760,7 +775,7 @@ class Display(customtkinter.CTk):
                 self.renderBlackScreen()
 
 
-        self.after(self._loop_hud, self.updateHud)
+        self.after(self._loop_delay, self.updateHud)
 
 
     def _stop(self):

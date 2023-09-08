@@ -7,13 +7,15 @@
 ########################################################################
 import os
 import pygame
+import numpy as np
 from pygame import mixer
 
 from ..utils.__utils_objects import AVAILABLE_LANG
 
 GAME_OVER_VOICE_ENDED = pygame.USEREVENT + 1
 STANDARD_VOICE_ENDED = pygame.USEREVENT + 1
-TUTORIAL_VOICE_ENDED = pygame.USEREVENT + 1
+HIERARCHY_VOICE_ENDED = pygame.USEREVENT + 1
+HIST_DELAY_ENDED = pygame.USEREVENT + 1
 
 class AudioManager(object):
 
@@ -22,6 +24,7 @@ class AudioManager(object):
         super().__init__()
 
         self._mixer = None
+
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
 
@@ -30,6 +33,8 @@ class AudioManager(object):
 
         self.userlock_direction = True
         self.userlock_orientation = True
+
+        self.shipIsIddling = False
         
         self._music_playlist = []
         self._sfx_playlist = []
@@ -37,6 +42,10 @@ class AudioManager(object):
         self._voices_playlist = {
             AVAILABLE_LANG.FR.value : {}
         }
+
+        self.voices_cmd = None
+        self.voices_history = None
+        self.voices_hierarchy = None
 
         self._lang = AVAILABLE_LANG.FR.value
         self._voice_is_playing = False
@@ -47,23 +56,35 @@ class AudioManager(object):
             "voice" : 0.5
         }
 
-        self.tutorial_index = 0
+        self.voice_index = 0
 
         self.FullHudIndexReached = False
         self.HistIndexReached = False
-
-        self.tutorialIsComplete = False
 
         self.unlock_direction = False
         self.unlock_orientation = False
         self.unlock_hist = False
 
-    @property
-    def display_frame_index(self):
-        return 9
-    
 
-    def _enable( self ):
+
+    @property
+    def FullHudIndexReached(self):
+        return self.voice_index >= 5
+    
+    @property
+    def HistIndexReached(self):
+        return self.voice_index >= len( self.voices_cmd + 1 )
+    
+    @property
+    def readAllVoices(self):
+        return self.voice_index >= len( self.voices_hierarchy )
+
+
+    @property
+    def canPlayHistory(self):
+        return self.shipIsIddling and self.unlock_hist
+    
+    def _enable( self, droneIndex = 0 ):
         
         pygame.init()
 
@@ -108,6 +129,7 @@ class AudioManager(object):
         self._load_sfx()
         self._load_voices()
 
+        self._set_voice_hierarchy( droneIndex )
 
 
     def _load_music( self ):
@@ -146,7 +168,36 @@ class AudioManager(object):
             ]
 
             self._voices_playlist[lang_dir] = {os.path.splitext(os.path.basename(file))[0]: file for file in voices_files}
-            
+    
+    def _set_voices_hierarchy( self, droneIndex = 0 ):
+
+        self.voices_cmd = [
+
+        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "lockDirection" : True, "lockOrientation" : True, "img" : "pirateHead", "isAVideo" : False, "delay": 500, "condition": lambda: True},#0
+        
+        {"voice": "cmd_introduction", "displayCamera" : False, "lockDirection" : True,"lockOrientation" : True, "img" : "cmd_introduction","isAVideo" : False,  "delay": 2000, "condition": lambda: True},#1
+
+        {"voice": "cmd_direction", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : True,"img" : "cmd_buttonClick","isAVideo" : False,  "delay": 2000,  "condition": lambda: True},#2
+        {"voice": "cmd_orientation", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation","isAVideo" : False,  "delay": 500,  "condition": lambda: self.unlock_direction},#3
+        {"voice": "cmd_invert", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation","isAVideo" : False,  "delay": 1000, "condition": lambda: self.unlock_orientation},#4
+        {"voice": "cmd_spyglass", "displayCamera" : True,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam","isAVideo" : False,  "delay": 500,  "condition": lambda: True},#5 > display frame
+        {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam","isAVideo" : False,  "delay": 500,  "condition": lambda: True},#6
+        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None,"isAVideo" : False,  "delay": 1000,  "condition": lambda: True},#7
+
+        ]
+        
+        self.voices_history = [
+
+        {"voice": "hist_handcraft", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_handcraft", "isAVideo" : True,  "delay": 1000, "condition": lambda: self.canPlayHistory },#8
+        {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "isAVideo" : True,  "delay": 1000, "condition": lambda: self.canPlayHistory },#9 
+        {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit","isAVideo" : True, "delay": 1000, "condition": lambda: self.canPlayHistory },#10
+        {"voice": "hist_sugarFarm", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_sugarFarm","isAVideo" : True, "delay": 1000,  "condition": lambda: self.canPlayHistory },#11
+        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 1000,"isAVideo" : True, "condition": lambda: self.canPlayHistory },#12 > displayframe
+        {"voice": "hist_pitcairn", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_pitcairn", "delay": 1000,"isAVideo" : True, "condition": lambda: self.canPlayHistory }#13 > displayframe
+
+        ]
+    
+        self.voices_hierarchy = self.voices_cmd + self.voices_hierarchy
 
     def play_sfx( self, sfx = None ): 
         
@@ -176,7 +227,7 @@ class AudioManager(object):
             self._mixer.play(loops=-1)
 
 
-    def play_voice( self, voice = None, delay=500, tutorialEvent = True ): 
+    def play_voice( self, voice = None, delay=500, event=None ): 
 
         if self._voice_is_playing is False:
             
@@ -197,46 +248,22 @@ class AudioManager(object):
                     voiceClip.play()
                     #add a pause function at some point 
 
-                    pygame.time.set_timer( TUTORIAL_VOICE_ENDED if tutorialEvent is True else STANDARD_VOICE_ENDED, int( voiceClip.get_length() * 1000 + delay ) )
+                    if event is not None :
+                        pygame.time.set_timer( event, int( voiceClip.get_length() * 1000 + delay ) )
      
     
-    def follow_tutorial(self, droneIndex = 0 ):
+    def next_voice( self ):
 
-        if self.tutorialIsComplete is True:
+        if self.voice_index > len( self.voices_hierarchy ) - 1 :
+            self.displayCameraFeed = True
             return
         
-        tutorial_steps = [
-        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "lockDirection" : True, "lockOrientation" : True, "img" : "pirateHead", "isAVideo" : False, "delay": 500, "condition": lambda: True},#0
-        {"voice": "cmd_introduction", "displayCamera" : False, "lockDirection" : True,"lockOrientation" : True, "img" : "cmd_introduction","isAVideo" : False,  "delay": 2000, "condition": lambda: True},#1
-
-        {"voice": "cmd_direction", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : True,"img" : "cmd_buttonClick","isAVideo" : False,  "delay": 2000,  "condition": lambda: True},#2
-        {"voice": "cmd_orientation", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation","isAVideo" : False,  "delay": 500,  "condition": lambda: self.unlock_direction},#3
-        {"voice": "cmd_invert", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_orientation","isAVideo" : False,  "delay": 1000, "condition": lambda: self.unlock_orientation},#4
-        {"voice": "cmd_spyglass", "displayCamera" : True,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam","isAVideo" : False,  "delay": 500,  "condition": lambda: True},#5 > display frame
-        {"voice": "cmd_cam", "displayCamera" : False,"lockDirection" : False, "lockOrientation" : False,"img" : "cmd_cam","isAVideo" : False,  "delay": 500,  "condition": lambda: True},#6
-        {"voice": "cmd_end", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None,"isAVideo" : False,  "delay": 30 * 1000,  "condition": lambda: True},#7
-
-        {"voice": "hist_intro", "displayCamera" : True, "lockDirection" : False,"lockOrientation" : False, "img" : None,"isAVideo" : False,  "delay": 500,  "condition": lambda: True},#7
-        
-        {"voice": "hist_handcraft", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_handcraft", "isAVideo" : True,  "delay": 1000, "condition": lambda: self.unlock_hist },#8
-        {"voice": "hist_bounty", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_bountyAtSea", "isAVideo" : True,  "delay": 1000, "condition": lambda: self.unlock_hist },#9 
-        {"voice": "hist_breadfruit", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False,"img" : "hist_breadfruit","isAVideo" : True, "delay": 1000, "condition": lambda: self.unlock_hist },#10
-        {"voice": "hist_sugarFarm", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_sugarFarm","isAVideo" : True, "delay": 1000,  "condition": lambda: self.unlock_hist },#11
-        {"voice": "hist_mutiny", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_mutiny", "delay": 1000,"isAVideo" : True, "condition": lambda: self.unlock_hist },#12 > displayframe
-        {"voice": "hist_pitcairn", "displayCamera" : False, "lockDirection" : False,"lockOrientation" : False, "img" : "hist_pitcairn", "delay": 1000,"isAVideo" : True, "condition": lambda: self.unlock_hist }#13 > displayframe
-
-        ]
-
         if self._voice_is_playing is False:
 
-            if self.tutorial_index > len( tutorial_steps ) - 1 :
-                self.tutorialIsComplete = True
-                self.displayCameraFeed = True
-                return
-
-            step = tutorial_steps[ self.tutorial_index ]
+            step = self.voices_hierarchy[ self.voice_index ]
 
             if step["condition"]():
+
                 self.displayCameraFeed = step["displayCamera"]
                 self.imgToDisplay = step["img"]
                 self.imgIsFromAVideo = step["isAVideo"]
@@ -244,7 +271,9 @@ class AudioManager(object):
                 self.userlock_direction = step["lockDirection"]
                 self.userlock_orientation = step["lockOrientation"]
 
-                self.play_voice(voice=step["voice"], delay=step["delay"], tutorialEvent=True)
+                self.play_voice(voice=step["voice"], delay=step["delay"], event = HIERARCHY_VOICE_ENDED)
+
+                self.unlock_hist = False
 
 
     def get_media_to_display( self ):
@@ -259,13 +288,14 @@ class AudioManager(object):
     
 
     def onGameOver( self ):
-        self.play_voice(voice="game_over", delay=1000, tutorialEvent=GAME_OVER_VOICE_ENDED )
-        
+        self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
+    
+    def onHistoryReady( self ):
+        self.play_voice(voice="hist_listen", delay=1000, event = STANDARD_VOICE_ENDED )
 
     def reset_tutorial( self ):
 
-        self.tutorial_index = 0
-        self.tutorialIsComplete = False
+        self.voice_index = 0
 
         self.unlock_direction = False
         self.unlock_orientation = False
@@ -281,8 +311,7 @@ class AudioManager(object):
 
     def abort_tutorial( self ):
 
-        self.tutorial_index = 13
-        self.tutorialIsComplete = True
+        self.voice_index = len(self.voices_hierarchy) if self.voices_hierarchy is not None else 13
         self.displayCameraFeed = True
 
         self.unlock_direction = True
@@ -339,28 +368,49 @@ class AudioManager(object):
         if self._mixer:    
             self._mixer.set_volume(self._volume_levels[ "music" ] )
 
+    def set_playtime( self, playtime = 10*60 ):
+
+        self.history_delay = np.floor( playtime / (len( self.voices_history ) + 1 ) )
+
+    def wait_before_next_play( self ):
+
+        if self.voice_index >= len( self.voices_hierarchy ):
+            return 
+        
+        pygame.time.set_timer( HIST_DELAY_ENDED, self.history_delay )
+
 
     def loop( self ):
 
         for event in pygame.event.get():
 
-            if event.type == TUTORIAL_VOICE_ENDED:
+            if event.type == HIERARCHY_VOICE_ENDED:
+
                 self.reset_music_volume()
+
                 pygame.time.set_timer(event.type, 0)
-                self.tutorial_index += 1
+                self.voice_index += 1
             
-                self.FullHudIndexReached = self.tutorial_index >= 5
-                self.HistIndexReached = self.tutorial_index >= 8
+                if self.HistIndexReached is True: 
+                    self.wait_before_next_play()
 
             elif STANDARD_VOICE_ENDED:
+
                 self.reset_music_volume()
                 pygame.time.set_timer(event.type, 0)
 
             elif GAME_OVER_VOICE_ENDED:
+
                 self.reset_tutorial()
                 pygame.time.set_timer(event.type, 0)
 
-            
+            elif HIST_DELAY_ENDED:
+
+                self.unlock_hist = True
+                self.onHistoryReady()
+                pygame.time.set_timer(event.type, 0)
+
+        
 
 
     def _disable( self ):
