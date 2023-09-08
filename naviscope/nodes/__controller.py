@@ -388,7 +388,7 @@ class Controller( Node ):
         def checkVoicesCompletion( self ):
 
             if self._audioManager is not None:
-                
+ 
                 if self._audioManager.readAllVoices is True:
                     return 
                 
@@ -396,18 +396,15 @@ class Controller( Node ):
 
                 if self._audioManager.FullHudIndexReached is True:
                     
-                    if self._audioManager._voice_is_playing is False:
-
-                        if self.droneDirection == DIRECTION_STATE.STOP.value:
-                            self.lockBtnDirection = True
+                    if self._audioManager._voice_is_playing is True and self._audioManager.HistIndexReached is True:
+                            
+                        self.lockBtnDirection = self._audioManager.shipIsIddling
 
                     else:
 
                         self.lockBtnDirection = False
                         self.lockWheelOrientation = False
                     
-                    return
-                
                 else:
                     
                     self.lockBtnDirection = self._audioManager.userlock_direction

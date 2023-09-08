@@ -8,14 +8,16 @@
 import os
 import pygame
 import numpy as np
+import itertools
+
 from pygame import mixer
 
 from ..utils.__utils_objects import AVAILABLE_LANG
 
 GAME_OVER_VOICE_ENDED = pygame.USEREVENT + 1
-STANDARD_VOICE_ENDED = pygame.USEREVENT + 1
-HIERARCHY_VOICE_ENDED = pygame.USEREVENT + 1
-HIST_DELAY_ENDED = pygame.USEREVENT + 1
+STANDARD_VOICE_ENDED = pygame.USEREVENT + 2
+HIERARCHY_VOICE_ENDED = pygame.USEREVENT + 3
+HIST_DELAY_ENDED = pygame.USEREVENT + 4
 
 class AudioManager(object):
 
@@ -24,13 +26,16 @@ class AudioManager(object):
         super().__init__()
 
         self._mixer = None
+        
+        self.tutorialTime = 90
 
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
 
         self.displayCameraFeed = False
         self.imgToDisplay = ""
-
+        self.imgIsFromAVideo = False
+        
         self.userlock_direction = True
         self.userlock_orientation = True
 
@@ -58,14 +63,12 @@ class AudioManager(object):
 
         self.voice_index = 0
 
-        self.FullHudIndexReached = False
-        self.HistIndexReached = False
-
         self.unlock_direction = False
         self.unlock_orientation = False
         self.unlock_hist = False
 
-
+        self.history_delay = 60*1000
+        self.histDelayIsRunning = False
 
     @property
     def FullHudIndexReached(self):
@@ -73,7 +76,7 @@ class AudioManager(object):
     
     @property
     def HistIndexReached(self):
-        return self.voice_index >= len( self.voices_cmd + 1 )
+        return self.voice_index >= len( self.voices_cmd ) 
     
     @property
     def readAllVoices(self):
@@ -129,7 +132,7 @@ class AudioManager(object):
         self._load_sfx()
         self._load_voices()
 
-        self._set_voice_hierarchy( droneIndex )
+        self._set_voices_hierarchy( droneIndex )
 
 
     def _load_music( self ):
@@ -197,8 +200,8 @@ class AudioManager(object):
 
         ]
     
-        self.voices_hierarchy = self.voices_cmd + self.voices_hierarchy
-
+        self.voices_hierarchy = list(itertools.chain(self.voices_cmd, self.voices_history)) 
+    
     def play_sfx( self, sfx = None ): 
         
         if self._mixer and sfx in self._sfx_playlist:
@@ -276,15 +279,15 @@ class AudioManager(object):
                 self.unlock_hist = False
 
 
+
     def get_media_to_display( self ):
 
         if self.displayCameraFeed is True:
-            return None
+            return (None, False)
          
-        if self.HistIndexReached is True and self.unlock_hist is False:
-            return None
-        
         return (self.imgToDisplay, self.imgIsFromAVideo )
+    
+    
     
 
     def onGameOver( self ):
@@ -306,12 +309,9 @@ class AudioManager(object):
         self.userlock_direction = True
         self.userlock_orientation = True
 
-        self.FullHudIndexReached = False
-        self.HistIndexReached = False
-
     def abort_tutorial( self ):
 
-        self.voice_index = len(self.voices_hierarchy) if self.voices_hierarchy is not None else 13
+        self.voice_index = len(self.voices_hierarchy) if self.voices_hierarchy is not None else 14
         self.displayCameraFeed = True
 
         self.unlock_direction = True
@@ -321,10 +321,7 @@ class AudioManager(object):
         self.userlock_direction = False
         self.userlock_orientation = False
 
-        self.FullHudIndexReached = True
-        self.HistIndexReached = True
-            
-            
+         
     def gameplayMusic( self, Enable, direction ): 
 
         if Enable is True:
@@ -370,14 +367,14 @@ class AudioManager(object):
 
     def set_playtime( self, playtime = 10*60 ):
 
-        self.history_delay = np.floor( playtime / (len( self.voices_history ) + 1 ) )
-
+        self.history_delay = int( np.floor( (playtime - self.tutorialTime ) / ( len( self.voices_history ) +1 ) ) )
+    
     def wait_before_next_play( self ):
 
-        if self.voice_index >= len( self.voices_hierarchy ):
+        if self.voice_index > len( self.voices_hierarchy ):
             return 
         
-        pygame.time.set_timer( HIST_DELAY_ENDED, self.history_delay )
+        pygame.time.set_timer( HIST_DELAY_ENDED, int(self.history_delay * 1000 ) )
 
 
     def loop( self ):
@@ -386,30 +383,44 @@ class AudioManager(object):
 
             if event.type == HIERARCHY_VOICE_ENDED:
 
+                self._voice_is_playing = False   
                 self.reset_music_volume()
 
                 pygame.time.set_timer(event.type, 0)
+                
                 self.voice_index += 1
-            
-                if self.HistIndexReached is True: 
-                    self.wait_before_next_play()
 
-            elif STANDARD_VOICE_ENDED:
+                if self.readAllVoices is False:
 
+                    if self.HistIndexReached is True and self.histDelayIsRunning is False:
+                        self.histDelayIsRunning = True
+                        self.wait_before_next_play()
+
+
+            elif event.type == STANDARD_VOICE_ENDED:
+                
+                self._voice_is_playing = False   
                 self.reset_music_volume()
+
                 pygame.time.set_timer(event.type, 0)
 
-            elif GAME_OVER_VOICE_ENDED:
-
+            elif event.type == GAME_OVER_VOICE_ENDED:
+                
+                self._voice_is_playing = False   
                 self.reset_tutorial()
                 pygame.time.set_timer(event.type, 0)
 
-            elif HIST_DELAY_ENDED:
-
+            elif event.type == HIST_DELAY_ENDED:
+                
                 self.unlock_hist = True
-                self.onHistoryReady()
+                self.histDelayIsRunning = False
+
+                if self.shipIsIddling is False:
+                    self.onHistoryReady()
+
                 pygame.time.set_timer(event.type, 0)
 
+        
         
 
 

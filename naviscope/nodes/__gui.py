@@ -2,12 +2,16 @@
 import os
 import traceback
 import datetime
-import cv2 # OpenCV library
+import json
+from time import sleep
+
 import math
 import numpy as np
-from time import sleep
+
 from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
+
+import cv2 # OpenCV library
 
 import rclpy
 
@@ -37,6 +41,7 @@ class Display(customtkinter.CTk):
         super().__init__()
         
         self.ZoomLevel = 10
+        
         self.last_image = None 
 
         self.gameplayEnable = False
@@ -46,6 +51,7 @@ class Display(customtkinter.CTk):
 
         self._drone_orientation = None
 
+        self._last_center_image = None
         self.rawFrame = None
 
         self._videoFrame = None
@@ -53,6 +59,10 @@ class Display(customtkinter.CTk):
 
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
+
+        self.video_capture=None
+        self.flipVertically = True
+        self.videoPlayerFrame = None
 
         self.title(Display.APP_NAME)
 
@@ -98,7 +108,6 @@ class Display(customtkinter.CTk):
         self._center_image = None
         self._canvas_frame = None
 
-        self.videoCapture = None
         self._isVideoPaused = False
         self.currentVideoFile = ""
         
@@ -188,13 +197,37 @@ class Display(customtkinter.CTk):
     def bind_events( self ):
 
         self.bind("<Control-c>", self._closing_from_gui)
+        #self.bind("z", self.set_buttonPress)
+        #self.bind("s", self.set_buttonPress)
+        #self.bind("g", self.set_gameplayEnable)
         #self.bind("<<closeGUI>>", self._stop)
+
+    """
+
+    def set_buttonPress( self, event ):
+        self._node.OnButtonPress(shortPress=True,longPress=False)
+        self._node.droneDirection = self._node._direction
+        self._node._audioManager.unlock_direction = True
+        self._node._audioManager.unlock_orientation = True
+
+
+    def set_gameplayEnable( self, event ):
+        self._node.isGamePlayEnable = True
+        self._node._playtimeLeft = 5*60
+        self._node._audioManager.set_playtime(5*60)
+        self._node._update_direction(DIRECTION_STATE.STOP.value)
+        self._node._audioManager.gameplayMusic( True, 0 )
+ 
+    
+    """
 
 
     def _create_window( self ): 
 
         self.canvas = customtkinter.CTkCanvas(self, width=self.canvaResolution[0], height=self.canvaResolution[1])
         self.canvas.pack( side="top", fill="both", expand=True )
+
+        self.loadDatas()
 
         self.loadImages()
         self.draw_image_frame()
@@ -206,10 +239,38 @@ class Display(customtkinter.CTk):
         
         self.renderBlackScreen()
 
+    def loadDatas( self ):
+
+        DIR = os.path.join(
+        os.getcwd(), 
+        'install',            
+        'naviscope',   
+        'share',         
+        'naviscope',    
+        'datas'                
+        )
+
+        files = [
+            os.path.join( DIR, filename )
+            for filename in os.listdir( DIR )
+            if filename.endswith(".json")
+        ]
+
+        self.datasList = { os.path.splitext(os.path.basename(file))[0] :  self.open_datas(file) for file in files}
+
+    def open_datas( self, file_path ):
+        
+        datas = None
+
+        with open( file_path, "r" ) as fichier_json:
+            datas = json.load(fichier_json)
+
+        return datas
+
 
     def loadImages( self ):
 
-        IMG_DIR = os.path.join(
+        DIR = os.path.join(
         os.getcwd(), 
         'install',            
         'naviscope',   
@@ -219,19 +280,19 @@ class Display(customtkinter.CTk):
         'img'                 
         )
 
-        img_files = [
-            os.path.join(IMG_DIR, filename)
-            for filename in os.listdir(IMG_DIR)
+        files = [
+            os.path.join( DIR, filename )
+            for filename in os.listdir( DIR )
             if filename.endswith(".jpg")
         ]
 
-        self.imgList = { os.path.splitext(os.path.basename(file))[0] : self.load_and_resize(file, flipVertically=True) for file in img_files}
+        self.imgList = { os.path.splitext(os.path.basename(file))[0] : self.load_and_resize( file, flipVertically=True ) for file in files }
 
 
 
     def loadVideo( self ):
 
-        VID_DIR = os.path.join(
+        DIR = os.path.join(
         os.getcwd(), 
         'install',            
         'naviscope',   
@@ -241,13 +302,13 @@ class Display(customtkinter.CTk):
         'vid'                 
         )
 
-        vid_files = [
-            os.path.join(VID_DIR, filename)
-            for filename in os.listdir(VID_DIR)
+        files = [
+            os.path.join( DIR, filename )
+            for filename in os.listdir( DIR )
             if filename.endswith(".mp4")
         ]
 
-        self._vidList = {os.path.splitext(os.path.basename(file))[0]: file for file in vid_files}
+        self._vidList = { os.path.splitext(os.path.basename( file ))[0]: file for file in files }
 
 
 
@@ -399,29 +460,81 @@ class Display(customtkinter.CTk):
         if imgName == "":
             return 
         
-        self._center_image_name = imgName
-
         if isAVideo is False:
             
             if self._center_image_name != imgName:
 
                 image = self.imgList[imgName]
                 self.updateImageOnCanva( image )
-
+                
         else:
 
-            image = self.readVideoFile(imgName, True)
+            image = self.readVideoFile(imgName)
             self.updateImageOnCanva( image )
-
+        
+        
+        self._center_image_name = imgName
     
     def updateImageOnCanva( self, image = None ):
-        
-        if image is not None:
-            self.canvas.itemconfig( self._canvas_frame, image=image )
-
     
-    def readVideoFile( self, imgName ="", flipVertically = True ):
+        if image is not None and image != self._last_center_image:
+            self._last_center_image = image
+            self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
+    def updateCapture( self, videoFile = "" ): 
+
+        self._isPaused = False
+
+        if videoFile == "": 
+            return 
+        
+        if self.video_capture is None:
+
+            self.video_capture = cv2.VideoCapture( videoFile )
+            self.video_file = videoFile
+
+        else:
+            
+            if videoFile != self.video_file:
+
+                self.video_capture.release()
+                self.video_capture.open(videoFile) 
+                
+                self.video_file = videoFile
+
+        self.read_frame()
+    
+    def read_frame(self):
+
+        if self.video_capture is not None:
+                
+            if self._isPaused is True:
+                return self.videoPlayerFrame
+                
+            ret, frame = self.video_capture.read()
+
+            if ret:
+
+                self.current_frame = frame
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image = Image.fromarray(image)
+
+                #cv2.imshow("Video", frame)  # Afficher la vidéo avec OpenCV
+                #cv2.waitKey(30)  # Attendre 30 ms entre chaque frame (ajustez selon vos besoins)
+
+                if self.flipVertically is True:
+                    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
+                photoImg = ImageTk.PhotoImage(image=image)
+
+                self.videoPlayerFrame = photoImg
+
+            else:
+
+                self.videoPlayerFrame = None
+
+    def readVideoFile( self, imgName ="" ):
+    
         if imgName == "": 
             return None
             
@@ -429,32 +542,11 @@ class Display(customtkinter.CTk):
 
         if videoFile is None: 
             return None
-            
-        if self.videoCapture is None:
-
-            self.videoCapture = cv2.VideoCapture( videoFile )
-
-        if videoFile != self.currentVideoFile:
-
-            self.videoCapture.release()
-            self.videoCapture.open(videoFile) 
-            self.currentVideoFile = videoFile
-
+        
         if self._isVideoPaused is False:
-
-            ret, frame = self.videoCapture.read()
-
-            if ret:
-
-                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = Image.fromarray(image)
-
-                photoImg = ImageTk.PhotoImage(image=image)
-
-                if flipVertically is True:
-                    photoImg  = photoImg.transpose(Image.FLIP_TOP_BOTTOM)
-
-                return photoImg
+            self.updateCapture( videoFile )
+        
+        return self.videoPlayerFrame
 
 
     def set_box( self, box, fillColor="", outlineColor="" ):
@@ -662,7 +754,7 @@ class Display(customtkinter.CTk):
     
     
     def renderDroneView( self ):
-        
+        self._center_image_name = "frame"   
         if self.rawFrame is not None:
 
             self.clear_img_text()
@@ -679,8 +771,7 @@ class Display(customtkinter.CTk):
 
                 self._videoFrame = frameToRender
                 self.canvas.itemconfig( self._canvas_frame, image= self._videoFrame)
-                self._center_image_name = "frame"
-            
+  
             self.rawFrame = None
 
 
@@ -689,16 +780,29 @@ class Display(customtkinter.CTk):
         if self._node._audioManager is not None:
             
             mediaToDisplay, isAVideo = self._node._audioManager.get_media_to_display()
-
+            
             if mediaToDisplay is not None:
 
-                self.set_center_img(mediaToDisplay, isAVideo)
+                if self._node._audioManager.HistIndexReached is False:
 
+                    self.set_center_img(mediaToDisplay, isAVideo)
+
+                else:
+                    
+                    
+                    if self._node._audioManager._voice_is_playing is True and self._node._audioManager.shipIsIddling is True: 
+                        
+                        self.set_center_img(mediaToDisplay, isAVideo)
+                        
+                    else:
+                        
+                        self.renderDroneView()
             else:
                 
                 self.renderDroneView()
         
         self._blackScreen = False
+
     
     
     def clear_hud_texts( self ):
@@ -754,7 +858,6 @@ class Display(customtkinter.CTk):
         self.renderMainFrame()
         
 
-
     def updateHud(self):
     
         if self._node is not None: 
@@ -767,7 +870,7 @@ class Display(customtkinter.CTk):
         
                 if self._node._audioManager.FullHudIndexReached is True:
 
-                    self.render_orientation(self.arrowColor_base)
+                    self.render_orientation(self.arrowColor_base if self._node._audioManager.shipIsIddling else self.arrowColor_forward )
                     self.render_elapsed()
                     #self.render_direction(DIRECTION_STATE.STOP.value)
             else:
@@ -776,6 +879,7 @@ class Display(customtkinter.CTk):
 
 
         self.after(self._loop_delay, self.updateHud)
+
 
 
     def _stop(self):
@@ -792,10 +896,15 @@ class Display(customtkinter.CTk):
                     
             except Exception as e:
                 traceback.print_exc()
-        
-        self.destroy()
 
+        
         self._kill_videostream()
+
+        try:
+            self.destroy()
+
+        except Exception as e:
+            traceback.print_exc()
 
 
     def _action_on_shutdown(self, value):
