@@ -347,7 +347,7 @@ class Controller( Node ):
             #if self.EnableFilter is True:
             #    self._init_filter()
 
-            self._board = externalBoard( self._board_datas )
+            self._board = externalBoard( callback=self._board_datas )
             self.reset()
 
             self._board._enable()
@@ -536,26 +536,27 @@ class Controller( Node ):
 
 
         def _board_datas( self, json_datas ): 
-            
+               
             datas = json_datas
            
             if SENSORS_TOPICS.ORIENTATION.value in datas:
 
                 if self.lockWheelOrientation is False:
                     self.OnWheelRotation(datas[SENSORS_TOPICS.ORIENTATION.value])
-            
+         
             if SENSORS_TOPICS.PROPULSION.value in datas:
 
                 self.OnButtonRotation(datas[SENSORS_TOPICS.PROPULSION.value])
-
+         
             if SENSORS_TOPICS.SHORT_PRESS.value in datas and SENSORS_TOPICS.LONG_PRESS.value in datas:
                 self.OnButtonPress( 
                     datas[SENSORS_TOPICS.SHORT_PRESS.value], 
                     datas[SENSORS_TOPICS.LONG_PRESS.value] 
                 )
+  
 
             if self.mpu_keys.issubset( datas.keys()):   
-                
+          
                 self.OnMPUDatas(
                     pitch=datas[SENSORS_TOPICS.PITCH.value],
                     roll=datas[SENSORS_TOPICS.ROLL.value],
@@ -565,6 +566,7 @@ class Controller( Node ):
                     delta_y=datas[ SENSORS_TOPICS.DELTA_YAW.value ]
                 )
 
+      
             self._send_sensors_datas(datas)
 
 
@@ -665,7 +667,7 @@ class Controller( Node ):
             
             #if self._filter is not None:
             #    pitch, roll, yaw = self.smooth_imu_data(pitch, roll, yaw)
-            
+     
             self._sensor_yaw = yaw
             self._sensor_pitch = pitch
             self._sensor_roll = roll
@@ -682,7 +684,6 @@ class Controller( Node ):
             angleZ = int(np.clip( self._mpu_yaw * self._mpu_PanMultiplier - delta_p, 0,180 ))
       
             self.tiltSwitchTriggered = angleX <= self.tiltSwitchThreshold
-            self._master.set_bounty_figure()
 
             if abs( angleX - self._mpu_tilt ) >= self.panTiltThreshold or abs( angleZ - self._mpu_yaw ) >= self.panTiltThreshold:
                 
@@ -731,26 +732,26 @@ class Controller( Node ):
 
 
         def _send_sensors_datas( self, sensor_json ):
-            
+           
             sensor_msg = String()
-            
+         
             if self._sensors_id is None:
                 self._sensors_id = self.get_parameter("peer_index").value
             
-
+   
             sensor_json[SENSORS_TOPICS.IP.value] = f"{self._address}"
             sensor_json[SENSORS_TOPICS.WIFI.value] = ( self._wifi_rssi, self._wifi_frequency )
-     
+        
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
                 SENSORS_TOPICS.INDEX.value : self._sensors_id,
                 SENSORS_TOPICS.DATAS.value : sensor_json
             }
+         
             sensor_msg.data = json.dumps( sensors_datas )
-
+            
             self._pub_sensor.publish( sensor_msg )
-        
-
+      
         def OnDroneDatas( self, msg ):
             
             drone_sensors = json.loads( msg.data )

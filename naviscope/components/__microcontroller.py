@@ -72,7 +72,7 @@ class externalBoard( object ):
                 self._reset( )
                 
                 self._thread_init()
-                print(f" port open on {self.COM_PORT }")
+                #print(f" port open on {self.COM_PORT }")
 
 
         def _reset(self ):
@@ -124,12 +124,12 @@ class externalBoard( object ):
                             if self.SERIAL.in_waiting > 0:
 
                                 line = self.SERIAL.readline() 
-                                #print(line)
+                  
                                 datas = json.loads( line )
-
-                                if datas is not None:
+                                
+                                if datas is not None:    
                                     self._callback( datas )
-
+                                
                         except Exception as e: #(ValueError, serial.SerialException)
                             pass  
      
