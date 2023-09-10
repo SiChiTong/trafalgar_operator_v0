@@ -292,6 +292,7 @@ class AudioManager(object):
 
     def onGameOver( self ):
         self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
+        self.reset_tutorial()
     
     def onHistoryReady( self ):
         self.play_voice(voice="hist_listen", delay=1000, event = STANDARD_VOICE_ENDED )

@@ -78,7 +78,7 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_delay = 33#100 if self._enableUDPStream is False else 1
+        self._loop_delay = 41#100 if self._enableUDPStream is False else 1
 
         self.iddleLoop = False
 
