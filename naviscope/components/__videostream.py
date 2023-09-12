@@ -16,11 +16,12 @@ MAX_QUEUE_SIZE = 4
 
 class VideoStream( object ):
 
-    def __init__( self, queue ):
+    def __init__( self, output_queue, input_queue ):
 
         super().__init__()
 
-        self.queue = queue
+        self.frame_queue = output_queue
+        self.command_queue = input_queue
 
         self._pipeline = None
         self._isHighQualityCodec = False
@@ -50,16 +51,10 @@ class VideoStream( object ):
             "size": (frame_width, frame_height)
         }
 
-        if self.queue.qsize() >= MAX_QUEUE_SIZE:
-            self.queue.get() 
-
-        #while not self.queue.empty():
-        #    self.queue.get()
-        # Check queue size, and push frame to the queue if not full
-        #if self.queue.qsize() >= MAX_QUEUE_SIZE:
-        #    self.queue.get() 
+        if self.frame_queue.qsize() >= MAX_QUEUE_SIZE:
+            self.frame_queue.get() 
         
-        self.queue.put(frame_data)
+        self.frame_queue.put(frame_data)
 
         buf.unmap(buffer)
 
@@ -120,10 +115,11 @@ class VideoStream( object ):
 
         self._pipeline.set_state(Gst.State.PLAYING)
 
+        self.loop.idle_add( self.handle_commands )
         self.loop.run()
 
 
-    def stop( self ):
+    def quit( self ):
 
         if self._pipeline is not None: 
 
@@ -132,6 +128,37 @@ class VideoStream( object ):
 
         if self.loop:
             self.loop.quit()
+
+
+    def pause( self, enable = True ):
+
+        if self._pipeline is not None:
+
+            if enable is True : 
+
+                if self.isPlaying is False:
+                    self.isPlaying = True
+                    self._pipeline.set_state( Gst.State.PLAYING )
+
+            else:
+                if self.isPlaying is True:
+                    self.isPlaying = False
+                    self._pipeline.set_state(Gst.State.PAUSED)
+
+
+    def handle_commands(self):
+
+        try:
+            command = self.command_queue.get(timeout=1)  # Check for commands every second
+            if command == "start":
+                self.pause(False)
+            elif command == "stop":
+                self.pause(True)
+            elif command == "quit":
+                self.quit()
+
+        except self.command_queue.Empty:
+            pass  # Handle the case when the queue is empty
 
  
 

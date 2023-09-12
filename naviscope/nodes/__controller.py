@@ -40,6 +40,7 @@ class Controller( Node ):
             super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
 
             self._master = Master
+            self._isControlByMaster = False
 
             self.lockBtnDirection = True
             self.lockWheelOrientation = True
@@ -392,7 +393,8 @@ class Controller( Node ):
                 if self._audioManager.readAllVoices is True:
                     return 
                 
-                self._audioManager.shipIsIddling = self.droneDirection == DIRECTION_STATE.STOP.value
+                if self._isControlByMaster is False:
+                    self._audioManager.shipIsIddling = self.droneDirection == DIRECTION_STATE.STOP.value
 
                 if self._audioManager.FullHudIndexReached is True:
                     
@@ -821,6 +823,8 @@ class Controller( Node ):
         def OnMasterPulse( self, msg ):
 
             master_pulse = json.loads( msg.data )
+
+            self._isControlByMaster = True if self.get_parameter('peer_index').value == master_pulse["control"] else False
             
             if "peers" in master_pulse: 
 

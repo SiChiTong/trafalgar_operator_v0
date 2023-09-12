@@ -11,7 +11,7 @@ import numpy as np
 from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
 
-import cv2 # OpenCV library
+import cv2 
 
 import rclpy
 
@@ -23,6 +23,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-bl
 
 from .__controller import Controller
 from ..components.__videostream import VideoStream
+from ..components.__videoPlayer import VideoPlayer
 
 from ..utils.__utils_objects import DIRECTION_STATE
 
@@ -59,7 +60,7 @@ class Display(customtkinter.CTk):
 
         self._enableUDPStream = Display.ENABLE_UDP_STREAM
         self._videostream = None
-
+        
         self.video_capture=None
         self.flipVertically = True
         self.videoPlayerFrame = None
@@ -78,17 +79,29 @@ class Display(customtkinter.CTk):
         self._playtime = 10*60
         self._playtimeLeft = 0
 
-        self._loop_delay = 41#100 if self._enableUDPStream is False else 1
-
-        self.iddleLoop = False
-
         self._thread = None
         self._lock = Lock()
 
         self._process = None
+        self._videoPlayer_process = None
 
         self._frame_stop_event = Event()
         self._frame_queue = Queue()
+        self._command_queue = Queue()
+
+        self._videoPlayerEnable = True
+
+        self._videoPlayerCommand = {
+
+            "paused" : self._isVideoPaused,
+            "playlist" : {},
+            "voice_index" : 0,
+            "enable" : self._videoPlayerEnable 
+
+        }
+
+        self._videoPlayerFrameQueue = Queue()
+        self._videoPlayerCommandQueue = Queue()
 
         self._text_name = None
         self._text_elapsed_time = None
@@ -115,6 +128,14 @@ class Display(customtkinter.CTk):
 
         self._initialize()
 
+    @property
+    def loop_gameplay( self ):
+        return 1
+    
+    @property
+    def loop_idle( self ):
+        return 1000
+    
     @property
     def screen_center_x(self):
         return 240
@@ -462,15 +483,24 @@ class Display(customtkinter.CTk):
         
         if isAVideo is False:
             
+            self._isVideoPaused = True
+
+            self.updateVideoPlayer()
+
             if self._center_image_name != imgName:
 
                 image = self.imgList[imgName]
                 self.updateImageOnCanva( image )
                 
         else:
+            
+            if self._vidList is None:
+                return
 
-            image = self.readVideoFile(imgName)
-            self.updateImageOnCanva( image )
+            image = self.getVideoFileFrame()
+
+            if image is not None:
+                self.updateImageOnCanva( image )
         
         
         self._center_image_name = imgName
@@ -481,72 +511,29 @@ class Display(customtkinter.CTk):
             self._last_center_image = image
             self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
-    def updateCapture( self, videoFile = "" ): 
 
-        self._isPaused = False
+    def updateVideoPlayer( self ):
 
-        if videoFile == "": 
-            return 
-        
-        if self.video_capture is None:
+        if self._node is not None:
 
-            self.video_capture = cv2.VideoCapture( videoFile )
-            self.video_file = videoFile
+            self._videoPlayerCommand["paused"] = self._isVideoPaused
+            self._videoPlayerCommand["playlist"] = self._vidList
+            self._videoPlayerCommand["voice_index"] = self._node._audioManager.voice_index
+            self._videoPlayerCommand["enable"] = self._videoPlayerEnable
 
-        else:
-            
-            if videoFile != self.video_file:
+            self._videoPlayerCommandQueue.put( self._videoPlayerCommand )
 
-                self.video_capture.release()
-                self.video_capture.open(videoFile) 
-                
-                self.video_file = videoFile
 
-        self.read_frame()
+    def getVideoFileFrame( self ):
     
-    def read_frame(self):
+        self.updateVideoPlayer()
 
-        if self.video_capture is not None:
-                
-            if self._isPaused is True:
-                return self.videoPlayerFrame
-                
-            ret, frame = self.video_capture.read()
+        if not self._videoPlayerFrameQueue.empty():
 
-            if ret:
+            frame = self._videoPlayerFrameQueue.get()
+            self.videoPlayerFrame = ImageTk.PhotoImage(image=frame)
 
-                self.current_frame = frame
-                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = Image.fromarray(image)
-
-                #cv2.imshow("Video", frame)  # Afficher la vidéo avec OpenCV
-                #cv2.waitKey(30)  # Attendre 30 ms entre chaque frame (ajustez selon vos besoins)
-
-                if self.flipVertically is True:
-                    image = image.transpose(Image.FLIP_TOP_BOTTOM)
-
-                photoImg = ImageTk.PhotoImage(image=image)
-
-                self.videoPlayerFrame = photoImg
-
-            else:
-
-                self.videoPlayerFrame = None
-
-    def readVideoFile( self, imgName ="" ):
-    
-        if imgName == "": 
-            return None
-            
-        videoFile = self._vidList[imgName]
-
-        if videoFile is None: 
-            return None
-        
-        if self._isVideoPaused is False:
-            self.updateCapture( videoFile )
-        
-        return self.videoPlayerFrame
+            return self.videoPlayerFrame
 
 
     def set_box( self, box, fillColor="", outlineColor="" ):
@@ -784,6 +771,8 @@ class Display(customtkinter.CTk):
             if mediaToDisplay is not None:
 
                 if self._node._audioManager.HistIndexReached is False:
+                    
+                    self.updateVideoStreamPlayState("stop")
 
                     self.set_center_img(mediaToDisplay, isAVideo)
 
@@ -792,18 +781,28 @@ class Display(customtkinter.CTk):
                     
                     if self._node._audioManager._voice_is_playing is True and self._node._audioManager.shipIsIddling is True: 
                         
+                        self.updateVideoStreamPlayState("stop")
                         self.set_center_img(mediaToDisplay, isAVideo)
                         
                     else:
                         
+                        self.updateVideoStreamPlayState("start")
                         self.renderDroneView()
             else:
                 
+                self.updateVideoStreamPlayState("start")
                 self.renderDroneView()
         
         self._blackScreen = False
 
     
+    def updateVideoStreamPlayState( self, state = "stop" ):
+        
+        if self._videoStreamPlayState != state:
+            
+            self._videoStreamPlayState = state
+            self._command_queue.put(self._videoStreamPlayState)
+
     
     def clear_hud_texts( self ):
 
@@ -849,36 +848,40 @@ class Display(customtkinter.CTk):
     def updateStream(self):
             
         if self._process is not None: 
-
+            
             if not self._frame_queue.empty():
                         
                 frame_data = self._frame_queue.get()
                 self.OnGstSample( frame_data["frame"], frame_data["size"])
                 
-        self.renderMainFrame()
-        
 
     def updateHud(self):
-    
+        
+        loop_delay = self.loop_idle
+
         if self._node is not None: 
         
             self.gameplayEnable = self._node.isGamePlayEnable
 
             if self.gameplayEnable is True:
                 
+                loop_delay = self.loop_gameplay
+
                 self.updateStream()
-        
+
+                self.renderMainFrame()
+
                 if self._node._audioManager.FullHudIndexReached is True:
 
                     self.render_orientation(self.arrowColor_base if self._node._audioManager.shipIsIddling else self.arrowColor_forward )
                     self.render_elapsed()
                     #self.render_direction(DIRECTION_STATE.STOP.value)
             else:
-
+                
                 self.renderBlackScreen()
 
 
-        self.after(self._loop_delay, self.updateHud)
+        self.after( loop_delay, self.updateHud)
 
 
 
@@ -919,6 +922,7 @@ class Display(customtkinter.CTk):
 
         self._start_controller_node()
         self._start_videostream()
+        self._start_videoPlayer()
 
 
     def _start_controller_node(self):
@@ -954,22 +958,39 @@ class Display(customtkinter.CTk):
         if self._enableUDPStream is True:
 
             # Créez le processus en utilisant la méthode _stream_process comme cible.
-            self._process = Process(target=self._stream_process, args=(self._frame_queue, self._frame_stop_event ))
+            self._process = Process(target=self._stream_process, args=(self._frame_queue, self._command_queue, self._frame_stop_event ))
             self._process.daemon = True
             self._process.start()
 
 
-    def _stream_process(self, queue, event ):
+    def _start_videoPlayer( self ):
+
+        self._videoPlayer_process = Process(
+
+            target=self._videoCapture_process, 
+            args=( self._videoPlayerFrameQueue , self._videoPlayerCommandQueue )
+        )
+            
+        self._videoPlayer_process.daemon = True
+        self._videoPlayer_process.start()
+
+
+    def _videoCapture_process(command_queue, frame_queue):
+
+        video_capture = VideoPlayer(frame_queue, command_queue)
+        video_capture.loop()
+
+    def _stream_process(self, frame_queue, command_queue, stop_event ):
         
         try:
             
-            videostream = VideoStream(queue)
+            videostream = VideoStream(frame_queue, command_queue)
             videostream.start()
 
-            while not self._frame_stop_event.is_set():
+            while not stop_event.is_set():
                 sleep(2)  # Sleep for a short while
 
-            videostream.stop()
+            videostream.quit()
 
         except Exception as e:
             traceback.print_exc()
@@ -984,7 +1005,18 @@ class Display(customtkinter.CTk):
             self._process.terminate()
             self._process.join()
 
-        
+    
+    def _kill_videoPlayer( self ):
+
+        self._videoPlayerCommand["paused"] = self._isVideoPaused
+        self._videoPlayerCommand["playlist"] = self._vidList
+        self._videoPlayerCommand["enable"] = False
+
+        self._videoPlayerCommandQueue.put( self._videoPlayerCommand )
+
+        self._videoPlayer_process.terminate()
+        self._videoPlayer_process.join()
+
 
         
 def main(args=None):

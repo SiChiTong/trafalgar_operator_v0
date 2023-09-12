@@ -207,10 +207,11 @@ class AudioManager(object):
         if self._mixer and sfx in self._sfx_playlist:
             
             sfx_path = self._sfx_playlist[sfx]
-            sfxClip = mixer.Sound( sfx_path )
+            
+            self.sound_sfx = mixer.Sound( sfx_path )
 
-            sfxClip.set_volume( self._volume_levels[ "sfx" ] )
-            sfxClip.play()
+            self.sound_sfx.set_volume( self._volume_levels[ "sfx" ] )
+            self.sound_sfx.play()
 
             
 
@@ -239,20 +240,21 @@ class AudioManager(object):
                 if self._mixer and voice in self._voices_playlist[self._lang]:
 
                     voice_path = self._voices_playlist[self._lang][voice]
-                    voiceClip = mixer.Sound( voice_path )
 
-                    voiceClip.set_volume( self._volume_levels[ "voice" ] )
+                    self.sound_voice = mixer.Sound( voice_path )
+
+                    self.sound_voice.set_volume( self._volume_levels[ "voice" ] )
 
                     if self._mixer:
                         self._mixer.set_volume(0.1)
 
                     self._voice_is_playing = True
 
-                    voiceClip.play()
+                    self.sound_voice.play()
                     #add a pause function at some point 
 
                     if event is not None :
-                        pygame.time.set_timer( event, int( voiceClip.get_length() * 1000 + delay ) )
+                        pygame.time.set_timer( event, int( self.sound_voice.get_length() * 1000 + delay ) )
      
     
     def next_voice( self ):
@@ -348,7 +350,7 @@ class AudioManager(object):
                     self.play_music("idle")
         else:
             
-            self.stop_music()
+            self.mute()
                     
 
     def stop_music( self ): 
@@ -358,6 +360,28 @@ class AudioManager(object):
 
         if self._mixer and self._mixer.get_busy():
             self._mixer.stop()
+
+    def stop_sfx( self ):
+
+        if self.sound_sfx is None:
+            return
+
+        if self.sound_sfx.get_busy():
+            self.sound_sfx.stop()
+
+    def stop_voice( self ):
+
+        if self.sound_voice is None:
+            return
+
+        if self.sound_voice.get_busy():
+            self.sound_voice.stop()
+
+    def mute( self ):
+
+        self.stop_music()
+        self.stop_sfx()
+        self.stop_voice()
 
     def reset_music_volume( self ):
 
