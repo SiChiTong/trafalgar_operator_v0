@@ -1,7 +1,13 @@
+#!/usr/bin/env python3
+########################################################################
+# Filename    : __videoPlayer.py
+# Description : audio manager
+# Author      : Man'O'AR
+# modification: 17/01/2023
+########################################################################
+
 import cv2 
-from time import sleep
 from PIL import Image
-import queue
 
 FLIP_VERTICALLY = True
 FLIP_HORIZONTALLY = False
@@ -17,31 +23,49 @@ class VideoPlayer( object ):
         self.command_queue = input_queue
 
         self.video_file = None
+
+        self.videoTrackToDisplay = None
+        self.activeVideoTrack = None
+
         self.video_capture = None
 
         self.frame = None
         self._isPaused = True
 
 
-    def updateCapture( self,  ): 
+    def updateCapture( self  ): 
 
         self._isPaused = False
 
-        videoFile = self.playlist[ self._video_index ]
-        
         if self.video_capture is None:
 
-            self.video_capture = cv2.VideoCapture( videoFile )
-            self.video_file = videoFile
+            videoFile = self.playlist[ self.videoTrackToDisplay ]
+
+            if videoFile is not None:
+
+                try:
+                    self.video_capture = cv2.VideoCapture( videoFile )
+                    self.activeVideoTrack = self.videoTrackToDisplay
+                except Exception as e: 
+                    print(f"exception has occured while openning cv2.videocapture : {e}")
 
         else:
             
-            if videoFile != self.video_file:
-
-                self.video_capture.release()
-                self.video_capture.open(videoFile) 
+            if self.activeVideoTrack != self.videoTrackToDisplay :
                 
-                self.video_file = videoFile
+                videoFile = self.playlist[ self.videoTrackToDisplay ]
+
+                if videoFile is not None: 
+
+                    try:
+
+                        self.video_capture.release()
+                        self.video_capture.open(videoFile) 
+                
+                        self.activeVideoTrack = self.videoTrackToDisplay
+
+                    except Exception as e:
+                        print(f"exception has occured while openning cv2.videocapture : {e}")
 
 
     def read_frame(self):
@@ -78,21 +102,20 @@ class VideoPlayer( object ):
                 self.frame = None
 
 
+
     def loop( self ):
 
-        while True:
-            if not self.command_queue.empty():
-                self.handle_commands()
-
-            self.read_frame()
-            sleep(1/30)
-            
+        if not self.command_queue.empty():
+            self.handle_commands()
+       
+        self.read_frame()
+   
 
     def handle_commands(self):
 
         try:
 
-            command = self.command_queue.get(timeout=1)  
+            command = self.command_queue.get()  
 
             if "paused" in command.keys():
                 self._isPaused = command["paused"]
@@ -100,29 +123,32 @@ class VideoPlayer( object ):
             if "playlist" in command.keys():
                 if self.playlist is None:
                     self.playlist = command["playlist"]
-                    
+       
             if "voice_index" in command.keys():
                 self._video_index = command["voice_index"]
+       
+            if "videotrack" in command.keys():
+                self.videoTrackToDisplay = command["videotrack"]
 
             if self.playlist is not None:
 
                 if self._isPaused is False:
                     self.updateCapture( )
-                    print( f"videoCapture should be updated" )
 
             if "kill" in command.keys():
                 exit = command["kill"]
                 if exit is True: 
                     self.quit()
         
-        except queue.Empty:
-            pass 
+        except Exception as e:
+            print(f"{e}")
 
     def is_playing(self):
         return self.video_capture.isOpened()
 
     def release(self):
-        self.video_capture.release()
+        if self.video_capture is not None:
+            self.video_capture.release()
 
     def quit( self ):
         self.release()

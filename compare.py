@@ -1,11 +1,4 @@
-#!/usr/bin/env python3
-########################################################################
-# Filename    : __gui.py
-# Description : 
-# Author      : Man'O'AR
-# modification: 17/01/2023
-########################################################################
-
+#!/usr/bin/env python
 import os
 import traceback
 import datetime
@@ -89,10 +82,10 @@ class Display(customtkinter.CTk):
 
         self.title(Display.APP_NAME)
 
-        self.geometry(str( self.winfo_screenwidth() ) + "x" + str( self.winfo_screenheight() ))
+        self.geometry(str( 480 ) + "x" + str( 480))
         #self.minsize(Display.WIDTH, Display.HEIGHT)
 
-        self.attributes("-fullscreen", True) 
+        #self.attributes("-fullscreen", True) 
 
         self.canvaResolution = (self.winfo_screenwidth(), self.winfo_screenheight()) 
 
@@ -105,7 +98,7 @@ class Display(customtkinter.CTk):
         self._lock = Lock()
 
         self._videoPlayerPlayState = True
-        self._videoStreamPlayState = "stop"
+        self._videoStreamPlayState = ""
         
         self._text_name = None
         self._text_elapsed_time = None
@@ -232,12 +225,10 @@ class Display(customtkinter.CTk):
     def bind_events( self ):
 
         self.bind("<Control-c>", self._closing_from_gui)
-        #self.bind("z", self.set_buttonPress)
-        #self.bind("s", self.set_buttonPress)
-        #self.bind("g", self.set_gameplayEnable)
+        self.bind("z", self.set_buttonPress)
+        self.bind("s", self.set_buttonPress)
+        self.bind("g", self.set_gameplayEnable)
         #self.bind("<<closeGUI>>", self._stop)
-
-    """
 
     def set_buttonPress( self, event ):
         self._node.OnButtonPress(shortPress=True,longPress=False)
@@ -257,8 +248,6 @@ class Display(customtkinter.CTk):
             self._node._audioManager.gameplayMusic( True, 0 )
         else:
             self._node._audioManager.onGameOver()
-
-    """
 
 
     def _create_window( self ): 
@@ -543,6 +532,7 @@ class Display(customtkinter.CTk):
                 self._videoPlayerCommand["playlist"] = self._vidList
                 self._videoPlayerCommand["voice_index"] = self._node._audioManager.voice_index
                 self._videoPlayerCommand["videotrack"] = self._node._audioManager.imgToDisplay
+
 
                 Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
 
@@ -848,6 +838,7 @@ class Display(customtkinter.CTk):
             self._videoStreamPlayState = state
             Q_COMMAND_videoStream.put( self._videoStreamPlayState )
 
+
     
     def clear_hud_texts( self ):
 
@@ -1018,6 +1009,7 @@ def run_process_videoStream( queueFrame, queueCommand, stopEvent, loop_delay  ):
         videostream.start()
 
         while not stopEvent.is_set():
+            videostream.handle_commands()
             sleep( loop_delay )  # Sleep for a short while
 
         videostream.quit()
@@ -1051,7 +1043,7 @@ def run_process_videoPlayer( queueFrame, queueCommand, stopEvent, loop_delay ):
         while not stopEvent.is_set():
 
             video_capture.loop()
-            sleep(loop_delay)  # Sleep for a short while
+            sleep( loop_delay )  # Sleep for a short while
 
         video_capture.quit()
 

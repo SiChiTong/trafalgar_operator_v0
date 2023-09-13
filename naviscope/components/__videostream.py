@@ -5,12 +5,11 @@
 # Author      : Man'O'AR
 # modification: 17/01/2023
 ########################################################################
-#from multiprocessing import Queue
-import numpy as np
 
+import numpy as np
 import gi
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GObject
+from gi.repository import Gst
 
 MAX_QUEUE_SIZE = 4
 
@@ -19,6 +18,8 @@ class VideoStream( object ):
     def __init__( self, output_queue, input_queue ):
 
         super().__init__()
+
+        self.isPipelinePaused = True
 
         self.frame_queue = output_queue
         self.command_queue = input_queue
@@ -30,9 +31,9 @@ class VideoStream( object ):
     def udpPort( self ): 
         return 3000
         
-
     def OnNewSample(self, sink):
-            
+        
+
         sample = sink.emit("pull-sample")
         buf = sample.get_buffer()
 
@@ -102,8 +103,6 @@ class VideoStream( object ):
 
     def start( self ):
 
-        self.loop = GObject.MainLoop()
-
         Gst.init(None)
 
         pipeline_string = self.h265_decoder() if self._isHighQualityCodec is True else self.h264_decoder()#self.h264_decoder()
@@ -115,9 +114,6 @@ class VideoStream( object ):
 
         self._pipeline.set_state(Gst.State.PLAYING)
 
-        self.loop.idle_add( self.handle_commands )
-        self.loop.run()
-
 
     def quit( self ):
 
@@ -126,39 +122,39 @@ class VideoStream( object ):
             self._pipeline.set_state(Gst.State.NULL)
             self._pipeline = None
 
-        if self.loop:
-            self.loop.quit()
 
-
-    def pause( self, enable = True ):
+    def play( self, playMode = True ):
 
         if self._pipeline is not None:
 
-            if enable is True : 
+            if playMode is True : 
 
-                if self.isPlaying is False:
-                    self.isPlaying = True
+                if self.isPipelinePaused is True:
+                    self.isPipelinePaused = False
                     self._pipeline.set_state( Gst.State.PLAYING )
 
             else:
-                if self.isPlaying is True:
-                    self.isPlaying = False
+
+                if self.isPipelinePaused is False:
+                    self.isPipelinePaused = True
                     self._pipeline.set_state(Gst.State.PAUSED)
 
 
     def handle_commands(self):
 
-        try:
-            command = self.command_queue.get(timeout=1)  # Check for commands every second
+        if not self.command_queue.empty():
+
+            command = self.command_queue.get() 
+
             if command == "start":
-                self.pause(False)
+                self.play(True)
+
             elif command == "stop":
-                self.pause(True)
+                self.play(False)
+
             elif command == "quit":
                 self.quit()
 
-        except self.command_queue.Empty:
-            pass  # Handle the case when the queue is empty
 
  
 
