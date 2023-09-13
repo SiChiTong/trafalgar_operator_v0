@@ -27,7 +27,7 @@ class AudioManager(object):
 
         self._mixer = None
         
-        self.tutorialTime = 90
+        self.tutorialTime = 100
 
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
