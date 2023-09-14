@@ -165,7 +165,7 @@ class Controller( Node ):
 
         @property
         def tiltSwitchThreshold(self):
-            return 40
+            return 30
     
         @property
         def fanspeed_stop(self):

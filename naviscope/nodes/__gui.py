@@ -796,6 +796,10 @@ class Display(customtkinter.CTk):
             
             mediaToDisplay, isAVideo = self._node._audioManager.get_media_to_display()
             
+            if self._node.tiltSwitchTriggered is True:
+                mediaToDisplay = "logo_moa"
+                isAVideo = False
+                
             if mediaToDisplay is not None:
 
                 if self._node._audioManager.HistIndexReached is False:
