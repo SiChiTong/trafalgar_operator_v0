@@ -354,8 +354,8 @@ class Controller( Node ):
             self._board._enable()
 
             if self.EnableAudio is True: 
-                self._audioManager = AudioManager()
-                self._audioManager._enable( INDEX )
+                self._audioManager = AudioManager( operator_index = INDEX )
+                self._audioManager._enable( )
 
 
         def _init_timers( self ):

@@ -21,13 +21,14 @@ HIST_DELAY_ENDED = pygame.USEREVENT + 4
 
 class AudioManager(object):
 
-    def __init__(self, args=None ):
+    def __init__(self, operator_index =  0, args=None ):
         
         super().__init__()
 
         self._mixer = None
         
-        self.tutorialTime = 100
+        self._operator_index = operator_index 
+        self.tutorialTime = 60 * 2
 
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
@@ -56,9 +57,9 @@ class AudioManager(object):
         self._voice_is_playing = False
 
         self._volume_levels = {
-            "music" : 0.3,
+            "music" : 0.25,
             "sfx" : 0.6,
-            "voice" : 0.5
+            "voice" : 0.45
         }
 
         self.voice_index = 0
@@ -67,7 +68,7 @@ class AudioManager(object):
         self.unlock_orientation = False
         self.unlock_hist = False
 
-        self.history_delay = 60*1000
+        self.history_delay = 20*1000
         self.histDelayIsRunning = False
 
     @property
@@ -87,7 +88,7 @@ class AudioManager(object):
     def canPlayHistory(self):
         return self.shipIsIddling and self.unlock_hist
     
-    def _enable( self, droneIndex = 0 ):
+    def _enable( self ):
         
         pygame.init()
 
@@ -132,7 +133,7 @@ class AudioManager(object):
         self._load_sfx()
         self._load_voices()
 
-        self._set_voices_hierarchy( droneIndex )
+        self._set_voices_hierarchy( )
 
 
     def _load_music( self ):
@@ -172,11 +173,11 @@ class AudioManager(object):
 
             self._voices_playlist[lang_dir] = {os.path.splitext(os.path.basename(file))[0]: file for file in voices_files}
     
-    def _set_voices_hierarchy( self, droneIndex = 0 ):
+    def _set_voices_hierarchy( self ):
 
         self.voices_cmd = [
 
-        {"voice": f"drone_{droneIndex}", "displayCamera" : False, "lockDirection" : True, "lockOrientation" : True, "img" : "pirateHead", "isAVideo" : False, "delay": 500, "condition": lambda: True},#0
+        {"voice": f"drone_{self._operator_index}", "displayCamera" : False, "lockDirection" : True, "lockOrientation" : True, "img" : "pirateHead", "isAVideo" : False, "delay": 500, "condition": lambda: True},#0
         
         {"voice": "cmd_introduction", "displayCamera" : False, "lockDirection" : True,"lockOrientation" : True, "img" : "cmd_introduction","isAVideo" : False,  "delay": 2000, "condition": lambda: True},#1
 
@@ -281,7 +282,6 @@ class AudioManager(object):
                 self.unlock_hist = False
 
 
-
     def get_media_to_display( self ):
 
         if self.displayCameraFeed is True:
@@ -289,9 +289,6 @@ class AudioManager(object):
          
         return (self.imgToDisplay, self.imgIsFromAVideo )
     
-    
-    
-
     def onGameOver( self ):
         self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
         self.reset_tutorial()
@@ -337,7 +334,13 @@ class AudioManager(object):
 
                 if self.IsAdventurePlaying is False:
                     self.IsAdventurePlaying = True
-                    self.play_music("adventure")
+                    self.play_music("move_base") 
+                    #next upgrade 
+                    # play instrumental sea shanty adapt to each boat : 
+                    # wellerman
+                    # santi anno
+                    # drunken sailor
+
 
             else:
 
@@ -347,7 +350,8 @@ class AudioManager(object):
 
                 if self.IsIdlePlaying is False:
                     self.IsIdlePlaying = True
-                    self.play_music("idle")
+                    self.play_music(f"idle_{self._operator_index}")
+
         else:
             
             self.mute()
@@ -392,7 +396,7 @@ class AudioManager(object):
 
     def set_playtime( self, playtime = 10*60 ):
 
-        self.history_delay = int( np.floor( (playtime - self.tutorialTime ) / ( len( self.voices_history ) +1 ) ) )
+        self.history_delay = int( np.floor( ( playtime - self.tutorialTime ) / ( len( self.voices_history ) + 1 ) ) )
     
     def wait_before_next_play( self ):
 
