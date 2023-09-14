@@ -68,7 +68,7 @@ class AudioManager(object):
         self.unlock_orientation = False
         self.unlock_hist = False
 
-        self.history_delay = 20*1000
+        self.history_delay = 20 * 1000
         self.histDelayIsRunning = False
 
     @property

@@ -588,15 +588,15 @@ class Controller( Node ):
                     self._updateWheelAudio( increment )
 
 
-        def OnButtonRotation( self, updateLevelIncrement ): 
+        def OnButtonRotation( self, increment ): 
             
             if self.lockBtnPropulsion is False:
 
-                self.PropulsionIncrement( updateLevelIncrement )
+                self.PropulsionIncrement( increment )
 
             if self.lockBtnCam is False:
                     
-                self._cam_pan_angle = int(np.clip( self._cam_pan_angle - updateLevelIncrement, 0,180 )) 
+                self._cam_pan_angle = int(np.clip( self._cam_pan_angle + increment, 0,180 )) 
                 self._update_pantilt( pan = self._cam_pan_angle, tilt = self._cam_tilt_angle )
   
 
