@@ -27,7 +27,7 @@ class AudioManager(object):
 
         self._mixer = None
         self.sound_sfx = None
-        self.sound_sfx = None
+        self.sound_voice = None
         
         self._operator_index = operator_index 
 
