@@ -135,16 +135,15 @@ class VideoPlayer( object ):
             if "videotrack" in command.keys():
                 self.videoTrackToDisplay = command["videotrack"]
 
-            if self.playlist is not None:
-
-                if self._isPaused is False:
-                    self.updateCapture( )
-
             if "released" in command.keys():
                 release = command["released"]
 
                 if release is True: 
                     self.release()
+                else:
+
+                    if self.playlist is not None and self._isPaused is False:
+                        self.updateCapture( )
 
         
         except Exception as e:
