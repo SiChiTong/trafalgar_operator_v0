@@ -18,7 +18,7 @@ from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
 
 import cv2 
-import vlc 
+#import vlc 
 
 import rclpy
 
@@ -229,12 +229,13 @@ class Display(customtkinter.CTk):
 
         self._create_window()
 
-        self._start_videoPlayer( )
+        #self._start_videoPlayer( )
         self.updateHud()
 
-
-    def _start_videoPlayer( self ):
-
+    """
+       def _start_videoPlayer( self ):
+        
+        
         if self._enableOCVPlayer is True:
             return
         
@@ -242,6 +243,9 @@ class Display(customtkinter.CTk):
 
         self.vlcPlayer = self.vlcInstance.media_player_new()
         self.vlcPlayer.set_hwnd(self.canvas.winfo_id())
+ 
+    
+    """
 
 
     def _start( self ):
@@ -535,6 +539,7 @@ class Display(customtkinter.CTk):
             image = self.getVideoFileFrame()
 
             if image is not None:
+                self.videoPlayerFrame = image
                 self.updateImageOnCanva( image )
         
         
@@ -549,7 +554,7 @@ class Display(customtkinter.CTk):
             self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
 
-    def updateVideoPlayer( self, release = False, paused = False ):
+    def updateVideoPlayer( self, released = False, paused = False ):
 
         global Q_COMMAND_videoPlayer
 
@@ -557,7 +562,7 @@ class Display(customtkinter.CTk):
             
             videoList = self._videoPlayerCommand["playlist"] is None
             pauseState = self._videoPlayerCommand["paused"] != paused
-            releaseState = self._videoPlayerCommand["releaseState"] != release
+            releaseState = self._videoPlayerCommand["released"] != released
             trackSelection = self._videoPlayerCommand["videotrack"] != self._node._audioManager.imgToDisplay
 
             onStateChange = videoList or pauseState or releaseState
@@ -568,7 +573,7 @@ class Display(customtkinter.CTk):
                 self._videoPlayerCommand["playlist"] = self._vidList
                 self._videoPlayerCommand["voice_index"] = self._node._audioManager.voice_index
                 self._videoPlayerCommand["videotrack"] = self._node._audioManager.imgToDisplay
-                self._videoPlayerCommand["released"] = release
+                self._videoPlayerCommand["released"] = released
             
                 if self._enableOCVPlayer is True:
                 
@@ -576,6 +581,8 @@ class Display(customtkinter.CTk):
 
                 else:
                     
+                    return
+                    """
                     if pauseState is True:
 
                         if paused is True: 
@@ -596,7 +603,7 @@ class Display(customtkinter.CTk):
                                     self.vlcPlayer.stop()
 
                             
-                            if release is False:
+                            if released is False:
                                 
                                 if trackSelection is True:
 
@@ -615,6 +622,8 @@ class Display(customtkinter.CTk):
                                 if self.vlcPlayer is not None:
                                     self.vlcPlayer.release()
                                     self.vlcPlayer = None
+          
+                    """
 
 
 
@@ -630,13 +639,19 @@ class Display(customtkinter.CTk):
             if not Q_FRAME_videoPlayer.empty():
 
                 frame = Q_FRAME_videoPlayer.get()
-
-        else:
+        """
+                else:
 
             if self.vlcPlayer is not None and self.vlcPlayer.get_state() == vlc.State.Playing:
                 frame = self.vlcPlayer.get_video()
+        
+        """
 
-        self.videoPlayerFrame = ImageTk.PhotoImage(image=frame)
+        if frame is not None:
+            frame = ImageTk.PhotoImage(image=frame)
+
+        return frame
+
 
 
     def set_box( self, box, fillColor="", outlineColor="" ):
@@ -1053,8 +1068,8 @@ class Display(customtkinter.CTk):
             except Exception as e:
                 traceback.print_exc()
         
-        if self.vlcPlayer is not None:
-            self.vlcPlayer.release()
+        #if self.vlcPlayer is not None:
+        #    self.vlcPlayer.release()
 
         STOP_EVENT.set()
 
