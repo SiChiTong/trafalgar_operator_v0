@@ -47,6 +47,7 @@ class VideoPlayer( object ):
                 try:
                     self.video_capture = cv2.VideoCapture( videoFile )
                     self.activeVideoTrack = self.videoTrackToDisplay
+                    
                 except Exception as e: 
                     print(f"exception has occured while openning cv2.videocapture : {e}")
 
@@ -108,13 +109,11 @@ class VideoPlayer( object ):
 
     def loop( self ):
         
-        while True:
-
-            if not self.command_queue.empty():
-                self.handle_commands()
+        if not self.command_queue.empty():
+            self.handle_commands()
        
-            self.read_frame()
-            sleep( 1 / 25 )
+        self.read_frame()
+        sleep( 1 / 24 )
    
 
     def handle_commands(self):
@@ -141,10 +140,12 @@ class VideoPlayer( object ):
                 if self._isPaused is False:
                     self.updateCapture( )
 
-            if "kill" in command.keys():
-                exit = command["kill"]
-                if exit is True: 
-                    self.quit()
+            if "released" in command.keys():
+                release = command["released"]
+
+                if release is True: 
+                    self.release()
+
         
         except Exception as e:
             print(f"{e}")
@@ -155,6 +156,9 @@ class VideoPlayer( object ):
     def release(self):
         if self.video_capture is not None:
             self.video_capture.release()
+            self.video_capture = None
+
+        self.frame = None
 
     def quit( self ):
         self.release()

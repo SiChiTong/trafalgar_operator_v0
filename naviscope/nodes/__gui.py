@@ -10,7 +10,6 @@ import os
 import traceback
 import datetime
 import json
-from time import sleep
 
 import math
 import numpy as np
@@ -19,6 +18,7 @@ from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
 
 import cv2 
+import vlc 
 
 import rclpy
 
@@ -36,6 +36,8 @@ from ..utils.__utils_objects import DIRECTION_STATE
 
 
 ENABLE_UDP_STREAM = True
+ENABLE_OCV_PLAYER = True
+
 STOP_EVENT = Event()
 
 Process_videoStream = None
@@ -59,7 +61,9 @@ class Display(customtkinter.CTk):
         
         super().__init__()
         
-        global ENABLE_UDP_STREAM
+        global ENABLE_UDP_STREAM, ENABLE_OCV_PLAYER
+        self._enableUDPStream = ENABLE_UDP_STREAM
+        self._enableOCVPlayer = ENABLE_OCV_PLAYER
 
         self.ZoomLevel = 10
         
@@ -78,11 +82,15 @@ class Display(customtkinter.CTk):
         self._videoFrame = None
         self._squareFrameEnabled = True
 
-        self._enableUDPStream = ENABLE_UDP_STREAM
+
         self._videostream = None
         
         self.video_capture=None
         self.flipVertically = True
+
+        self.vlcPlayer = None
+        self.vlcInstance = None
+
         self.videoPlayerFrame = None
 
         self.title(Display.APP_NAME)
@@ -102,7 +110,6 @@ class Display(customtkinter.CTk):
         self._thread = None
         self._lock = Lock()
 
-        self._videoPlayerPlayState = True
         self._videoStreamPlayState = "stop"
         
         self._text_name = None
@@ -123,24 +130,22 @@ class Display(customtkinter.CTk):
         self._center_image = None
         self._canvas_frame = None
 
-        self._isVideoPaused = False
-        self.currentVideoFile = ""
-        
         self.arrow_color = self.arrowColor_hide
 
         self._videoPlayerCommand = {
 
-            "paused" : self._isVideoPaused,
+            "paused" : False,
             "playlist" : {},
             "voice_index" : 0,
-            "videotrack" : "" 
+            "videotrack" : "",
+            "released": True
 
         }
 
 
     @property
     def loop_gameplay( self ):
-        return 16
+        return 33
     
     @property
     def loop_idle( self ):
@@ -223,7 +228,21 @@ class Display(customtkinter.CTk):
         self._start_controller_node()
 
         self._create_window()
+
+        self._start_videoPlayer( )
         self.updateHud()
+
+
+    def _start_videoPlayer( self ):
+
+        if self._enableOCVPlayer is True:
+            return
+        
+        self.vlcInstance = vlc.Instance("--no-xlib", "--no-audio")
+
+        self.vlcPlayer = self.vlcInstance.media_player_new()
+        self.vlcPlayer.set_hwnd(self.canvas.winfo_id())
+
 
     def _start( self ):
 
@@ -530,23 +549,73 @@ class Display(customtkinter.CTk):
             self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
 
-    def updateVideoPlayer( self ):
+    def updateVideoPlayer( self, release = False, paused = False ):
 
         global Q_COMMAND_videoPlayer
-    
+
         if self._node is not None:
             
-            videoList = self._videoPlayerCommand["playlist"]
-            pauseState = self._videoPlayerCommand["paused"]
-            
-            if videoList is None or pauseState != self._isVideoPaused:
+            videoList = self._videoPlayerCommand["playlist"] is None
+            pauseState = self._videoPlayerCommand["paused"] != paused
+            releaseState = self._videoPlayerCommand["releaseState"] != release
+            trackSelection = self._videoPlayerCommand["videotrack"] != self._node._audioManager.imgToDisplay
+
+            onStateChange = videoList or pauseState or releaseState
+
+            if onStateChange is True:
                 
-                self._videoPlayerCommand["paused"] = self._isVideoPaused
+                self._videoPlayerCommand["paused"] = paused
                 self._videoPlayerCommand["playlist"] = self._vidList
                 self._videoPlayerCommand["voice_index"] = self._node._audioManager.voice_index
                 self._videoPlayerCommand["videotrack"] = self._node._audioManager.imgToDisplay
+                self._videoPlayerCommand["released"] = release
+            
+                if self._enableOCVPlayer is True:
+                
+                    Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
 
-                Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
+                else:
+                    
+                    if pauseState is True:
+
+                        if paused is True: 
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() == vlc.State.Playing:
+                                    self.vlcPlayer.pause()
+
+                        else:
+
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() != vlc.State.Playing:
+                                    self.vlcPlayer.play()
+
+                        if releaseState:
+
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() == vlc.State.Playing:
+                                    self.vlcPlayer.stop()
+
+                            
+                            if release is False:
+                                
+                                if trackSelection is True:
+
+                                    self.vlcPlayer = self.vlcInstance.media_player_new()
+                                    self.vlcPlayer.set_hwnd(self.canvas.winfo_id())
+
+                                    videoTrack = self._vidList[self._videoPlayerCommand["videotrack"]]
+                                    
+                                    media = self.vlcInstance.media_new( videoTrack )
+                                    
+                                    self.vlcPlayer.set_media(media)
+                                    self.vlcPlayer.play()
+
+                            else:
+                                
+                                if self.vlcPlayer is not None:
+                                    self.vlcPlayer.release()
+                                    self.vlcPlayer = None
+
 
 
 
@@ -554,16 +623,20 @@ class Display(customtkinter.CTk):
         
         global Q_FRAME_videoPlayer
 
-        if not Q_FRAME_videoPlayer.empty():
+        frame = None
 
-            frame = Q_FRAME_videoPlayer.get()
-            self.videoPlayerFrame = ImageTk.PhotoImage(image=frame)
+        if self._enableOCVPlayer is True:
 
-            return self.videoPlayerFrame
-        
-        else: 
+            if not Q_FRAME_videoPlayer.empty():
 
-            return None
+                frame = Q_FRAME_videoPlayer.get()
+
+        else:
+
+            if self.vlcPlayer is not None and self.vlcPlayer.get_state() == vlc.State.Playing:
+                frame = self.vlcPlayer.get_video()
+
+        self.videoPlayerFrame = ImageTk.PhotoImage(image=frame)
 
 
     def set_box( self, box, fillColor="", outlineColor="" ):
@@ -816,9 +889,7 @@ class Display(customtkinter.CTk):
 
                 if self._node._audioManager.HistIndexReached is False:
                     
-                    self._isVideoPaused = True
-
-                    self.updateVideoPlayer()
+                    self.updateVideoPlayer( released = True )
                     self.updateVideoStreamPlayState("stop")
 
                     self.set_center_img( mediaToDisplay, isAVideo )
@@ -828,18 +899,14 @@ class Display(customtkinter.CTk):
                     
                     if self._node._audioManager._voice_is_playing is True and self._node._audioManager.shipIsIddling is True: 
                         
-                        self._isVideoPaused = False
-
-                        self.updateVideoPlayer()
+                        self.updateVideoPlayer( released = False )
                         self.updateVideoStreamPlayState("stop")
 
                         self.set_center_img(mediaToDisplay, isAVideo)
                         
                     else:
                         
-                        self._isVideoPaused = True
-
-                        self.updateVideoPlayer()
+                        self.updateVideoPlayer( released = True )
 
                         if self._node.tiltSwitchTriggered is True:
                             
@@ -856,10 +923,7 @@ class Display(customtkinter.CTk):
 
             else:
                 
-                
-                self._isVideoPaused = True
-
-                self.updateVideoPlayer()
+                self.updateVideoPlayer( released = True )
 
                 if self._node.tiltSwitchTriggered is True:
 
@@ -901,9 +965,7 @@ class Display(customtkinter.CTk):
 
     def renderBlackScreen( self ):
         
-        self._isVideoPaused = True
-
-        self.updateVideoPlayer()
+        self.updateVideoPlayer( released = True )
         self.updateVideoStreamPlayState("stop")
 
         if self._blackScreen is False: 
@@ -990,6 +1052,9 @@ class Display(customtkinter.CTk):
                     
             except Exception as e:
                 traceback.print_exc()
+        
+        if self.vlcPlayer is not None:
+            self.vlcPlayer.release()
 
         STOP_EVENT.set()
 
@@ -1110,8 +1175,11 @@ def main(args=None):
 
     try:
 
-        start_videoPlayer()
-        start_videoStream()
+        if ENABLE_OCV_PLAYER is True:
+            start_videoPlayer()
+        
+        if ENABLE_UDP_STREAM is True:
+            start_videoStream()
 
         app._start()
 

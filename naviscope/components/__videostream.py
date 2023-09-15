@@ -143,12 +143,10 @@ class VideoStream( object ):
 
     def loop( self ):
 
-        while True:
-
-            if not self.command_queue.empty():
-                self.handle_commands()
+        if not self.command_queue.empty():
+            self.handle_commands()
         
-            sleep( 1 / 30 )
+        sleep( 1 / 30 )
             
 
     def handle_commands(self):
