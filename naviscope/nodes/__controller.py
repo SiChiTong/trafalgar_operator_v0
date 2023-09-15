@@ -16,6 +16,8 @@ import subprocess
 import re
 import netifaces
 
+import datetime
+
 import rclpy
 from rclpy.node import Node
 
@@ -38,6 +40,9 @@ class Controller( Node ):
         def __init__( self,Master=None, enableUDPStream = True, **kwargs ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
+
+            self._connectionTime = 0
+            self._connectionTimeToGCS = "--:--:--"
 
             self._master = Master
             self._isControlByMaster = False
@@ -373,7 +378,17 @@ class Controller( Node ):
             self.create_timer( 1, self._play_loop )
 
 
+        def _update_connectionTime( self ):
+   
+            self._connectionTime +=1
+        
+            time_delta = datetime.timedelta( seconds = self._connectionTime )
+            self._connectionTimeToGCS = str(time_delta).split(".")[0]
+
+        
         def _play_loop( self ):
+            
+            self._update_connectionTime( )
 
             if self._audioManager is not None:
                 self._audioManager.loop()
@@ -398,9 +413,6 @@ class Controller( Node ):
 
             if self._audioManager is not None:
  
-                if self._audioManager.readAllVoices is True:
-                    return 
-                
                 if self._isControlByMaster is False:
                     self._audioManager.shipIsIddling = self.droneDirection == DIRECTION_STATE.STOP.value
 
@@ -420,8 +432,8 @@ class Controller( Node ):
                     self.lockBtnDirection = self._audioManager.userlock_direction
                     self.lockWheelOrientation = self._audioManager.userlock_orientation
                 
-
-                self._audioManager.next_voice()
+                if self._audioManager.readAllVoices is False:
+                    self._audioManager.next_voice()
 
         
         def _init_publishers( self ):
@@ -751,7 +763,8 @@ class Controller( Node ):
    
             sensor_json[SENSORS_TOPICS.IP.value] = f"{self._address}"
             sensor_json[SENSORS_TOPICS.WIFI.value] = ( self._wifi_rssi, self._wifi_frequency )
-        
+            sensor_json[SENSORS_TOPICS.CONNECTION.value] = self._connectionTimeToGCS
+
             #self.get_logger().info(sensor_json[f"{SENSORS_TOPICS.IP}"] )
             sensors_datas = {
                 SENSORS_TOPICS.INDEX.value : self._sensors_id,
@@ -918,6 +931,11 @@ class Controller( Node ):
 
             if self._is_master_connected is False:
                 self.standard_reset()
+                
+                if self._audioManager is not None:
+                    self._audioManager.stop_music()
+                    self._audioManager.stop_sfx()
+                    self._audioManager.stop_voice()
 
 
         def standard_reset( self ):

@@ -10,7 +10,6 @@ import subprocess
 import json
 import netifaces 
 
-
 import rclpy
 from rclpy.time import Time
 from rclpy.node import Node
@@ -24,7 +23,7 @@ class HeartbeatsNode( Node ):
         def __init__( self, **kwargs ):
 
             super().__init__( "heartbeat", namespace = f"{PEER.USER.value}_0" )
-            
+
             self._address  = None 
             self._heartbeats = None
             self._beat_pulsation = 1.0
@@ -193,7 +192,7 @@ class HeartbeatsNode( Node ):
 
                 info = {
                     "address" : self._address,
-                    "peer" : self._peer_type
+                    "peer" : self._peer_type,
                 }
 
                 pulse_msg.data = json.dumps( info )

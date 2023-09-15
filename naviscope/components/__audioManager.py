@@ -297,9 +297,16 @@ class AudioManager(object):
         return (self.imgToDisplay, self.imgIsFromAVideo )
     
     def onGameOver( self ):
-        self.mute()
-        self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
+
+        self.stop_music()
+        self.stop_sfx()
+        
+        self.stop_voice()
+
         self.reset_tutorial()
+        
+        self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
+    
     
     def onHistoryReady( self ):
         self.play_voice(voice="hist_listen", delay=1000, event = STANDARD_VOICE_ENDED )
@@ -359,10 +366,6 @@ class AudioManager(object):
                 if self.IsIdlePlaying is False:
                     self.IsIdlePlaying = True
                     self.play_music(f"idle_{self._operator_index}")
-
-        else:
-            
-            self.mute()
                     
 
     def stop_music( self ): 
@@ -379,6 +382,7 @@ class AudioManager(object):
             return
 
         self.sound_sfx.stop()
+        self.sound_sfx = None
 
 
     def stop_voice( self ):
@@ -387,12 +391,8 @@ class AudioManager(object):
             return
 
         self.sound_voice.stop()
+        self.sound_voice = None
 
-    def mute( self ):
-
-        self.stop_music()
-        self.stop_sfx()
-        self.stop_voice()
 
     def reset_music_volume( self ):
 
@@ -437,12 +437,10 @@ class AudioManager(object):
 
                 if self.readAllVoices is False:
                     
-                    if self._isInAShortGamePlay is True:
-                        
-                        self.voice_index = len( self.voices_hierarchy )
+                    if self.HistIndexReached is True:
+                            
+                        if self._isInAShortGamePlay is False and self.histDelayIsRunning is False:
 
-                    else:
-                        if self.HistIndexReached is True and self.histDelayIsRunning is False:
                             self.histDelayIsRunning = True
                             self.wait_before_next_play()
 
@@ -457,7 +455,6 @@ class AudioManager(object):
             elif event.type == GAME_OVER_VOICE_ENDED:
                 
                 self._voice_is_playing = False   
-                self.reset_tutorial()
                 pygame.time.set_timer(event.type, 0)
 
             elif event.type == HIST_DELAY_ENDED:

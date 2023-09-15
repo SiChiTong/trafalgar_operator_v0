@@ -54,7 +54,7 @@ class SENSORS_TOPICS( str, Enum ):
     SHORT_PRESS = "shortPress"
     LONG_PRESS = "longPress"
     TEMPERATURE = "temperature"
-
+    CONNECTION = "connectionTime"
 
     
 
