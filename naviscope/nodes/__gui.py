@@ -201,10 +201,14 @@ class Display(customtkinter.CTk):
     
     @property
     def arrowColor_forward(self):
-        return "blue"
+        return "green"
     
     @property
     def arrowColor_backward(self):
+        return "black"
+    
+    @property
+    def arrowColor_steer_limit(self):
         return "red"
     
     @property
@@ -669,7 +673,7 @@ class Display(customtkinter.CTk):
         )
 
 
-    def render_orientation(self, arrow_color = "white" ):
+    def render_orientation(self ):
   
         current_angle = self._node.droneSteering
 
@@ -688,8 +692,18 @@ class Display(customtkinter.CTk):
         
             self._drone_orientation = update_orientation
             #self.set_text( self._text_steering, update_orientation )
-                
-            self.render_directional_arrow( current_angle, arrow_color )
+
+            arrowColor = self.arrowColor_base
+
+            if not self._node._audioManager.shipIsIddling:
+
+                if self._node.droneSteerMin > current_angle < self._node.droneSteerMax:
+                    arrowColor = self.arrowColor_forward
+
+                else:
+                    arrowColor = self.arrowColor_steer_limit
+            
+            self.render_directional_arrow( current_angle, arrowColor )
 
 
     def render_direction( self, droneDirection ):
@@ -924,7 +938,7 @@ class Display(customtkinter.CTk):
 
                 if self._node._audioManager.FullHudIndexReached is True:
 
-                    self.render_orientation(self.arrowColor_base if self._node._audioManager.shipIsIddling else self.arrowColor_forward )
+                    self.render_orientation( )
                     self.render_elapsed()
                     #self.render_direction(DIRECTION_STATE.STOP.value)
             else:

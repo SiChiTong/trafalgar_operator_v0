@@ -159,6 +159,14 @@ class Controller( Node ):
             return 130
 
         @property
+        def droneSteerMin( self ):
+            return 0
+        
+        @property
+        def droneSteerMax( self ):
+            return 180
+        
+        @property
         def panTiltThreshold(self):
             return 10
         
