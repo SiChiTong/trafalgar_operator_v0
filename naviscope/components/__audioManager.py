@@ -32,6 +32,9 @@ class AudioManager(object):
         self.deviceTutorialTime = 60 * 2
         self.historyTellingTime = 60 * 3
 
+        self._playtime = 10 * 60
+        self._isInAShortGamePlay = False
+
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
 
@@ -398,6 +401,9 @@ class AudioManager(object):
 
     def set_playtime( self, playtime = 10*60 ):
         
+        self._playtime = playtime
+        self._isInAShortGamePlay = self._playtime <= 5*60
+
         freeNavigationTime = playtime - (self.deviceTutorialTime + self.historyTellingTime)
         freeNavigationTime =  np.clip( freeNavigationTime / ( len( self.voices_history ) + 1 ), 25, 180 ) 
 
@@ -428,10 +434,15 @@ class AudioManager(object):
                 self.voice_index += 1
 
                 if self.readAllVoices is False:
+                    
+                    if self._isInAShortGamePlay is True:
+                        
+                        self.voice_index = len( self.voices_hierarchy )
 
-                    if self.HistIndexReached is True and self.histDelayIsRunning is False:
-                        self.histDelayIsRunning = True
-                        self.wait_before_next_play()
+                    else:
+                        if self.HistIndexReached is True and self.histDelayIsRunning is False:
+                            self.histDelayIsRunning = True
+                            self.wait_before_next_play()
 
 
             elif event.type == STANDARD_VOICE_ENDED:
