@@ -564,7 +564,7 @@ class Controller( Node ):
                     datas[SENSORS_TOPICS.LONG_PRESS.value] 
                 )
   
-
+            
             if self.mpu_keys.issubset( datas.keys()):   
           
                 self.OnMPUDatas(
@@ -879,7 +879,7 @@ class Controller( Node ):
                         else:
                             
                             if self.isGamePlayEnable is True:
-
+                  
                                 if self._audioManager is not None: 
                                     self._audioManager.onGameOver()
 
@@ -923,12 +923,10 @@ class Controller( Node ):
         def standard_reset( self ):
             
             self.isGamePlayEnable = False
+            self._playtimeLeft = 0
 
             if self._direction != DIRECTION_STATE.STOP.value:   
                 self._update_direction(DIRECTION_STATE.STOP.value)
-
-            if self._audioManager is not None:
-                self._audioManager.stop_music( )  
 
 
         def exit(self):

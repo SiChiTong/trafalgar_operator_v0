@@ -8,10 +8,11 @@
 
 import cv2 
 from PIL import Image
+from time import sleep
 
 FLIP_VERTICALLY = True
 FLIP_HORIZONTALLY = False
-MAX_QUEUE_SIZE = 4
+MAX_QUEUE_SIZE = 2
 
 class VideoPlayer( object ):
 
@@ -60,6 +61,8 @@ class VideoPlayer( object ):
                     try:
 
                         self.video_capture.release()
+                        self.frame = None
+
                         self.video_capture.open(videoFile) 
                 
                         self.activeVideoTrack = self.videoTrackToDisplay
@@ -104,11 +107,14 @@ class VideoPlayer( object ):
 
 
     def loop( self ):
+        
+        while True:
 
-        if not self.command_queue.empty():
-            self.handle_commands()
+            if not self.command_queue.empty():
+                self.handle_commands()
        
-        self.read_frame()
+            self.read_frame()
+            sleep( 1 / 25 )
    
 
     def handle_commands(self):

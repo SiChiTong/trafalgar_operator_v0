@@ -26,6 +26,8 @@ class AudioManager(object):
         super().__init__()
 
         self._mixer = None
+        self.sound_sfx = None
+        self.sound_sfx = None
         
         self._operator_index = operator_index 
 
@@ -295,6 +297,7 @@ class AudioManager(object):
         return (self.imgToDisplay, self.imgIsFromAVideo )
     
     def onGameOver( self ):
+        self.mute()
         self.play_voice(voice="game_over", delay=1000, event = GAME_OVER_VOICE_ENDED )
         self.reset_tutorial()
     
@@ -375,16 +378,15 @@ class AudioManager(object):
         if self.sound_sfx is None:
             return
 
-        if self.sound_sfx.get_busy():
-            self.sound_sfx.stop()
+        self.sound_sfx.stop()
+
 
     def stop_voice( self ):
 
         if self.sound_voice is None:
             return
 
-        if self.sound_voice.get_busy():
-            self.sound_voice.stop()
+        self.sound_voice.stop()
 
     def mute( self ):
 

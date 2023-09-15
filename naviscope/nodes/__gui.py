@@ -38,12 +38,10 @@ from ..utils.__utils_objects import DIRECTION_STATE
 ENABLE_UDP_STREAM = True
 STOP_EVENT = Event()
 
-videoStream_loop = 1/15
 Process_videoStream = None
 Q_COMMAND_videoStream = Queue()
 Q_FRAME_videoStream = Queue()
 
-videoPlayer_loop = 1/30
 Process_videoPlayer = None 
 Q_COMMAND_videoPlayer = Queue()
 Q_FRAME_videoPlayer = Queue()
@@ -142,11 +140,11 @@ class Display(customtkinter.CTk):
 
     @property
     def loop_gameplay( self ):
-        return 1
+        return 16
     
     @property
     def loop_idle( self ):
-        return 1000
+        return 100
     
     @property
     def screen_center_x(self):
@@ -488,7 +486,7 @@ class Display(customtkinter.CTk):
         if self._audioManager.HistIndexReached is False:
             return        
      
-        if self.tiltSwitchTriggered is True:
+        if self._node.tiltSwitchTriggered is True:
 
             index = 3 #random number between all bounty names
             self._bounty_figure = ""
@@ -578,19 +576,16 @@ class Display(customtkinter.CTk):
 
 
     def render_elapsed( self ):
-
-        if self.gameplayEnable is True:
             
-            self._playtimeLeft = self._node._playtimeLeft
+        self._playtimeLeft = self._node._playtimeLeft
 
-            if self._playtime > 0:
+        if self._playtimeLeft > 0:
 
-                if self._playtimeLeft > 0:
-
-                    time_delta = datetime.timedelta(seconds=self._playtimeLeft)
-                    formatted_time = self.format_time(time_delta)
+            time_delta = datetime.timedelta(seconds=self._playtimeLeft)
+            formatted_time = self.format_time(time_delta)
                 
-                    self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
+            self.set_text( self._text_elapsed_time, f"{ formatted_time }" )
+
 
         self.render_elapsed_box( self._playtimeLeft ) 
 
@@ -623,7 +618,7 @@ class Display(customtkinter.CTk):
             self.canvas.tag_raise( self._text_elapsed_time )  
 
 
-    def render_directional_arrow(self, currentAngle = 90, arrowColorFill = "black", arrowColorOutline = "white" ):
+    def render_directional_arrow(self, currentAngle = 90 ):
 
         adapted_angle = 90
 
@@ -665,6 +660,21 @@ class Display(customtkinter.CTk):
             points[i] = pivot_x + (x * math.cos(angle_rad) - y * math.sin(angle_rad))
             points[i+1] = pivot_y + (x * math.sin(angle_rad) + y * math.cos(angle_rad))
 
+
+        arrowColorFill = self.arrowColor_base
+        arrowColorOutline = "white"
+
+        if not self._node._audioManager.shipIsIddling:
+
+            arrowColorFill = self.arrowColor_forward
+            
+            if self._node.droneSteerMin < adapted_angle < self._node.droneSteerMax:
+                arrowColorFill = self.arrowColor_forward
+
+            else:
+                arrowColorFill = self.arrowColor_steer_limit
+
+
         self.canvas.create_polygon(
             points, 
             outline=arrowColorOutline, 
@@ -692,18 +702,8 @@ class Display(customtkinter.CTk):
         
             self._drone_orientation = update_orientation
             #self.set_text( self._text_steering, update_orientation )
-
-            arrowColor = self.arrowColor_base
-
-            if not self._node._audioManager.shipIsIddling:
-
-                if self._node.droneSteerMin > current_angle < self._node.droneSteerMax:
-                    arrowColor = self.arrowColor_forward
-
-                else:
-                    arrowColor = self.arrowColor_steer_limit
             
-            self.render_directional_arrow( current_angle, arrowColor )
+            self.render_directional_arrow( current_angle )
 
 
     def render_direction( self, droneDirection ):
@@ -805,15 +805,13 @@ class Display(customtkinter.CTk):
 
 
     def renderMainFrame( self ):
-    
+
+        self._blackScreen = False
+
         if self._node._audioManager is not None:
-            
+                        
             mediaToDisplay, isAVideo = self._node._audioManager.get_media_to_display()
             
-            if self._node.tiltSwitchTriggered is True:
-                mediaToDisplay = "logo_moa"
-                isAVideo = False
-                
             if mediaToDisplay is not None:
 
                 if self._node._audioManager.HistIndexReached is False:
@@ -842,19 +840,40 @@ class Display(customtkinter.CTk):
                         self._isVideoPaused = True
 
                         self.updateVideoPlayer()
-                        self.updateVideoStreamPlayState("start")
 
-                        self.renderDroneView()
+                        if self._node.tiltSwitchTriggered is True:
+                            
+                            mediaToDisplay = "logo_moa"
+                            isAVideo = False
+
+                            self.updateVideoStreamPlayState("stop")
+                            self.set_center_img(mediaToDisplay, isAVideo)
+
+                        else:
+
+                            self.updateVideoStreamPlayState("start")
+                            self.renderDroneView()
+
             else:
+                
                 
                 self._isVideoPaused = True
 
                 self.updateVideoPlayer()
-                self.updateVideoStreamPlayState("start")
 
-                self.renderDroneView()
-        
-        self._blackScreen = False
+                if self._node.tiltSwitchTriggered is True:
+
+                    mediaToDisplay = "logo_moa"
+                    isAVideo = False
+
+                    self.updateVideoStreamPlayState("stop")
+                    self.set_center_img( mediaToDisplay, isAVideo )
+
+                else:
+
+                    self.updateVideoStreamPlayState("start")
+                    self.renderDroneView()
+
 
     
     def updateVideoStreamPlayState( self, state = "stop" ):
@@ -882,6 +901,11 @@ class Display(customtkinter.CTk):
 
     def renderBlackScreen( self ):
         
+        self._isVideoPaused = True
+
+        self.updateVideoPlayer()
+        self.updateVideoStreamPlayState("stop")
+
         if self._blackScreen is False: 
 
             self.canvas.update_idletasks()
@@ -924,27 +948,28 @@ class Display(customtkinter.CTk):
         
         loop_delay = self.loop_idle
 
-        if self._node is not None: 
+        if self._node is None:
+            self.renderBlackScreen()
+            self.after( loop_delay, self.updateHud)
+            return
+             
+        if self._node.isGamePlayEnable is True or self._node._playtimeLeft > 0:
+                
+            loop_delay = self.loop_gameplay
+
+            self.updateStream()
+
+            self.renderMainFrame()
+
+            if self._node._audioManager.FullHudIndexReached is True:
+
+                self.render_orientation( )
+                self.render_elapsed()
+     
+        else:
+                
+            self.renderBlackScreen()
         
-            self.gameplayEnable = self._node.isGamePlayEnable
-
-            if self.gameplayEnable is True:
-                
-                loop_delay = self.loop_gameplay
-
-                self.updateStream()
-
-                self.renderMainFrame()
-
-                if self._node._audioManager.FullHudIndexReached is True:
-
-                    self.render_orientation( )
-                    self.render_elapsed()
-                    #self.render_direction(DIRECTION_STATE.STOP.value)
-            else:
-                
-                self.renderBlackScreen()
-
 
         self.after( loop_delay, self.updateHud)
 
@@ -1015,20 +1040,20 @@ class Display(customtkinter.CTk):
 
 def start_videoStream():
 
-    global ENABLE_UDP_STREAM, Q_FRAME_videoStream, Q_COMMAND_videoStream, STOP_EVENT, Process_videoStream, videoStream_loop
+    global ENABLE_UDP_STREAM, Q_FRAME_videoStream, Q_COMMAND_videoStream, STOP_EVENT, Process_videoStream
 
     if ENABLE_UDP_STREAM is True:
 
         Process_videoStream = Process(
             target=run_process_videoStream, 
-            args=( Q_FRAME_videoStream, Q_COMMAND_videoStream, STOP_EVENT, videoStream_loop )
+            args=( Q_FRAME_videoStream, Q_COMMAND_videoStream, STOP_EVENT )
         )
 
         Process_videoStream.daemon = True
         Process_videoStream.start()
 
 
-def run_process_videoStream( queueFrame, queueCommand, stopEvent, loop_delay  ):
+def run_process_videoStream( queueFrame, queueCommand, stopEvent  ):
         
     try:
             
@@ -1036,7 +1061,7 @@ def run_process_videoStream( queueFrame, queueCommand, stopEvent, loop_delay  ):
         videostream.start()
 
         while not stopEvent.is_set():
-            sleep( loop_delay )  # Sleep for a short while
+            videostream.loop()
 
         videostream.quit()
 
@@ -1047,12 +1072,12 @@ def run_process_videoStream( queueFrame, queueCommand, stopEvent, loop_delay  ):
 
 def start_videoPlayer( ):
 
-    global Q_FRAME_videoPlayer, Q_COMMAND_videoPlayer, STOP_EVENT, Process_videoPlayer, videoPlayer_loop
+    global Q_FRAME_videoPlayer, Q_COMMAND_videoPlayer, STOP_EVENT, Process_videoPlayer
 
     Process_videoPlayer= Process(
 
         target=run_process_videoPlayer, 
-        args=( Q_FRAME_videoPlayer , Q_COMMAND_videoPlayer, STOP_EVENT, videoPlayer_loop )
+        args=( Q_FRAME_videoPlayer , Q_COMMAND_videoPlayer, STOP_EVENT )
     
     )
             
@@ -1060,16 +1085,15 @@ def start_videoPlayer( ):
     Process_videoPlayer.start()
 
 
-def run_process_videoPlayer( queueFrame, queueCommand, stopEvent, loop_delay ):
+def run_process_videoPlayer( queueFrame, queueCommand, stopEvent ):
 
     try:
             
         video_capture = VideoPlayer( queueFrame, queueCommand)
 
         while not stopEvent.is_set():
-
             video_capture.loop()
-            sleep(loop_delay)  # Sleep for a short while
+  
 
         video_capture.quit()
 

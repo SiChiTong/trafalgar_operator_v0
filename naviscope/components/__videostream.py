@@ -10,8 +10,9 @@ import numpy as np
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
+from time import sleep
 
-MAX_QUEUE_SIZE = 4
+MAX_QUEUE_SIZE = 2
 
 class VideoStream( object ):
 
@@ -140,21 +141,28 @@ class VideoStream( object ):
                     self._pipeline.set_state(Gst.State.PAUSED)
 
 
+    def loop( self ):
+
+        while True:
+
+            if not self.command_queue.empty():
+                self.handle_commands()
+        
+            sleep( 1 / 30 )
+            
+
     def handle_commands(self):
 
-        if not self.command_queue.empty():
+        command = self.command_queue.get() 
 
-            command = self.command_queue.get() 
+        if command == "start":
+            self.play(True)
 
-            if command == "start":
-                self.play(True)
+        elif command == "stop":
+            self.play(False)
 
-            elif command == "stop":
-                self.play(False)
-
-            elif command == "quit":
-                self.quit()
-
+        elif command == "quit":
+            self.quit()
 
  
 
