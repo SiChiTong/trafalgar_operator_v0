@@ -28,7 +28,9 @@ class AudioManager(object):
         self._mixer = None
         
         self._operator_index = operator_index 
-        self.tutorialTime = 60 * 2
+
+        self.deviceTutorialTime = 60 * 2
+        self.historyTellingTime = 60 * 3
 
         self.IsAdventurePlaying = False
         self.IsIdlePlaying = False
@@ -395,17 +397,23 @@ class AudioManager(object):
             self._mixer.set_volume(self._volume_levels[ "music" ] )
 
     def set_playtime( self, playtime = 10*60 ):
+        
+        freeNavigationTime = playtime - (self.deviceTutorialTime + self.historyTellingTime)
+        freeNavigationTime =  np.clip( freeNavigationTime / ( len( self.voices_history ) + 1 ), 25, 180 ) 
 
-        self.history_delay = int( np.floor( ( playtime - self.tutorialTime ) / ( len( self.voices_history ) + 1 ) ) )
-    
+        self.history_delay = int( freeNavigationTime )
+
     def wait_before_next_play( self ):
 
         if self.voice_index > len( self.voices_hierarchy ):
             return 
         
-        pygame.time.set_timer( HIST_DELAY_ENDED, int(self.history_delay * 1000 ) )
+        new_delay = self.randomize_delay(self.history_delay) * 1000 
+        pygame.time.set_timer( HIST_DELAY_ENDED, int( new_delay ) )
 
-
+    def randomize_delay( self, delayToRandomize = 120 ):
+        return np.random.randint(25, delayToRandomize + 1)
+    
     def loop( self ):
 
         for event in pygame.event.get():
