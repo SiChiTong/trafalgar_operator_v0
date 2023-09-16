@@ -28,14 +28,12 @@ customtkinter.set_appearance_mode("light")  # Modes: system (default), light, da
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
 from .__controller import Controller
-from ..components.__videoPlayer import VideoPlayer
-from ..components.__videostream import VideoStream
+from ..components.__gstPlayer import GstPlayer
 
 from ..utils.__utils_objects import DIRECTION_STATE
 
 
 ENABLE_UDP_STREAM = True
-ENABLE_OCV_PLAYER = True
 
 STOP_EVENT = Event()
 
@@ -60,9 +58,8 @@ class Display(customtkinter.CTk):
         
         super().__init__()
         
-        global ENABLE_UDP_STREAM, ENABLE_OCV_PLAYER
+        global ENABLE_UDP_STREAM
         self._enableUDPStream = ENABLE_UDP_STREAM
-        self._enableOCVPlayer = ENABLE_OCV_PLAYER
 
         self.ZoomLevel = 10
         
@@ -106,8 +103,6 @@ class Display(customtkinter.CTk):
         self._thread = None
         self._lock = Lock()
 
-        self._videoStreamPlayState = "stop"
-        
         self._text_name = None
         self._text_elapsed_time = None
         self._text_angle = None
@@ -130,15 +125,21 @@ class Display(customtkinter.CTk):
 
         self._videoPlayerCommand = {
 
-            "paused" : False,
-            "playlist" : {},
-            "voice_index" : 0,
+            "pause" : False,
             "videotrack" : "",
-            "released": True
+            "release": False
 
         }
 
+        self._videoStreamCommand = {
 
+            "pause" : False,
+            "release": False
+
+        }
+
+        self._initialize()
+        
     @property
     def loop_gameplay( self ):
         return 33
@@ -228,10 +229,7 @@ class Display(customtkinter.CTk):
         self.updateHud()
 
 
-
     def _start( self ):
-
-        self._initialize()
         self.mainloop()
     
 
@@ -265,7 +263,6 @@ class Display(customtkinter.CTk):
             self._node._audioManager.onGameOver()
 
     """
-
 
     def _create_window( self ): 
 
@@ -535,31 +532,44 @@ class Display(customtkinter.CTk):
             self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
 
-    def updateVideoPlayer( self, released = False, paused = False ):
+    def updateVideoPlayerPlayState( self, release = False, pause = False ):
 
         global Q_COMMAND_videoPlayer
 
         if self._node is not None:
             
-            videoList = self._videoPlayerCommand["playlist"] is None
-            pauseState = self._videoPlayerCommand["paused"] != paused
-            releaseState = self._videoPlayerCommand["released"] != released
+            pauseState = self._videoPlayerCommand["pause"] != pause
+            releaseState = self._videoPlayerCommand["release"] != release
             trackSelection = self._videoPlayerCommand["videotrack"] != self._node._audioManager.imgToDisplay
 
-            onStateChange = videoList or pauseState or releaseState
+            onStateChange = pauseState or releaseState or trackSelection
 
             if onStateChange is True:
                 
-                self._videoPlayerCommand["paused"] = paused
-                self._videoPlayerCommand["playlist"] = self._vidList
-                self._videoPlayerCommand["voice_index"] = self._node._audioManager.voice_index
+                self._videoPlayerCommand["pause"] = pause
                 self._videoPlayerCommand["videotrack"] = self._node._audioManager.imgToDisplay
-                self._videoPlayerCommand["released"] = released
+                self._videoPlayerCommand["release"] = release
             
-                if self._enableOCVPlayer is True:
-                
-                    Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
+                Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
 
+
+    def updateVideoStreamPlayState( self,  release = False, pause = False ):
+        
+        global Q_COMMAND_videoStream
+
+        if self._node is not None:
+            
+            pauseState = self._videoStreamCommand["pause"] != pause
+            releaseState = self._videoStreamCommand["release"] != release
+
+            onStateChange = pauseState or releaseState
+
+            if onStateChange is True:
+                
+                self._videoStreamCommand["pause"] = pause
+                self._videoStreamCommand["release"] = release
+            
+                Q_COMMAND_videoStream.put( self._videoStreamCommand )
 
 
     def getVideoFileFrame( self ):
@@ -568,11 +578,9 @@ class Display(customtkinter.CTk):
 
         frame = None
 
-        if self._enableOCVPlayer is True:
+        if not Q_FRAME_videoPlayer.empty():
 
-            if not Q_FRAME_videoPlayer.empty():
-
-                frame = Q_FRAME_videoPlayer.get()
+            frame = Q_FRAME_videoPlayer.get()
 
         if frame is not None:
             frame = ImageTk.PhotoImage(image=frame)
@@ -831,8 +839,8 @@ class Display(customtkinter.CTk):
 
                 if self._node._audioManager.HistIndexReached is False:
                     
-                    self.updateVideoPlayer( released = True )
-                    self.updateVideoStreamPlayState("stop")
+                    self.updateVideoPlayerPlayState( pause = True )
+                    self.updateVideoStreamPlayState( pause = True )
 
                     self.set_center_img( mediaToDisplay, isAVideo )
 
@@ -841,57 +849,49 @@ class Display(customtkinter.CTk):
                     
                     if self._node._audioManager._voice_is_playing is True and self._node._audioManager.shipIsIddling is True: 
                         
-                        self.updateVideoPlayer( released = False )
-                        self.updateVideoStreamPlayState("stop")
+                        self.updateVideoPlayerPlayState( pause =  False )
+                        self.updateVideoStreamPlayState( pause = True )
 
                         self.set_center_img(mediaToDisplay, isAVideo)
                         
                     else:
                         
-                        self.updateVideoPlayer( released = True )
+                        self.updateVideoPlayerPlayState( pause = True )
 
                         if self._node.tiltSwitchTriggered is True:
                             
                             mediaToDisplay = "logo_moa"
                             isAVideo = False
 
-                            self.updateVideoStreamPlayState("stop")
+                            self.updateVideoStreamPlayState( pause = True )
                             self.set_center_img(mediaToDisplay, isAVideo)
 
                         else:
 
-                            self.updateVideoStreamPlayState("start")
+                            self.updateVideoStreamPlayState( pause = False )
                             self.renderDroneView()
 
             else:
                 
-                self.updateVideoPlayer( released = True )
+                self.updateVideoPlayerPlayState( pause = True )
 
                 if self._node.tiltSwitchTriggered is True:
 
                     mediaToDisplay = "logo_moa"
                     isAVideo = False
 
-                    self.updateVideoStreamPlayState("stop")
+                    self.updateVideoStreamPlayState( pause = True )
                     self.set_center_img( mediaToDisplay, isAVideo )
 
                 else:
 
-                    self.updateVideoStreamPlayState("start")
+                    self.updateVideoStreamPlayState( pause = False )
                     self.renderDroneView()
 
 
-    
-    def updateVideoStreamPlayState( self, state = "stop" ):
-        
-        global Q_COMMAND_videoStream
 
-        if self._videoStreamPlayState != state:
-            
-            self._videoStreamPlayState = state
-            Q_COMMAND_videoStream.put( self._videoStreamPlayState )
 
-    
+
     def clear_hud_texts( self ):
 
         if self.hudTexts is not None:
@@ -907,8 +907,8 @@ class Display(customtkinter.CTk):
 
     def renderBlackScreen( self ):
         
-        self.updateVideoPlayer( released = True )
-        self.updateVideoStreamPlayState("stop")
+        self.updateVideoPlayerPlayState( pause = True )
+        self.updateVideoStreamPlayState( pause = True )
 
         if self._blackScreen is False: 
 
@@ -995,7 +995,6 @@ class Display(customtkinter.CTk):
             except Exception as e:
                 traceback.print_exc()
         
-
         STOP_EVENT.set()
 
         try:
@@ -1043,6 +1042,28 @@ class Display(customtkinter.CTk):
 
 
 
+"""
+//////////////////////// VideoProcess parts
+
+"""
+
+
+def pipeline_videoplayer( firstVideoTrack ):
+
+    return (
+
+            f"filesrc name=videoplayer location={firstVideoTrack} ! "
+            "avdec_h264 ! "
+            "videoconvert ! "
+            "video/x-raw, format=(string)BGR ! "
+            "videoscale ! "
+            "identity drop-allocation=true ! "
+            "appsink name=appsink emit-signals=true max-buffers=1 drop=true sync=false async=false"
+    
+    )
+    
+
+
 def start_videoStream():
 
     global ENABLE_UDP_STREAM, Q_FRAME_videoStream, Q_COMMAND_videoStream, STOP_EVENT, Process_videoStream
@@ -1061,8 +1082,12 @@ def start_videoStream():
 def run_process_videoStream( queueFrame, queueCommand, stopEvent  ):
         
     try:
-            
-        videostream = VideoStream(queueFrame, queueCommand)
+        
+        videostream = GstPlayer(
+            queueFrame, 
+            queueCommand
+        )
+
         videostream.start()
 
         while not stopEvent.is_set():
@@ -1075,14 +1100,14 @@ def run_process_videoStream( queueFrame, queueCommand, stopEvent  ):
 
 
 
-def start_videoPlayer( ):
+def start_videoPlayer( playList ):
 
     global Q_FRAME_videoPlayer, Q_COMMAND_videoPlayer, STOP_EVENT, Process_videoPlayer
 
     Process_videoPlayer= Process(
 
         target=run_process_videoPlayer, 
-        args=( Q_FRAME_videoPlayer , Q_COMMAND_videoPlayer, STOP_EVENT )
+        args=( Q_FRAME_videoPlayer , Q_COMMAND_videoPlayer, STOP_EVENT, playList )
     
     )
             
@@ -1090,11 +1115,16 @@ def start_videoPlayer( ):
     Process_videoPlayer.start()
 
 
-def run_process_videoPlayer( queueFrame, queueCommand, stopEvent ):
+def run_process_videoPlayer( queueFrame, queueCommand, stopEvent, playList  ):
 
     try:
-            
-        video_capture = VideoPlayer( queueFrame, queueCommand)
+
+        video_capture = GstPlayer(
+            queueFrame, 
+            queueCommand, 
+            playList, 
+            1/24
+        )
 
         while not stopEvent.is_set():
             video_capture.loop()
@@ -1115,8 +1145,7 @@ def main(args=None):
 
     try:
 
-        if ENABLE_OCV_PLAYER is True:
-            start_videoPlayer()
+        start_videoPlayer( app._vidList )
         
         if ENABLE_UDP_STREAM is True:
             start_videoStream()

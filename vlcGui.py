@@ -18,6 +18,7 @@ from multiprocessing import Process, Event, Queue
 from threading import Thread,Lock
 
 import cv2 
+#import vlc 
 
 import rclpy
 
@@ -28,8 +29,7 @@ customtkinter.set_appearance_mode("light")  # Modes: system (default), light, da
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
 from .__controller import Controller
-from ..components.__videoPlayer import VideoPlayer
-from ..components.__videostream import VideoStream
+from ..components.__gstPlayer import GstPlayer
 
 from ..utils.__utils_objects import DIRECTION_STATE
 
@@ -86,6 +86,9 @@ class Display(customtkinter.CTk):
         
         self.video_capture=None
         self.flipVertically = True
+
+        self.vlcPlayer = None
+        self.vlcInstance = None
 
         self.videoPlayerFrame = None
 
@@ -225,8 +228,23 @@ class Display(customtkinter.CTk):
 
         self._create_window()
 
+        #self._start_videoPlayer( )
         self.updateHud()
 
+    """
+       def _start_videoPlayer( self ):
+        
+        
+        if self._enableOCVPlayer is True:
+            return
+        
+        self.vlcInstance = vlc.Instance("--no-xlib", "--no-audio")
+
+        self.vlcPlayer = self.vlcInstance.media_player_new()
+        self.vlcPlayer.set_hwnd(self.canvas.winfo_id())
+ 
+    
+    """
 
 
     def _start( self ):
@@ -560,6 +578,53 @@ class Display(customtkinter.CTk):
                 
                     Q_COMMAND_videoPlayer.put( self._videoPlayerCommand )
 
+                else:
+                    
+                    return
+                    """
+                    if pauseState is True:
+
+                        if paused is True: 
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() == vlc.State.Playing:
+                                    self.vlcPlayer.pause()
+
+                        else:
+
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() != vlc.State.Playing:
+                                    self.vlcPlayer.play()
+
+                        if releaseState:
+
+                            if self.vlcPlayer is not None:
+                                if self.vlcPlayer.get_state() == vlc.State.Playing:
+                                    self.vlcPlayer.stop()
+
+                            
+                            if released is False:
+                                
+                                if trackSelection is True:
+
+                                    self.vlcPlayer = self.vlcInstance.media_player_new()
+                                    self.vlcPlayer.set_hwnd(self.canvas.winfo_id())
+
+                                    videoTrack = self._vidList[self._videoPlayerCommand["videotrack"]]
+                                    
+                                    media = self.vlcInstance.media_new( videoTrack )
+                                    
+                                    self.vlcPlayer.set_media(media)
+                                    self.vlcPlayer.play()
+
+                            else:
+                                
+                                if self.vlcPlayer is not None:
+                                    self.vlcPlayer.release()
+                                    self.vlcPlayer = None
+          
+                    """
+
+
 
 
     def getVideoFileFrame( self ):
@@ -573,6 +638,13 @@ class Display(customtkinter.CTk):
             if not Q_FRAME_videoPlayer.empty():
 
                 frame = Q_FRAME_videoPlayer.get()
+        """
+                else:
+
+            if self.vlcPlayer is not None and self.vlcPlayer.get_state() == vlc.State.Playing:
+                frame = self.vlcPlayer.get_video()
+        
+        """
 
         if frame is not None:
             frame = ImageTk.PhotoImage(image=frame)
@@ -995,6 +1067,8 @@ class Display(customtkinter.CTk):
             except Exception as e:
                 traceback.print_exc()
         
+        #if self.vlcPlayer is not None:
+        #    self.vlcPlayer.release()
 
         STOP_EVENT.set()
 
