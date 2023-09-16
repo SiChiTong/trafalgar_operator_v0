@@ -535,7 +535,7 @@ class Display(customtkinter.CTk):
             self.canvas.itemconfig( self._canvas_frame, image=self._last_center_image )
 
 
-    def updateVideoPlayer( self, released = False, paused = False ):
+    def updateVideoPlayerPlayState( self, released = False, paused = False ):
 
         global Q_COMMAND_videoPlayer
 
@@ -831,7 +831,7 @@ class Display(customtkinter.CTk):
 
                 if self._node._audioManager.HistIndexReached is False:
                     
-                    self.updateVideoPlayer( released = True )
+                    self.updateVideoPlayerPlayState( released = True )
                     self.updateVideoStreamPlayState("stop")
 
                     self.set_center_img( mediaToDisplay, isAVideo )
@@ -841,14 +841,14 @@ class Display(customtkinter.CTk):
                     
                     if self._node._audioManager._voice_is_playing is True and self._node._audioManager.shipIsIddling is True: 
                         
-                        self.updateVideoPlayer( released = False )
+                        self.updateVideoPlayerPlayState( released = False )
                         self.updateVideoStreamPlayState("stop")
 
                         self.set_center_img(mediaToDisplay, isAVideo)
                         
                     else:
                         
-                        self.updateVideoPlayer( released = True )
+                        self.updateVideoPlayerPlayState( released = True )
 
                         if self._node.tiltSwitchTriggered is True:
                             
@@ -865,7 +865,7 @@ class Display(customtkinter.CTk):
 
             else:
                 
-                self.updateVideoPlayer( released = True )
+                self.updateVideoPlayerPlayState( released = True )
 
                 if self._node.tiltSwitchTriggered is True:
 
@@ -907,7 +907,7 @@ class Display(customtkinter.CTk):
 
     def renderBlackScreen( self ):
         
-        self.updateVideoPlayer( released = True )
+        self.updateVideoPlayerPlayState( released = True )
         self.updateVideoStreamPlayState("stop")
 
         if self._blackScreen is False: 
