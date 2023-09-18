@@ -75,7 +75,9 @@ class DISPATCH_TOPICS( str, Enum ):
     STAT_RANGE = "stat_range"
     WATCHDOG = "watchdog"
 
-
+class OFFSETS(str, Enum ): 
+    MUSIC = "music"
+    
 BOARD_SENSORS_DATAS = {
 
     SENSORS_TOPICS.IP.value : "",

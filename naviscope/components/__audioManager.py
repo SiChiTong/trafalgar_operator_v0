@@ -224,7 +224,7 @@ class AudioManager(object):
             
 
 
-    def play_music( self, music = None ): 
+    def play_music( self, music = None, offset = 0 ): 
 
         if self._mixer and music in self._music_playlist:
 
@@ -237,6 +237,9 @@ class AudioManager(object):
             self._mixer.set_volume(self._volume_levels[ "music" ])
 
             self._mixer.play(loops=-1)
+
+            if offset > 0:
+                self._mixer.set_pos( offset )
 
 
     def play_voice( self, voice = None, delay=500, event=None ): 
@@ -337,7 +340,7 @@ class AudioManager(object):
         self.userlock_orientation = False
 
          
-    def gameplayMusic( self, Enable, direction ): 
+    def gameplayMusic( self, Enable, direction, offset = 0 ): 
 
         if Enable is True:
 
@@ -349,7 +352,7 @@ class AudioManager(object):
 
                 if self.IsAdventurePlaying is False:
                     self.IsAdventurePlaying = True
-                    self.play_music("move_base") 
+                    self.play_music("move_base", offset ) 
                     #next upgrade 
                     # play instrumental sea shanty adapt to each boat : 
                     # wellerman

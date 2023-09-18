@@ -30,16 +30,20 @@ from sensor_msgs.msg import CompressedImage
 from rclpy.qos import qos_profile_sensor_data
 
 from ..components.__microcontroller import externalBoard
-from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, WIFI_INTERFACE, DIRECTION_STATE, DRONES_LIST, AVAILABLE_LANG
+from ..utils.__utils_objects import AVAILABLE_TOPICS, SENSORS_TOPICS, PEER, OFFSETS, WIFI_INTERFACE, DIRECTION_STATE, DRONES_LIST, AVAILABLE_LANG
 from ..components.__audioManager import AudioManager
 
 INDEX = int(os.environ.get('PEER_ID'))
+ADVENTURE_SONG_DURATION = 106
 
 class Controller( Node ):
 
         def __init__( self,Master=None, enableUDPStream = True, **kwargs ):
 
             super().__init__("controller", namespace=f"{PEER.USER.value}_{INDEX}")
+
+            self._master_offsets = {}
+            self._masterClock = 0
 
             self._connectionTime = 0
             self._connectionTimeToGCS = "--:--:--"
@@ -111,7 +115,7 @@ class Controller( Node ):
             self._delta_pitch = 0
 
             self._sensor_yaw = 0
-            self._sensor_pitch =0
+            self._sensor_pitch = 0
             self._sensor_roll =0
             
             self._mpu_TiltMultiplier = 1
@@ -236,7 +240,23 @@ class Controller( Node ):
 
             self.droneName = drone_name
                 
+        
+        def offset_forwardMusic( self ):
+
+            offset = 0
+
+            if self._masterClock is not None :
                 
+                if self._masterClock <= ADVENTURE_SONG_DURATION: 
+                    offset = self._masterClock
+                
+                else:
+                    offset = self._masterClock % ADVENTURE_SONG_DURATION
+                    offset = np.clip( offset, 0, ADVENTURE_SONG_DURATION )
+
+            return int(offset)
+        
+        
         def get_local_ip(self):
             
             self.get_wifi_interfaces()
@@ -358,6 +378,7 @@ class Controller( Node ):
 
         def _init_component(self):
             
+            global INDEX
             #if self.EnableFilter is True:
             #    self._init_filter()
 
@@ -802,8 +823,10 @@ class Controller( Node ):
                             self.droneDirection = updateDroneDirection
 
                             if self._audioManager is not None :
+                                
+                                music_offset = self.offset_forwardMusic() if updateDroneDirection == DIRECTION_STATE.FORWARD.value else 0
 
-                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection )      
+                                self._audioManager.gameplayMusic( self.isGamePlayEnable, updateDroneDirection, music_offset )      
                                              
                                 if self.lockBtnDirection is False and self._audioManager.unlock_direction is False:
                                     
@@ -871,6 +894,12 @@ class Controller( Node ):
 
                     if "lang" in statusUpdate:
                         self.set_tutorial_language( statusUpdate["lang"] )
+
+                    if "offsets" in statusUpdate:       
+                        self._master_offsets = statusUpdate["offsets"]
+
+                    if SENSORS_TOPICS.CONNECTION.value in statusUpdate:
+                        self._masterClock = statusUpdate[ SENSORS_TOPICS.CONNECTION.value ]
 
                     if "enable" in statusUpdate:
                         
